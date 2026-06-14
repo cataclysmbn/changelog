@@ -13,7 +13,8 @@ const commits: Commit[] = [
     date: "2026-01-04",
     subject: "feat(ui): improve zone manager UI (#100)",
     author: "dev",
-    body: "Adds a display toggle.\n\nCo-authored-by: bot <bot@example.com>",
+    body:
+      "Adds a display toggle.\n\nAssisted-by: pi:gpt-5.5\nCo-authored-by: bot <bot@example.com>",
   },
   {
     hash: "def5678",
@@ -34,6 +35,7 @@ Deno.test("draftPost groups commits by padded body dates", () => {
   assertStringIncludes(draft, "01월 04일")
   assertStringIncludes(draft, "* improve zone manager UI (#100, abc1234)")
   assertStringIncludes(draft, "ㄴ Adds a display toggle.")
+  assertEquals(draft.includes("Assisted-by"), false)
   assertStringIncludes(draft, "01월 05일")
   assertStringIncludes(draft, "* stop crash while lockpicking (#101, def5678)")
 })

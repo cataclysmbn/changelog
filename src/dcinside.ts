@@ -41,7 +41,7 @@ const bodySummary = (body: string): string[] =>
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
-    .filter((line) => !/^Co-authored-by:/iu.test(line))
+    .filter((line) => !/^(Assisted-by|Co-authored-by):/iu.test(line))
     .slice(0, 3)
 
 const prNumber = (subject: string): string | null =>

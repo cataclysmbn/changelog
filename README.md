@@ -4,6 +4,18 @@ DCInside 로그라이크 갤러리용 Cataclysm: Bright Nights 패치글 초안�
 
 ## 사용법
 
+대화형 주간 생성:
+
+```sh
+deno task tui
+```
+
+이번 주만 pi 실행 없이 프롬프트/명령 확인:
+
+```sh
+deno task tui --yes --dry-run --newest 0 --oldest 0
+```
+
 프롬프트 생성:
 
 ```sh

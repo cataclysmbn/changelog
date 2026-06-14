@@ -1,8 +1,9 @@
 {
   "tasks": {
     "dc": "deno run --allow-read --allow-write --allow-run=git scripts/dc_changelog.ts",
-    "check": "deno check scripts/dc_changelog.ts src/dcinside.ts",
-    "test": "deno test --allow-read --allow-write --allow-run=git",
+    "tui": "deno run --allow-read --allow-write --allow-run --allow-env scripts/dc_tui.ts",
+    "check": "deno check scripts/dc_changelog.ts scripts/dc_tui.ts src/dcinside.ts src/weeks.ts",
+    "test": "deno test --allow-read --allow-write --allow-run --allow-env",
   },
   "lint": {
     "include": ["scripts", "src", ".agents"],
@@ -15,6 +16,7 @@
   },
   "imports": {
     "@cliffy/command": "jsr:@cliffy/command@^1.0.0-rc.8",
+    "@david/dax": "jsr:@david/dax@^0.48.3",
     "@std/assert": "jsr:@std/assert@^1.0.15",
     "@std/fs": "jsr:@std/fs@^1.0.19",
     "@std/path": "jsr:@std/path@^1.1.2",

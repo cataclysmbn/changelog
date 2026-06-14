@@ -10,15 +10,23 @@ Use this for `밝밤)` DCInside posts.
 
 ## Source gathering
 
-1. Generate a prompt or skeleton from the Cataclysm-BN checkout:
+1. For interactive weekly generation, use the dax TUI:
+
+   ```sh
+   deno task tui
+   ```
+
+   It lists this week first, lets the user choose an older contiguous week range, writes prompts under `out/dcinside`, and invokes `pi --skill .agents/skills/dcinside-changelog/SKILL.md -p @prompt` per week.
+
+2. Generate a prompt or skeleton manually from the Cataclysm-BN checkout:
 
    ```sh
    deno task dc --repo /home/scarf/repo/cata/Cataclysm-BN --since 2026-01-01 --until 2026-01-07 -o out/prompt.md
    deno task dc --repo /home/scarf/repo/cata/Cataclysm-BN v0.10.0..HEAD --mode draft
    ```
 
-2. If a commit title is unclear, inspect the PR or diff before writing a Korean bullet. Do not invent gameplay details.
-3. Look up Korean game terms in `Cataclysm-BN/lang/po/ko.po` before finalizing visible item/monster/UI names:
+3. If a commit title is unclear, inspect the PR or diff before writing a Korean bullet. Do not invent gameplay details.
+4. Look up Korean game terms in `Cataclysm-BN/lang/po/ko.po` before finalizing visible item/monster/UI names:
 
    ```sh
    rg -C2 -i '<English term>' /home/scarf/repo/cata/Cataclysm-BN/lang/po/ko.po | rg -v '^(#:|--)' | head -n 20
