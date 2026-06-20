@@ -16,7 +16,7 @@ Use this for `밝밤)` DCInside posts.
    deno task tui
    ```
 
-   It lists this week first, lets the user choose an older contiguous week range, crawls PR evidence/images, writes prompts only in a temp directory, and invokes isolated pi writer/reviewer passes per week. Output is a folder like `dist/2026-06-15_to_2026-06-21/changelog.md` plus downloaded PR images.
+   It lists this week first, lets the user choose an older contiguous week range, crawls PR evidence/images, writes prompts only in a temp directory, and invokes isolated pi writer/reviewer passes per week. Pi runs with `--no-context-files` plus role-specific AGENTS content injected through the system prompt, while keeping the user's normal pi auth/model settings. Output is a folder like `dist/2026-06-15_to_2026-06-21/changelog.md` plus downloaded PR images.
 
 2. Generate a prompt or skeleton manually from the Cataclysm-BN checkout:
 

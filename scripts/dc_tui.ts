@@ -65,7 +65,7 @@ type Options = {
 type PiWorkspace = {
   root: string
   cwd: string
-  agentDir: string
+  instructions: string
 }
 
 const chooseRange = async (
@@ -185,17 +185,17 @@ const makePiWorkspace = async (
 ): Promise<PiWorkspace> => {
   const root = await Deno.makeTempDir({ prefix: `dc-changelog-pi-${role}-` })
   const cwd = join(root, "work")
-  const agentDir = join(root, "agent")
+  const instructions = role === "writer" ? writerAgents : reviewerAgents
   await ensureDir(cwd)
-  await ensureDir(agentDir)
-  await Deno.writeTextFile(
-    join(cwd, "AGENTS.md"),
-    role === "writer" ? writerAgents : reviewerAgents,
-  )
-  return { root, cwd, agentDir }
+  await Deno.writeTextFile(join(cwd, "AGENTS.md"), instructions)
+  return { root, cwd, instructions }
 }
 
-const piArgs = (options: Options, promptFile: string): string[] => {
+const piArgs = (
+  options: Options,
+  promptFile: string,
+  workspace: PiWorkspace,
+): string[] => {
   const args = [
     options.pi,
     "--no-session",
@@ -203,9 +203,12 @@ const piArgs = (options: Options, promptFile: string): string[] => {
     "--no-extensions",
     "--no-prompt-templates",
     "--no-themes",
+    "--no-context-files",
     "--no-skills",
     "--skill",
     skillPath,
+    "--append-system-prompt",
+    workspace.instructions,
   ]
   if (options.model) {
     args.push("--model", options.model)
@@ -226,11 +229,10 @@ const runPiText = async (
   promptFile: string,
   workspace: PiWorkspace,
 ): Promise<string> => {
-  const args = piArgs(options, promptFile)
+  const args = piArgs(options, promptFile, workspace)
   const result = await new Deno.Command(args[0], {
     args: args.slice(1),
     cwd: workspace.cwd,
-    env: { PI_CODING_AGENT_DIR: workspace.agentDir },
     stdout: "piped",
     stderr: "piped",
   }).output()
@@ -250,7 +252,7 @@ const generateWithPi = async (
     if (options.dryRun) {
       $.logStep("dry-run", `${range.label} prompt: ${promptFile}`)
       $.logStep("dry-run", `cwd: ${workspace.cwd}`)
-      $.logStep("dry-run", piArgs(options, promptFile).join(" "))
+      $.logStep("dry-run", piArgs(options, promptFile, workspace).join(" "))
       return ""
     }
 
@@ -285,7 +287,10 @@ const reviewWithPi = async (
         `${range.label} reviewer prompt: ${reviewPromptFile}`,
       )
       $.logStep("dry-run", `reviewer cwd: ${workspace.cwd}`)
-      $.logStep("dry-run", piArgs(options, reviewPromptFile).join(" "))
+      $.logStep(
+        "dry-run",
+        piArgs(options, reviewPromptFile, workspace).join(" "),
+      )
       return draft
     }
 
