@@ -16,12 +16,12 @@ Use this for `밝밤)` DCInside posts.
    deno task tui
    ```
 
-   It lists this week first, lets the user choose an older contiguous week range, crawls PR evidence/images, writes prompts only in a temp directory, and invokes isolated pi writer/reviewer passes per week. Output is a folder like `out/dcinside/2026-06-15_to_2026-06-21/changelog.md` plus downloaded PR images.
+   It lists this week first, lets the user choose an older contiguous week range, crawls PR evidence/images, writes prompts only in a temp directory, and invokes isolated pi writer/reviewer passes per week. Output is a folder like `dist/2026-06-15_to_2026-06-21/changelog.md` plus downloaded PR images.
 
 2. Generate a prompt or skeleton manually from the Cataclysm-BN checkout:
 
    ```sh
-   deno task dc --repo /home/scarf/repo/cata/Cataclysm-BN --since 2026-01-01 --until 2026-01-07 -o out/prompt.md
+   deno task dc --repo /home/scarf/repo/cata/Cataclysm-BN --since 2026-01-01 --until 2026-01-07 --asset-dir dist/2026-01-01_to_2026-01-07 -o /tmp/prompt.md
    deno task dc --repo /home/scarf/repo/cata/Cataclysm-BN v0.10.0..HEAD --mode draft
    ```
 

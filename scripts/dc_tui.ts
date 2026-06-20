@@ -20,7 +20,7 @@ import { rangesBetween, weeklyRanges, type WeekRange } from "../src/weeks.ts"
 const scriptDir = dirname(fromFileUrl(import.meta.url))
 const appRoot = dirname(scriptDir)
 const defaultRepo = resolve(appRoot, "../Cataclysm-BN")
-const defaultOutputDir = join(appRoot, "out", "dcinside")
+const defaultOutputDir = join(appRoot, "dist")
 const skillPath = join(
   appRoot,
   ".agents",

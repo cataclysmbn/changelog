@@ -13,7 +13,7 @@ deno task tui
 결과는 주별 폴더에 생성됩니다.
 
 ```text
-out/dcinside/2026-06-15_to_2026-06-21/
+dist/2026-06-15_to_2026-06-21/
 ├── changelog.md
 └── pr-9538-1.png
 ```
@@ -29,7 +29,7 @@ deno task tui --yes --dry-run --newest 0 --oldest 0
 프롬프트 생성:
 
 ```sh
-deno task dc --repo /home/scarf/repo/cata/Cataclysm-BN --since 2026-01-01 --until 2026-01-07 --asset-dir out/dcinside/2026-01-01_to_2026-01-07 -o /tmp/prompt.md
+deno task dc --repo /home/scarf/repo/cata/Cataclysm-BN --since 2026-01-01 --until 2026-01-07 --asset-dir dist/2026-01-01_to_2026-01-07 -o /tmp/prompt.md
 ```
 
 바로 편집 가능한 날짜별 초안 생성:

@@ -396,7 +396,7 @@ const main = new Command()
   )
   .example(
     "weekly prompt",
-    "deno task dc --repo ../Cataclysm-BN --since 2026-01-01 --until 2026-01-07 --asset-dir out/dcinside/2026-01-01_to_2026-01-07 -o /tmp/prompt.md",
+    "deno task dc --repo ../Cataclysm-BN --since 2026-01-01 --until 2026-01-07 --asset-dir dist/2026-01-01_to_2026-01-07 -o /tmp/prompt.md",
   )
   .example("tag range draft", "deno task dc v0.10.0..HEAD --mode draft")
   .action(async (rawOptions, range?: string) => {
