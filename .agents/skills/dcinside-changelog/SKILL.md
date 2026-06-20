@@ -39,6 +39,7 @@ Use this for `밝밤)` DCInside posts.
 - Main bullets use `*`. Sub-bullets use `ㄴ`.
 - Keep bullets short and player-facing.
 - First mention may include English in parentheses: `불굴의 괴물(Relentless Hulk)`.
+- If a downloaded image illustrates an entry, put `![](filename)` immediately before that bullet.
 - End with `---` and a short caveat only when useful, e.g. `일부 누락될 수 있음`.
 
 ## Style distilled from reference posts
@@ -50,7 +51,8 @@ Use this for `밝밤)` DCInside posts.
 - Keep related bullets together under the same date. Merge follow-up/revert chains into the final visible result.
 - Use `ㄴ` for conditions, examples, exact numeric changes, and "what changed from what to what" details.
 - Include important numeric before/after values when present: `(300 -> 3000)`, `(50kw -> 5kw)`.
-- Mention screenshots/images only if the final folder actually includes them.
+- Follow the hand-written reference posts (`밝밤) 1월 3일 ~ 1월 13일 패치`, `밝밤) 1월 14일 ~ 2월 9일 패치`): concrete effect first, then `ㄴ` examples/conditions/numbers.
+- Mention screenshots/images only if the final folder actually includes them, with Markdown links before the relevant bullet.
 
 ## Avoid
 
@@ -58,5 +60,6 @@ Use this for `밝밤)` DCInside posts.
 - Corporate/hype wording.
 - English-only bullets when a Korean term is known.
 - Putting unclear commit subjects into a confident Korean gameplay claim.
-- Developer jargon such as `번들 배포`, `레지스트리 모드`, `전용 위치`, `정리`, `공용 팩토리`, or `타입체크` when the player-visible result is the real point.
+- Developer jargon or vague verbs such as `번들 배포`, `레지스트리 모드`, `전용 위치`, `정리`, `갱신`, `공용 팩토리`, or `타입체크` when the player-visible result is the real point.
+- Bare `수정`, `개선`, or `변경` entries without concrete details about what changed.
 - Long Markdown sections from release notes; DCInside posts should remain date-bucketed bullets.
