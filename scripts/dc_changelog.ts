@@ -1,20 +1,26 @@
-#!/usr/bin/env -S deno run --allow-read --allow-write --allow-run=git
+#!/usr/bin/env -S deno run --allow-read --allow-write --allow-run=git,gh --allow-net --allow-env=GH_TOKEN,GITHUB_TOKEN,PATH,HOME,XDG_CONFIG_HOME
 /**
  * @module
  *
  * Generate a DCInside-style Cataclysm: Bright Nights changelog draft or rewrite prompt.
  *
- * The script reads a Cataclysm-BN git range, groups commits by day, and emits either a
- * paste-ready skeleton or a prompt that asks an editor/LLM to rewrite the entries in the
- * compact Korean format used by DCInside roguelike gallery patch posts.
+ * The script reads a Cataclysm-BN git range, enriches commits with PR evidence and
+ * downloadable PR images, then emits either a paste-ready skeleton or a prompt that asks
+ * an editor/LLM to rewrite the entries in the compact Korean format used by DCInside
+ * roguelike gallery patch posts.
  */
 
 import { Command } from "@cliffy/command"
 import { ensureDir } from "@std/fs"
-import { dirname, resolve } from "@std/path"
+import { dirname, extname, resolve } from "@std/path"
 import * as v from "@valibot/valibot"
 
-import { type Commit, draftPost, rewritePrompt } from "../src/dcinside.ts"
+import {
+  type Commit,
+  draftPost,
+  type PullRequestDetails,
+  rewritePrompt,
+} from "../src/dcinside.ts"
 
 const ModeSchema = v.picklist(["prompt", "draft"])
 const OptionsSchema = v.object({
@@ -26,6 +32,10 @@ const OptionsSchema = v.object({
   includeBody: v.boolean(),
   output: v.optional(v.string()),
   title: v.optional(v.string()),
+  assetDir: v.optional(v.string()),
+  repoSlug: v.optional(v.string()),
+  noPrDetails: v.optional(v.boolean()),
+  allowMissingPrDetails: v.optional(v.boolean()),
 })
 const CommitSchema = v.object({
   hash: v.string(),
@@ -33,6 +43,14 @@ const CommitSchema = v.object({
   subject: v.string(),
   author: v.string(),
   body: v.string(),
+})
+const GhFileSchema = v.object({ path: v.string() })
+const GhPrSchema = v.object({
+  number: v.number(),
+  title: v.string(),
+  url: v.string(),
+  body: v.nullable(v.string()),
+  files: v.array(GhFileSchema),
 })
 
 type Mode = v.InferOutput<typeof ModeSchema>
@@ -53,6 +71,48 @@ const gitRangeArgs = (
 ): string[] => range ? [range] : [`--since=${since}`, `--until=${until}`]
 
 const decode = (bytes: Uint8Array): string => new TextDecoder().decode(bytes)
+
+const inheritedGhEnv = (): Record<string, string> => {
+  const env: Record<string, string> = {}
+  for (
+    const key of ["GH_TOKEN", "GITHUB_TOKEN", "PATH", "HOME", "XDG_CONFIG_HOME"]
+  ) {
+    const value = Deno.env.get(key)
+    if (value) env[key] = value
+  }
+  return env
+}
+
+const commandText = async (
+  command: string,
+  args: string[],
+  options: { clearEnv?: boolean } = {},
+): Promise<string> => {
+  const result = await new Deno.Command(command, {
+    args,
+    clearEnv: true,
+    env: options.clearEnv ? {} : inheritedGhEnv(),
+    stdout: "piped",
+    stderr: "piped",
+  }).output()
+  if (!result.success) {
+    throw new Error(
+      `${command} ${args.join(" ")} failed: ${decode(result.stderr).trim()}`,
+    )
+  }
+  return decode(result.stdout)
+}
+
+const inRequestedDateWindow = (
+  commit: Commit,
+  options: Options & { range?: string },
+): boolean => {
+  if (options.range) return true
+  const hasIsoWindow = /^\d{4}-\d{2}-\d{2}$/u.test(options.since) &&
+    /^\d{4}-\d{2}-\d{2}$/u.test(options.until)
+  return !hasIsoWindow ||
+    (commit.date >= options.since && commit.date < options.until)
+}
 
 const readCommits = async (
   options: Options & { range?: string },
@@ -81,7 +141,6 @@ const readCommits = async (
   return decode(stdout)
     .split("\x1e")
     .filter((record) => record.trim().length > 0)
-    .slice(0, options.maxCommits)
     .map((record) => {
       const [, hash = "", date = "", subject = "", author = "", ...body] =
         record.split("\x1f")
@@ -93,6 +152,196 @@ const readCommits = async (
         body: body.join("\x1f").trim(),
       })
     })
+    .filter((commit) => inRequestedDateWindow(commit, options))
+    .slice(0, options.maxCommits)
+}
+
+const prNumber = (subject: string): number | null => {
+  const match = subject.match(/\(#(\d+)\)$/u)
+  return match ? Number(match[1]) : null
+}
+
+const githubSlugFromRemote = (remote: string): string | null => {
+  const normalized = remote.trim().replace(/\.git$/u, "")
+  const https = normalized.match(/github\.com[:/]([^/]+\/[^/]+)$/u)
+  return https?.[1] ?? null
+}
+
+const resolveRepoSlug = async (
+  repo: string,
+  override?: string,
+): Promise<string> => {
+  if (override) return override
+  for (const remote of ["upstream", "origin"]) {
+    try {
+      const url = await commandText("git", [
+        "-C",
+        repo,
+        "remote",
+        "get-url",
+        remote,
+      ], {
+        clearEnv: true,
+      })
+      const slug = githubSlugFromRemote(url)
+      if (slug) return slug
+    } catch {
+      // Try the next conventional remote.
+    }
+  }
+  throw new Error(
+    "Could not infer GitHub owner/repo; pass --repo-slug owner/repo",
+  )
+}
+
+const imageUrls = (markdown: string): string[] => {
+  const urls = new Set<string>()
+  for (
+    const match of markdown.matchAll(
+      /<img\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/giu,
+    )
+  ) {
+    urls.add(match[1])
+  }
+  for (
+    const match of markdown.matchAll(/!\[[^\]]*\]\((https?:\/\/[^\s)]+)\)/giu)
+  ) {
+    urls.add(match[1])
+  }
+  for (const match of markdown.matchAll(/https?:\/\/[^\s)"']+/giu)) {
+    const url = match[0]
+    if (
+      /\.(?:png|jpe?g|gif|webp)(?:\?|$)/iu.test(url) ||
+      url.includes("/user-attachments/assets/")
+    ) {
+      urls.add(url)
+    }
+  }
+  return [...urls]
+}
+
+const extensionFromContentType = (contentType: string | null): string => {
+  const type = contentType?.split(";")[0]?.trim().toLowerCase()
+  if (type === "image/jpeg") return ".jpg"
+  if (type === "image/gif") return ".gif"
+  if (type === "image/webp") return ".webp"
+  return ".png"
+}
+
+const extensionFromUrl = (url: string, contentType: string | null): string => {
+  const parsed = new URL(url)
+  const ext = extname(parsed.pathname).toLowerCase()
+  return /^\.(?:png|jpe?g|gif|webp)$/u.test(ext)
+    ? ext
+    : extensionFromContentType(contentType)
+}
+
+const downloadPrImages = async (
+  pr: number,
+  body: string,
+  assetDir?: string,
+): Promise<PullRequestDetails["images"]> => {
+  const urls = imageUrls(body)
+  if (!assetDir || urls.length === 0) {
+    return urls.map((sourceUrl) => ({ sourceUrl }))
+  }
+
+  await ensureDir(assetDir)
+  const images: PullRequestDetails["images"] = []
+  for (const [index, sourceUrl] of urls.entries()) {
+    try {
+      const response = await fetch(sourceUrl, {
+        headers: { "User-Agent": "dc-changelog" },
+      })
+      if (!response.ok) {
+        images.push({
+          sourceUrl,
+          error: `${response.status} ${response.statusText}`,
+        })
+        continue
+      }
+      const ext = extensionFromUrl(
+        sourceUrl,
+        response.headers.get("content-type"),
+      )
+      const filename = `pr-${pr}-${index + 1}${ext}`
+      await Deno.writeFile(
+        resolve(assetDir, filename),
+        new Uint8Array(await response.arrayBuffer()),
+      )
+      images.push({ sourceUrl, filename })
+    } catch (error) {
+      images.push({
+        sourceUrl,
+        error: error instanceof Error ? error.message : String(error),
+      })
+    }
+  }
+  return images
+}
+
+const fetchPullRequest = async (
+  pr: number,
+  options: { repoSlug: string; assetDir?: string },
+): Promise<PullRequestDetails> => {
+  const json = await commandText("gh", [
+    "pr",
+    "view",
+    pr.toString(),
+    "--repo",
+    options.repoSlug,
+    "--json",
+    "number,title,body,files,url",
+  ])
+  const parsed = v.parse(GhPrSchema, JSON.parse(json))
+  const body = parsed.body ?? ""
+  return {
+    number: parsed.number,
+    title: parsed.title,
+    url: parsed.url,
+    body,
+    files: parsed.files.map((file) => file.path),
+    images: await downloadPrImages(pr, body, options.assetDir),
+  }
+}
+
+const withPullRequestDetails = async (
+  commits: Commit[],
+  options: Options,
+): Promise<Commit[]> => {
+  if (options.noPrDetails) return commits
+  const repo = resolve(options.repo)
+  const repoSlug = await resolveRepoSlug(repo, options.repoSlug)
+  const cache = new Map<number, Promise<PullRequestDetails>>()
+
+  return await Promise.all(commits.map(async (commit) => {
+    const number = prNumber(commit.subject)
+    if (!number) return commit
+
+    const cached = cache.get(number) ?? fetchPullRequest(number, {
+      repoSlug,
+      assetDir: options.assetDir ? resolve(options.assetDir) : undefined,
+    })
+    cache.set(number, cached)
+
+    try {
+      return { ...commit, pullRequest: await cached }
+    } catch (error) {
+      if (!options.allowMissingPrDetails) throw error
+      return {
+        ...commit,
+        pullRequest: {
+          number,
+          title: commit.subject,
+          url: `https://github.com/${repoSlug}/pull/${number}`,
+          body: "",
+          files: [],
+          images: [],
+          lookupError: error instanceof Error ? error.message : String(error),
+        },
+      }
+    }
+  }))
 }
 
 const main = new Command()
@@ -124,6 +373,22 @@ const main = new Command()
     "Include first commit body lines in draft output; prompt mode always includes them",
     { default: false },
   )
+  .option(
+    "--asset-dir <dir:string>",
+    "Download PR images into this output directory",
+  )
+  .option(
+    "--repo-slug <owner/repo:string>",
+    "GitHub repository slug for PR lookups",
+  )
+  .option("--no-pr-details", "Do not query GitHub PR bodies/files/images", {
+    default: false,
+  })
+  .option(
+    "--allow-missing-pr-details",
+    "Keep going and mark missing PR evidence instead of failing",
+    { default: false },
+  )
   .option("-t, --title <title:string>", "Override post title")
   .option(
     "-o, --output <file:string>",
@@ -131,12 +396,19 @@ const main = new Command()
   )
   .example(
     "weekly prompt",
-    "deno task dc --repo ../Cataclysm-BN --since 2026-01-01 --until 2026-01-07 -o out/prompt.md",
+    "deno task dc --repo ../Cataclysm-BN --since 2026-01-01 --until 2026-01-07 --asset-dir out/dcinside/2026-01-01_to_2026-01-07 -o /tmp/prompt.md",
   )
   .example("tag range draft", "deno task dc v0.10.0..HEAD --mode draft")
   .action(async (rawOptions, range?: string) => {
-    const options = v.parse(OptionsSchema, rawOptions)
-    const commits = await readCommits({ ...options, range })
+    const options = {
+      noPrDetails: false,
+      allowMissingPrDetails: false,
+      ...v.parse(OptionsSchema, rawOptions),
+    }
+    const commits = await withPullRequestDetails(
+      await readCommits({ ...options, range }),
+      options,
+    )
     if (commits.length === 0) {
       throw new Error("No commits found for the requested range")
     }

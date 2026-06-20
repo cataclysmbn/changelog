@@ -4,12 +4,35 @@ export type Commit = {
   subject: string
   author: string
   body: string
+  pullRequest?: PullRequestDetails
+}
+
+export type PullRequestImage = {
+  sourceUrl: string
+  filename?: string
+  error?: string
+}
+
+export type PullRequestDetails = {
+  number: number
+  title: string
+  url: string
+  body: string
+  files: string[]
+  images: PullRequestImage[]
+  lookupError?: string
 }
 
 export type DraftOptions = {
   commits: Commit[]
   title?: string
   includeBody?: boolean
+}
+
+export type ReviewPromptOptions = {
+  draft: string
+  sourcePrompt: string
+  title?: string
 }
 
 const monthDay = (date: string, pad: boolean): string => {
@@ -36,13 +59,26 @@ export const titleRange = (commits: Commit[]): string => {
   } 패치`
 }
 
-const bodySummary = (body: string): string[] =>
+const cleanMarkdown = (body: string): string =>
   body
+    .replace(
+      /<!-- BEGIN artifact comment -->[\s\S]*?<!-- END artifact comment -->/giu,
+      "",
+    )
+    .replace(/<!--([\s\S]*?)-->/gu, "")
+    .replace(/^## Checklist[\s\S]*/imu, "")
+    .replace(/^### Mandatory[\s\S]*/imu, "")
+    .replace(/^### Optional[\s\S]*/imu, "")
+    .replace(/\r\n/gu, "\n")
+    .trim()
+
+const bodySummary = (body: string, limit = 3): string[] =>
+  cleanMarkdown(body)
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
     .filter((line) => !/^(Assisted-by|Co-authored-by):/iu.test(line))
-    .slice(0, 3)
+    .slice(0, limit)
 
 const prNumber = (subject: string): string | null =>
   subject.match(/\(#(\d+)\)$/u)?.[1] ?? null
@@ -99,10 +135,44 @@ const styleGuide = `DCInside 밝밤 패치글 형식:
 - 세부 설명은 "ㄴ" 하위 불릿으로 짧게 붙입니다.
 - 한국어 위주로 쓰고 필요한 경우 첫 언급에만 영어 원문을 괄호로 병기합니다.
 - 플레이어가 체감하는 기능, 콘텐츠, 밸런스, UI, 버그 수정을 우선합니다.
-- JSON/Lua 모딩 변경은 "Modding:" 또는 "Lua 모딩:"처럼 명확히 표시합니다.
+- PR 제목만 번역하지 말고 PR 본문/파일/이미지 근거에서 Where + What + Result를 뽑아 씁니다.
+- PR 근거가 내부 개발/CI/리팩터링/Lua 타입체크뿐이면 게시글에서 뺍니다. 단, 실험판 다운로드 파일, 기본 포함 모드, 플레이 가능한 모드 콘텐츠처럼 플레이어가 직접 보는 변화는 남깁니다.
+- 되돌림/후속 수정 관계가 보이면 최종 플레이어 결과 하나로 합칩니다.
+- "번들 배포", "레지스트리 모드", "전용 위치", "정리", "공용 팩토리"처럼 한국 플레이어가 바로 이해 못 하는 개발자 말을 금지합니다. 예: "실험판에 기본 포함 모드 추가", "크라켄이 호수의 난파선 특수 장소에서만 스폰".
+- 갤러리에서 쓰는 말은 짧고 구체적입니다: 밝밤, ㅋㅌㅋㅂㅂ, ㅂㅂ, 실험판, 안정판, 최신버전, 하늘섬, 람쥐모드, 파암, 한글패치, 시작 지점, 스폰, 타일, 줍기, 자동운전.
 - 말투는 간결하고 갤러리 패치글처럼 담백하게 씁니다. 홍보 문구, 기여자 목록, 개발 과정 설명은 넣지 않습니다.
-- 추측으로 내용을 만들지 말고 커밋에서 불명확한 항목은 짧게 보수적으로 적습니다.
+- 추측으로 내용을 만들지 말고 PR 근거가 부족한 항목은 빼거나 보수적으로 씁니다.
 - 출력은 게시글 본문만 반환합니다.`
+
+const indent = (text: string, prefix: string): string =>
+  text.split("\n").map((line) => `${prefix}${line}`).join("\n")
+
+const prEvidence = (pullRequest: PullRequestDetails): string => {
+  if (pullRequest.lookupError) {
+    return indent(`PR lookup failed: ${pullRequest.lookupError}`, "  ")
+  }
+
+  const body = bodySummary(pullRequest.body, 18).join("\n")
+  const files = pullRequest.files.slice(0, 20).map((file) => `  - ${file}`)
+    .join("\n")
+  const images = pullRequest.images.length > 0
+    ? pullRequest.images.map((image) =>
+      `  - ${image.filename ?? "not downloaded"}: ${image.sourceUrl}${
+        image.error ? ` (${image.error})` : ""
+      }`
+    ).join("\n")
+    : "  - none"
+
+  return [
+    `  PR: #${pullRequest.number} ${pullRequest.title}`,
+    `  URL: ${pullRequest.url}`,
+    body
+      ? `  Body evidence:\n${indent(body, "    ")}`
+      : "  Body evidence: none",
+    files ? `  Changed files:\n${files}` : "  Changed files: none",
+    `  Downloaded images:\n${images}`,
+  ].join("\n")
+}
 
 export const rewritePrompt = (
   { commits, title, includeBody = true }: DraftOptions,
@@ -112,12 +182,15 @@ export const rewritePrompt = (
       const entries = items
         .map((commit) => {
           const details = bodySummary(commit.body)
-            .map((line) => `  body: ${line}`)
+            .map((line) => `  commit body: ${line}`)
             .join("\n")
           return [
             `- ${commit.hash} ${commit.subject}`,
             `  author: ${commit.author}`,
             includeBody ? details : "",
+            commit.pullRequest
+              ? prEvidence(commit.pullRequest)
+              : "  PR evidence: none",
           ].filter((line) => line.length > 0).join("\n")
         })
         .join("\n")
@@ -127,5 +200,28 @@ export const rewritePrompt = (
 
   return `${styleGuide}\n\n목표 제목: ${
     title ?? titleRange(commits)
-  }\n\n아래 커밋 목록을 위 형식의 한국어 패치글로 재작성해 주세요.\n\n${rawEntries}\n`
+  }\n\n아래 커밋/PR 근거를 읽고 위 형식의 한국어 패치글로 재작성해 주세요. 커밋 제목만 보고 쓰면 실패입니다. 플레이어가 읽고 "뭐가 어떻게 바뀌었는지" 알 수 없는 항목은 고치거나 삭제하세요.\n\n${rawEntries}\n`
 }
+
+export const reviewPrompt = (
+  { draft, sourcePrompt, title }: ReviewPromptOptions,
+): string =>
+  `${styleGuide}
+
+당신은 표독한 senior 한국어 편집자 reviewer subagent입니다. 아래 초안을 0점짜리 개발자 번역이라고 의심하고, PR 근거와 대조해서 게시 가능한 밝밤 DCInside 패치글로 다시 고치세요.
+
+검수 기준:
+- 한국인이 안 쓰는 비문, 개발자 은어, 번역투를 전부 제거합니다.
+- 플레이어에게 의미 없는 Lua/CI/리팩터링/팩토리/타입체크 항목은 삭제합니다.
+- PR을 읽어야 알 수 있는 세부사항(무엇에서 무엇으로 바뀜, 어떤 버그가 고쳐짐, 어디서 체감됨)을 복원합니다.
+- 후속 PR이 앞 PR을 고친 경우 최종 결과만 하나로 합칩니다.
+- 날짜별 형식과 불릿 형식을 유지합니다.
+- 출력은 최종 게시글 본문만 반환합니다.
+${title ? `- 목표 제목: ${title}\n` : ""}
+
+# 원본 근거
+${sourcePrompt}
+
+# 초안
+${draft}
+`

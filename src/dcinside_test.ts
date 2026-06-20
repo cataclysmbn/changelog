@@ -3,6 +3,7 @@ import { assertEquals, assertStringIncludes } from "@std/assert"
 import {
   type Commit,
   draftPost,
+  reviewPrompt,
   rewritePrompt,
   titleRange,
 } from "./dcinside.ts"
@@ -46,4 +47,39 @@ Deno.test("rewritePrompt carries the DCInside style guide", () => {
   assertStringIncludes(prompt, "DCInside 밝밤 패치글 형식")
   assertStringIncludes(prompt, '세부 설명은 "ㄴ" 하위 불릿')
   assertStringIncludes(prompt, "feat(ui): improve zone manager UI (#100)")
+})
+
+Deno.test("rewritePrompt includes PR evidence and downloaded images", () => {
+  const prompt = rewritePrompt({
+    commits: [{
+      ...commits[0],
+      pullRequest: {
+        number: 100,
+        title: "fix: player-facing bug",
+        url: "https://github.com/cataclysmbn/Cataclysm-BN/pull/100",
+        body: "## Purpose of change (The Why)\nPlayers saw a bad menu.",
+        files: ["src/menu.cpp"],
+        images: [{
+          sourceUrl: "https://github.com/user-attachments/assets/example",
+          filename: "pr-100-1.png",
+        }],
+      },
+    }],
+  })
+
+  assertStringIncludes(prompt, "PR: #100 fix: player-facing bug")
+  assertStringIncludes(prompt, "src/menu.cpp")
+  assertStringIncludes(prompt, "pr-100-1.png")
+})
+
+Deno.test("reviewPrompt injects hostile senior editor pass", () => {
+  const prompt = reviewPrompt({
+    draft: "* 번들 배포에 레지스트리 모드 포함",
+    sourcePrompt: "PR evidence",
+    title: "밝밤) 1월 4일 ~ 1월 5일 패치",
+  })
+
+  assertStringIncludes(prompt, "표독한 senior 한국어 편집자 reviewer subagent")
+  assertStringIncludes(prompt, "번들 배포")
+  assertStringIncludes(prompt, "PR evidence")
 })

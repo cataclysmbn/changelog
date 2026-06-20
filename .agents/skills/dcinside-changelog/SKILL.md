@@ -16,7 +16,7 @@ Use this for `밝밤)` DCInside posts.
    deno task tui
    ```
 
-   It lists this week first, lets the user choose an older contiguous week range, writes prompts under `out/dcinside`, and invokes `pi --skill .agents/skills/dcinside-changelog/SKILL.md -p @prompt` per week.
+   It lists this week first, lets the user choose an older contiguous week range, crawls PR evidence/images, writes prompts only in a temp directory, and invokes isolated pi writer/reviewer passes per week. Output is a folder like `out/dcinside/2026-06-15_to_2026-06-21/changelog.md` plus downloaded PR images.
 
 2. Generate a prompt or skeleton manually from the Cataclysm-BN checkout:
 
@@ -25,7 +25,7 @@ Use this for `밝밤)` DCInside posts.
    deno task dc --repo /home/scarf/repo/cata/Cataclysm-BN v0.10.0..HEAD --mode draft
    ```
 
-3. If a commit title is unclear, inspect the PR or diff before writing a Korean bullet. Do not invent gameplay details.
+3. Always inspect PR body/files/images or the diff before writing a Korean bullet. Commit titles and curated commit lists are not enough. Do not invent gameplay details.
 4. Look up Korean game terms in `Cataclysm-BN/lang/po/ko.po` before finalizing visible item/monster/UI names:
 
    ```sh
@@ -44,17 +44,19 @@ Use this for `밝밤)` DCInside posts.
 ## Style distilled from reference posts
 
 - Korean, compact, informal patch-note tone.
+- DCInside terms seen in crawled rlike posts: `밝밤`, `ㅋㅌㅋㅂㅂ`, `ㅂㅂ`, `실험판`, `안정판`, `최신버전`, `하늘섬`, `람쥐모드`, `파암`, `한글패치`, `시작 지점`, `스폰`, `타일`, `줍기`, `자동운전`.
 - Prefer concrete visible effects: UI changes, recipes, monsters, scenarios, balance, bug fixes.
-- Modding entries are allowed but label them clearly: `Modding:`, `Lua 모딩:`.
-- Keep related bullets together under the same date.
-- Use `ㄴ` for conditions, examples, or exact numeric changes.
+- Modding entries are usually omitted unless normal players directly see the result. If kept, label them clearly and explain the player-facing effect.
+- Keep related bullets together under the same date. Merge follow-up/revert chains into the final visible result.
+- Use `ㄴ` for conditions, examples, exact numeric changes, and "what changed from what to what" details.
 - Include important numeric before/after values when present: `(300 -> 3000)`, `(50kw -> 5kw)`.
-- Mention screenshots manually only if the final post will actually include them; the script does not fetch media.
+- Mention screenshots/images only if the final folder actually includes them.
 
 ## Avoid
 
-- Credits, contributor counts, Discord links, PR process, CI/build details, or changelog-provenance text.
+- Credits, contributor counts, Discord links, PR process, CI details, internal build plumbing, or changelog-provenance text.
 - Corporate/hype wording.
 - English-only bullets when a Korean term is known.
 - Putting unclear commit subjects into a confident Korean gameplay claim.
+- Developer jargon such as `번들 배포`, `레지스트리 모드`, `전용 위치`, `정리`, `공용 팩토리`, or `타입체크` when the player-visible result is the real point.
 - Long Markdown sections from release notes; DCInside posts should remain date-bucketed bullets.
