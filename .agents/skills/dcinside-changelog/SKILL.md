@@ -16,7 +16,7 @@ Use this for `밝밤)` DCInside posts.
    deno task tui
    ```
 
-   It lists this week first, lets the user choose an older contiguous week range, crawls PR evidence/images, writes prompts only in a temp directory, and invokes isolated pi writer/reviewer passes per week. Pi runs with `--no-context-files` plus role-specific AGENTS content injected through the system prompt, while keeping the user's normal pi auth/model settings. Output is a folder like `dist/2026-06-15_to_2026-06-21/changelog.md` plus downloaded PR images.
+   It lists this week first, lets the user choose an older contiguous week range, crawls PR evidence/images, writes prompts only in a temp directory, and invokes isolated pi writer/reviewer passes per week. Pi runs with `--no-context-files` plus role-specific AGENTS content injected through the system prompt, while keeping the user's normal pi auth/model settings. Output is a folder like `dist/2026-06-15_to_2026-06-21/changelog.txt` plus only the PR images referenced in the final text.
 
 2. Generate a prompt or skeleton manually from the Cataclysm-BN checkout:
 
@@ -39,7 +39,7 @@ Use this for `밝밤)` DCInside posts.
 - Main bullets use `*`. Sub-bullets use `ㄴ`.
 - Keep bullets short and player-facing.
 - First mention may include English in parentheses: `불굴의 괴물(Relentless Hulk)`.
-- If a downloaded image illustrates an entry, put `![](filename)` immediately before that bullet.
+- If a downloaded image illustrates an entry, put the filename alone immediately before that bullet, e.g. `pr-8621-1.png`.
 - End with `---` and a short caveat only when useful, e.g. `일부 누락될 수 있음`.
 
 ## Style distilled from reference posts
@@ -52,7 +52,7 @@ Use this for `밝밤)` DCInside posts.
 - Use `ㄴ` for conditions, examples, exact numeric changes, and "what changed from what to what" details.
 - Include important numeric before/after values when present: `(300 -> 3000)`, `(50kw -> 5kw)`.
 - Follow the hand-written reference posts (`밝밤) 1월 3일 ~ 1월 13일 패치`, `밝밤) 1월 14일 ~ 2월 9일 패치`): concrete effect first, then `ㄴ` examples/conditions/numbers.
-- Mention screenshots/images only if the final folder actually includes them, with Markdown links before the relevant bullet.
+- Mention screenshots/images only if the final folder actually includes them, with the bare filename before the relevant bullet.
 
 ## Avoid
 

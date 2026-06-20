@@ -6,7 +6,7 @@
  *
  * Uses dax prompts to choose a contiguous set of weekly ranges, generates a prompt for each
  * week in a temp directory, then invokes isolated pi writer/reviewer passes. Final output is
- * a per-week folder with changelog.md and any PR images crawled from GitHub.
+ * a per-week folder with changelog.txt and any PR images referenced by the text.
  */
 
 import { Command } from "@cliffy/command"
@@ -158,7 +158,7 @@ You are a Korean DCInside Cataclysm: Bright Nights changelog writer.
 - Use the supplied PR evidence. Never write from commit titles alone.
 - Delete internal-only CI, build plumbing, Lua typecheck, refactor, and factory entries unless the player-visible result is clear.
 - Merge follow-up/revert pairs into the final player-visible result.
-- If a downloaded image helps explain an entry, add "![](filename)" immediately before that bullet.
+- If a downloaded image helps explain an entry, add the filename alone immediately before that bullet, e.g. "pr-8621-1.png".
 - Prefer concrete words: 실험판, 안정판, 기본 포함 모드, 시작 지점, 스폰, 타일, 줍기, 자동운전.
 - Ban vague words such as 갱신/정리 unless the same bullet says exactly what changed.
 - Match hand-written posts by adding concrete effects, numbers, examples, and conditions.
@@ -173,7 +173,7 @@ You are a hostile senior Korean editor for DCInside 밝밤 changelogs.
 - Treat the draft as guilty until proven useful to a Korean player.
 - Remove every Korean sentence that sounds like machine translation or developer-only jargon.
 - Compare the draft against PR evidence and restore concrete gameplay details.
-- Add "![](filename)" immediately before bullets illustrated by downloaded images.
+- Add the filename alone immediately before bullets illustrated by downloaded images, e.g. "pr-8621-1.png".
 - Delete low-utility internal Lua/CI/refactor/build entries unless the final player-facing effect matters.
 - Collapse superseded entries into one final result.
 - Reject vague wording such as 갱신/정리/개선 unless the same entry explains exactly what changed.
@@ -303,6 +303,35 @@ const reviewWithPi = async (
   }
 }
 
+const normalizeImageReferences = (text: string): string =>
+  text.replace(/^!\[\]\((pr-\d+-\d+\.(?:png|jpe?g|gif|webp))\)$/gimu, "$1")
+
+const referencedImages = (text: string): Set<string> =>
+  new Set(
+    [...text.matchAll(
+      /(?:^|\s)(pr-\d+-\d+\.(?:png|jpe?g|gif|webp))(?=\s|$)/gimu,
+    )]
+      .map((match) => match[1]),
+  )
+
+const removeUnreferencedImages = async (
+  weekDir: string,
+  changelog: string,
+): Promise<void> => {
+  const keep = referencedImages(changelog)
+  for await (const entry of Deno.readDir(weekDir)) {
+    if (
+      !entry.isFile ||
+      !/^pr-\d+-\d+\.(?:png|jpe?g|gif|webp)$/iu.test(entry.name)
+    ) {
+      continue
+    }
+    if (!keep.has(entry.name)) {
+      await Deno.remove(join(weekDir, entry.name))
+    }
+  }
+}
+
 const run = async (options: Options): Promise<void> => {
   const ranges = weeklyRanges(new Date(), options.weeks)
   const selected = await chooseRange(ranges, options)
@@ -331,18 +360,21 @@ const run = async (options: Options): Promise<void> => {
 
       const promptFile = join(tempDir, `${slug}.prompt.md`)
       const reviewerPromptFile = join(tempDir, `${slug}.review.prompt.md`)
-      const outputFile = join(weekDir, "changelog.md")
+      const outputFile = join(weekDir, "changelog.txt")
       await buildPrompt(range, runOptions, promptFile, weekDir)
       const sourcePrompt = await Deno.readTextFile(promptFile)
       const draft = await generateWithPi(range, runOptions, promptFile)
-      const changelog = await reviewWithPi(
-        range,
-        runOptions,
-        sourcePrompt,
-        draft,
-        reviewerPromptFile,
+      const changelog = normalizeImageReferences(
+        await reviewWithPi(
+          range,
+          runOptions,
+          sourcePrompt,
+          draft,
+          reviewerPromptFile,
+        ),
       )
       if (!runOptions.dryRun) {
+        await removeUnreferencedImages(weekDir, changelog)
         await Deno.writeTextFile(outputFile, `${changelog.trimEnd()}\n`)
         $.logStep("wrote", outputFile)
       }

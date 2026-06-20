@@ -220,15 +220,21 @@ const imageUrls = (markdown: string): string[] => {
   return [...urls]
 }
 
-const extensionFromContentType = (contentType: string | null): string => {
+const extensionFromContentType = (
+  contentType: string | null,
+): string | null => {
   const type = contentType?.split(";")[0]?.trim().toLowerCase()
+  if (type === "image/png") return ".png"
   if (type === "image/jpeg") return ".jpg"
   if (type === "image/gif") return ".gif"
   if (type === "image/webp") return ".webp"
-  return ".png"
+  return null
 }
 
-const extensionFromUrl = (url: string, contentType: string | null): string => {
+const extensionFromUrl = (
+  url: string,
+  contentType: string | null,
+): string | null => {
   const parsed = new URL(url)
   const ext = extname(parsed.pathname).toLowerCase()
   return /^\.(?:png|jpe?g|gif|webp)$/u.test(ext)
@@ -248,7 +254,8 @@ const downloadPrImages = async (
 
   await ensureDir(assetDir)
   const images: PullRequestDetails["images"] = []
-  for (const [index, sourceUrl] of urls.entries()) {
+  let saved = 0
+  for (const sourceUrl of urls) {
     try {
       const response = await fetch(sourceUrl, {
         headers: { "User-Agent": "dc-changelog" },
@@ -260,11 +267,17 @@ const downloadPrImages = async (
         })
         continue
       }
-      const ext = extensionFromUrl(
-        sourceUrl,
-        response.headers.get("content-type"),
-      )
-      const filename = `pr-${pr}-${index + 1}${ext}`
+      const contentType = response.headers.get("content-type")
+      const ext = extensionFromUrl(sourceUrl, contentType)
+      if (!ext) {
+        images.push({
+          sourceUrl,
+          error: `skipped non-image content-type: ${contentType ?? "unknown"}`,
+        })
+        continue
+      }
+      saved += 1
+      const filename = `pr-${pr}-${saved}${ext}`
       await Deno.writeFile(
         resolve(assetDir, filename),
         new Uint8Array(await response.arrayBuffer()),

@@ -46,7 +46,7 @@ Deno.test("rewritePrompt carries the DCInside style guide", () => {
 
   assertStringIncludes(prompt, "DCInside 밝밤 패치글 형식")
   assertStringIncludes(prompt, '세부 설명은 "ㄴ" 하위 불릿')
-  assertStringIncludes(prompt, "![](파일명)")
+  assertStringIncludes(prompt, "pr-8621-1.png")
   assertStringIncludes(prompt, "feat(ui): improve zone manager UI (#100)")
 })
 
@@ -81,7 +81,7 @@ Deno.test("reviewPrompt injects hostile senior editor pass", () => {
   })
 
   assertStringIncludes(prompt, "표독한 senior 한국어 편집자 reviewer subagent")
-  assertStringIncludes(prompt, "![](파일명)")
+  assertStringIncludes(prompt, "pr-8621-1.png")
   assertStringIncludes(prompt, "번들 배포")
   assertStringIncludes(prompt, "PR evidence")
 })
