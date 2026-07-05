@@ -26,13 +26,11 @@ Use this for `밝밤)` DCInside posts.
    ```
 
 3. Always inspect PR body/files/images or the diff before writing a Korean bullet. Commit titles and curated commit lists are not enough. Do not invent gameplay details.
-4. Use `/home/scarf/repo/cata/translations/lang/po/ko.po` as the Korean game-term glossary before finalizing visible item/monster/UI names:
+4. Use `/home/scarf/repo/cata/translations/lang/po/ko.po` as the Korean game-term glossary before finalizing visible item/monster/UI names. Search the exact English term from the PR/diff and copy the matching `msgstr`; do not store word-level fixed translations or infer a whole name from a partial match.
 
    ```sh
    rg -C2 -i '<English term>' /home/scarf/repo/cata/translations/lang/po/ko.po | rg -v '^(#:|--)' | head -n 20
    ```
-
-   `feral` in human/monster names is `이성을 잃은`, never `야생`; e.g. `feral soldier` = `이성을 잃은 군인`, `feral armored bio-operator` = `이성을 잃은 중장갑 바이오닉 특수부대원`.
 
 ## Post format
 

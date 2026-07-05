@@ -14,13 +14,14 @@ import $ from "@david/dax"
 import { ensureDir } from "@std/fs"
 import { dirname, fromFileUrl, join, resolve } from "@std/path"
 
-import { glossaryGuide, reviewPrompt } from "../src/dcinside.ts"
+import { reviewPrompt, translationGuide } from "../src/dcinside.ts"
 import { rangesBetween, weeklyRanges, type WeekRange } from "../src/weeks.ts"
 
 const scriptDir = dirname(fromFileUrl(import.meta.url))
 const appRoot = dirname(scriptDir)
 const defaultRepo = resolve(appRoot, "../Cataclysm-BN")
 const defaultOutputDir = join(appRoot, "dist")
+const defaultGlossaryPo = resolve(appRoot, "../translations/lang/po/ko.po")
 const skillPath = join(
   appRoot,
   ".agents",
@@ -60,6 +61,8 @@ type Options = {
   noReview?: boolean
   allowMissingPrDetails?: boolean
   keepTemp?: boolean
+  glossaryPo: string
+  skipGlossary?: boolean
 }
 
 type PiWorkspace = {
@@ -140,11 +143,16 @@ const buildPrompt = async (
     range.title,
     "--asset-dir",
     assetDir,
+    "--glossary-po",
+    options.glossaryPo,
     "-o",
     promptFile,
   ]
   if (options.allowMissingPrDetails) {
     args.push("--allow-missing-pr-details")
+  }
+  if (options.skipGlossary) {
+    args.push("--skip-glossary")
   }
   await $`${args}`.cwd(appRoot)
 }
@@ -160,8 +168,8 @@ You are a Korean DCInside Cataclysm: Bright Nights changelog writer.
 - Merge follow-up/revert pairs into the final player-visible result.
 - If a downloaded image helps explain an entry, add the filename alone immediately before that bullet, e.g. "pr-8621-1.png".
 - Prefer concrete words: 실험판, 안정판, 기본 포함 모드, 시작 지점, 스폰, 타일, 줍기, 자동운전.
-- Use this glossary before choosing Korean game terms:
-${glossaryGuide}
+- Use the supplied Korean PO snippets before choosing Korean game terms:
+${translationGuide}
 - Ban vague words such as 갱신/정리 unless the same bullet says exactly what changed.
 - Match hand-written posts by adding concrete effects, numbers, examples, and conditions.
 - Do not run notify or any completion hook.
@@ -175,8 +183,8 @@ You are a hostile senior Korean editor for DCInside 밝밤 changelogs.
 - Treat the draft as guilty until proven useful to a Korean player.
 - Remove every Korean sentence that sounds like machine translation or developer-only jargon.
 - Compare the draft against PR evidence and restore concrete gameplay details.
-- Enforce this glossary before accepting Korean game terms:
-${glossaryGuide}
+- Enforce the supplied Korean PO snippets before accepting Korean game terms:
+${translationGuide}
 - Add the filename alone immediately before bullets illustrated by downloaded images, e.g. "pr-8621-1.png".
 - Delete low-utility internal Lua/CI/refactor/build entries unless the final player-facing effect matters.
 - Collapse superseded entries into one final result.
@@ -448,6 +456,16 @@ const main = new Command()
       default: false,
     },
   )
+  .option(
+    "--glossary-po <file:string>",
+    "Korean gettext PO file for term snippets",
+    {
+      default: defaultGlossaryPo,
+    },
+  )
+  .option("--skip-glossary", "Do not include Korean PO term snippets", {
+    default: false,
+  })
   .option("-y, --yes", "Use provided/default options without prompts")
   .example("interactive", "deno task tui")
   .example("generate current week", "deno task tui --newest 0 --oldest 0")

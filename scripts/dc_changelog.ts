@@ -12,7 +12,7 @@
 
 import { Command } from "@cliffy/command"
 import { ensureDir } from "@std/fs"
-import { dirname, extname, resolve } from "@std/path"
+import { dirname, extname, fromFileUrl, resolve } from "@std/path"
 import * as v from "@valibot/valibot"
 
 import {
@@ -21,6 +21,10 @@ import {
   type PullRequestDetails,
   rewritePrompt,
 } from "../src/dcinside.ts"
+
+const scriptDir = dirname(fromFileUrl(import.meta.url))
+const appRoot = dirname(scriptDir)
+const defaultGlossaryPo = resolve(appRoot, "../translations/lang/po/ko.po")
 
 const ModeSchema = v.picklist(["prompt", "draft"])
 const OptionsSchema = v.object({
@@ -36,6 +40,8 @@ const OptionsSchema = v.object({
   repoSlug: v.optional(v.string()),
   noPrDetails: v.optional(v.boolean()),
   allowMissingPrDetails: v.optional(v.boolean()),
+  glossaryPo: v.string(),
+  skipGlossary: v.optional(v.boolean()),
 })
 const CommitSchema = v.object({
   hash: v.string(),
@@ -52,6 +58,12 @@ const GhPrSchema = v.object({
   body: v.nullable(v.string()),
   files: v.array(GhFileSchema),
 })
+
+type PoEntry = {
+  msgid: string
+  msgidPlural?: string
+  msgstr: string
+}
 
 type Mode = v.InferOutput<typeof ModeSchema>
 type Options = v.InferOutput<typeof OptionsSchema>
@@ -357,6 +369,107 @@ const withPullRequestDetails = async (
   }))
 }
 
+const decodePoString = (line: string): string | null => {
+  const quote = line.indexOf('"')
+  if (quote < 0) return null
+  try {
+    return JSON.parse(line.slice(quote))
+  } catch {
+    return null
+  }
+}
+
+const poField = (block: string, start: RegExp): string | null => {
+  const chunks: string[] = []
+  let collecting = false
+  for (const line of block.split("\n")) {
+    const trimmed = line.trim()
+    if (!collecting && start.test(trimmed)) {
+      const value = decodePoString(trimmed)
+      if (value !== null) chunks.push(value)
+      collecting = true
+      continue
+    }
+    if (!collecting) continue
+    if (trimmed.startsWith('"')) {
+      const value = decodePoString(trimmed)
+      if (value !== null) chunks.push(value)
+      continue
+    }
+    if (/^(msgctxt|msgid|msgid_plural|msgstr(?:\[\d+\])?)\b/u.test(trimmed)) {
+      break
+    }
+  }
+  return collecting ? chunks.join("") : null
+}
+
+const poEntries = (text: string): PoEntry[] =>
+  text
+    .split(/\n{2,}/u)
+    .map((block) => {
+      const msgid = poField(block, /^msgid\s+/u)
+      const msgidPlural = poField(block, /^msgid_plural\s+/u)
+      const msgstr = poField(block, /^msgstr(?:\[0\])?\s+/u)
+      return msgid && msgstr
+        ? { msgid, ...(msgidPlural ? { msgidPlural } : {}), msgstr }
+        : null
+    })
+    .filter((entry): entry is PoEntry => entry !== null)
+
+const glossarySource = (commits: Commit[]): string =>
+  commits
+    .map((commit) =>
+      [
+        commit.subject,
+        commit.body,
+        commit.pullRequest?.title,
+        commit.pullRequest?.body,
+        commit.pullRequest?.files.join("\n"),
+      ].filter((text): text is string => typeof text === "string").join("\n")
+    )
+    .join("\n")
+
+const canMatchTerm = (term: string): boolean =>
+  term.length >= 6 && !term.includes("\n")
+
+const normalizeTerm = (text: string): string =>
+  text.toLocaleLowerCase().replace(/[-_]+/gu, " ").replace(/\s+/gu, " ")
+
+const matchingIndex = (entry: PoEntry, source: string): number => {
+  const candidates = [entry.msgid, entry.msgidPlural]
+    .filter((term): term is string => typeof term === "string")
+    .filter(canMatchTerm)
+    .map((term) => source.indexOf(normalizeTerm(term)))
+    .filter((index) => index >= 0)
+  return candidates.length === 0 ? -1 : Math.min(...candidates)
+}
+
+const formatPoEntry = (entry: PoEntry): string =>
+  [
+    `- msgid ${JSON.stringify(entry.msgid)}`,
+    entry.msgidPlural
+      ? `  msgid_plural ${JSON.stringify(entry.msgidPlural)}`
+      : "",
+    `  msgstr ${JSON.stringify(entry.msgstr)}`,
+  ].filter((line) => line.length > 0).join("\n")
+
+const buildPoGlossary = async (
+  commits: Commit[],
+  options: Options,
+): Promise<string | undefined> => {
+  if (options.skipGlossary) return undefined
+  const source = normalizeTerm(glossarySource(commits))
+  const entries = poEntries(
+    await Deno.readTextFile(resolve(options.glossaryPo)),
+  )
+    .map((entry) => ({ entry, index: matchingIndex(entry, source) }))
+    .filter(({ index }) => index >= 0)
+    .toSorted((a, b) => a.index - b.index)
+    .slice(0, 120)
+    .map(({ entry }) => formatPoEntry(entry))
+  return entries.length > 0 ? entries.join("\n") : undefined
+}
+
 const main = new Command()
   .name("dc-changelog")
   .version("0.1.0")
@@ -402,6 +515,16 @@ const main = new Command()
     "Keep going and mark missing PR evidence instead of failing",
     { default: false },
   )
+  .option(
+    "--glossary-po <file:string>",
+    "Korean gettext PO file for term snippets",
+    {
+      default: defaultGlossaryPo,
+    },
+  )
+  .option("--skip-glossary", "Do not include Korean PO term snippets", {
+    default: false,
+  })
   .option("-t, --title <title:string>", "Override post title")
   .option(
     "-o, --output <file:string>",
@@ -416,6 +539,7 @@ const main = new Command()
     const options = {
       noPrDetails: false,
       allowMissingPrDetails: false,
+      skipGlossary: false,
       ...v.parse(OptionsSchema, rawOptions),
     }
     const commits = await withPullRequestDetails(
@@ -432,7 +556,12 @@ const main = new Command()
         title: options.title,
         includeBody: options.includeBody,
       })
-      : rewritePrompt({ commits, title: options.title, includeBody: true })
+      : rewritePrompt({
+        commits,
+        title: options.title,
+        includeBody: true,
+        glossary: await buildPoGlossary(commits, options),
+      })
 
     if (options.output) {
       const outputDir = dirname(options.output)

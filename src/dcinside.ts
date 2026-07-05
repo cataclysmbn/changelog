@@ -27,6 +27,7 @@ export type DraftOptions = {
   commits: Commit[]
   title?: string
   includeBody?: boolean
+  glossary?: string
 }
 
 export type ReviewPromptOptions = {
@@ -129,11 +130,10 @@ export const draftPost = (
   }\n\n${sections}\n\n---\n\n일부 누락될 수 있음\n`
 }
 
-export const glossaryGuide = `게임 용어집:
-- 아이템/괴물/UI 이름은 /home/scarf/repo/cata/translations/lang/po/ko.po 번역을 우선합니다.
-- "feral"은 사람/괴물 이름에서 "이성을 잃은"입니다. "야생" 금지.
-- "feral soldier" = "이성을 잃은 군인".
-- "feral armored bio-operator" = "이성을 잃은 중장갑 바이오닉 특수부대원".`
+export const translationGuide = `한국어 용어 확인:
+- 생성 프롬프트의 "# 한국어 PO 용어 근거"에 있는 msgid/msgstr를 우선합니다.
+- 근거에 없는 보이는 영어 이름은 /home/scarf/repo/cata/translations/lang/po/ko.po에서 \`rg -n -C2 -i '<English term>'\`로 찾은 뒤 반영합니다.
+- 단어를 쪼개 추측 번역하지 말고, 같은 msgid/context의 msgstr를 씁니다.`
 
 const styleGuide = `DCInside 밝밤 패치글 형식:
 - 제목은 "밝밤) M월 D일 ~ M월 D일 패치".
@@ -147,7 +147,7 @@ const styleGuide = `DCInside 밝밤 패치글 형식:
 - PR에 다운로드된 이미지가 있고 해당 불릿을 설명하는 데 도움이 되면 불릿 바로 위에 파일명만 한 줄로 붙입니다. 예: "pr-8621-1.png".
 - "번들 배포", "레지스트리 모드", "전용 위치", "정리", "공용 팩토리", "갱신"처럼 한국 플레이어가 바로 이해 못 하는 개발자 말을 금지합니다. 예: "실험판에 기본 포함 모드 추가", "크라켄이 호수의 난파선 특수 장소에서만 스폰", "크라켄 본체가 촉수를 소환하고 촉수가 공격을 담당".
 - 갤러리에서 쓰는 말은 짧고 구체적입니다: 밝밤, ㅋㅌㅋㅂㅂ, ㅂㅂ, 실험판, 안정판, 최신버전, 하늘섬, 람쥐모드, 파암, 한글패치, 시작 지점, 스폰, 타일, 줍기, 자동운전.
-${glossaryGuide}
+${translationGuide}
 - 손작성 기준은 "밝밤) 1월 3일 ~ 1월 13일 패치", "밝밤) 1월 14일 ~ 2월 9일 패치"처럼 구체적 효과/수치/예시를 붙이는 방식입니다.
 - 말투는 간결하고 갤러리 패치글처럼 담백하게 씁니다. 홍보 문구, 기여자 목록, 개발 과정 설명은 넣지 않습니다.
 - 추측으로 내용을 만들지 말고 PR 근거가 부족한 항목은 빼거나 보수적으로 씁니다.
@@ -185,7 +185,7 @@ const prEvidence = (pullRequest: PullRequestDetails): string => {
 }
 
 export const rewritePrompt = (
-  { commits, title, includeBody = true }: DraftOptions,
+  { commits, title, includeBody = true, glossary }: DraftOptions,
 ): string => {
   const rawEntries = [...groupedCommits(commits)]
     .map(([date, items]) => {
@@ -208,9 +208,13 @@ export const rewritePrompt = (
     })
     .join("\n\n")
 
+  const glossarySection = glossary?.trim()
+    ? `\n\n# 한국어 PO 용어 근거\n${glossary.trim()}\n`
+    : ""
+
   return `${styleGuide}\n\n목표 제목: ${
     title ?? titleRange(commits)
-  }\n\n아래 커밋/PR 근거를 읽고 위 형식의 한국어 패치글로 재작성해 주세요. 커밋 제목만 보고 쓰면 실패입니다. 플레이어가 읽고 "뭐가 어떻게 바뀌었는지" 알 수 없는 항목은 고치거나 삭제하세요.\n\n${rawEntries}\n`
+  }${glossarySection}\n\n아래 커밋/PR 근거를 읽고 위 형식의 한국어 패치글로 재작성해 주세요. 커밋 제목만 보고 쓰면 실패입니다. 플레이어가 읽고 "뭐가 어떻게 바뀌었는지" 알 수 없는 항목은 고치거나 삭제하세요.\n\n${rawEntries}\n`
 }
 
 export const reviewPrompt = (

@@ -47,8 +47,19 @@ Deno.test("rewritePrompt carries the DCInside style guide", () => {
   assertStringIncludes(prompt, "DCInside 밝밤 패치글 형식")
   assertStringIncludes(prompt, '세부 설명은 "ㄴ" 하위 불릿')
   assertStringIncludes(prompt, "pr-8621-1.png")
-  assertStringIncludes(prompt, '"feral"은 사람/괴물 이름에서 "이성을 잃은"')
+  assertStringIncludes(prompt, "rg -n -C2 -i '<English term>'")
+  assertStringIncludes(prompt, "같은 msgid/context의 msgstr")
   assertStringIncludes(prompt, "feat(ui): improve zone manager UI (#100)")
+})
+
+Deno.test("rewritePrompt includes supplied PO glossary evidence", () => {
+  const prompt = rewritePrompt({
+    commits,
+    glossary: '- msgid "display toggle"\n  msgstr "표시 전환"',
+  })
+
+  assertStringIncludes(prompt, "# 한국어 PO 용어 근거")
+  assertStringIncludes(prompt, 'msgstr "표시 전환"')
 })
 
 Deno.test("rewritePrompt includes PR evidence and downloaded images", () => {
@@ -83,10 +94,7 @@ Deno.test("reviewPrompt injects hostile senior editor pass", () => {
 
   assertStringIncludes(prompt, "표독한 senior 한국어 편집자 reviewer subagent")
   assertStringIncludes(prompt, "pr-8621-1.png")
-  assertStringIncludes(
-    prompt,
-    '"feral armored bio-operator" = "이성을 잃은 중장갑 바이오닉 특수부대원"',
-  )
+  assertStringIncludes(prompt, "같은 msgid/context의 msgstr")
   assertStringIncludes(prompt, "번들 배포")
   assertStringIncludes(prompt, "PR evidence")
 })
