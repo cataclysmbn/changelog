@@ -1,7 +1,7 @@
 {
   "tasks": {
     "dc": "deno run --allow-read --allow-write --allow-run=git,gh --allow-net --allow-env=GH_TOKEN,GITHUB_TOKEN,PATH,HOME,XDG_CONFIG_HOME scripts/dc_changelog.ts",
-    "tui": "deno run --allow-read --allow-write --allow-run --allow-env scripts/dc_tui.ts",
+    "tui": "deno run --allow-read --allow-write --allow-run --allow-env scripts/dc_tui.ts --model openai-codex/gpt-5.6-terra:medium",
     "check": "deno check scripts/dc_changelog.ts scripts/dc_tui.ts src/dcinside.ts src/weeks.ts",
     "test": "deno test --allow-read --allow-write --allow-run --allow-env",
   },
