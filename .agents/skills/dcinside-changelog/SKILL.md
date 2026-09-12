@@ -26,11 +26,17 @@ Use this for `밝밤)` DCInside posts.
    ```
 
 3. Always inspect PR body/files/images or the diff before writing a Korean bullet. Commit titles and curated commit lists are not enough. Do not invent gameplay details.
-4. Use `/home/scarf/repo/cata/translations/lang/po/ko.po` as the Korean game-term glossary before finalizing visible item/monster/UI names. Search the exact English term from the PR/diff and copy the matching `msgstr`; do not store word-level fixed translations or infer a whole name from a partial match.
+4. Use `/home/scarf/repo/cata/translations/lang/po/ko.po` as the Korean game-term glossary before finalizing visible item/monster/UI names. Search the exact English term from the PR/diff and copy the matching `msgstr`; do not store word-level fixed translations or infer a whole name from a partial match. Preserve `msgctxt` when looking up a name. If the exact entry is absent, untranslated, or fuzzy, retain the full English name.
 
    ```sh
    rg -C2 -i '<English term>' /home/scarf/repo/cata/translations/lang/po/ko.po | rg -v '^(#:|--)' | head -n 20
    ```
+
+## Translation review
+
+- Keep the existing writer → reviewer sequence. The reviewer must report every game name in the final text as `msgid`, `msgctxt` (null for no context), and `used`, alongside the corrected `changelog` in the JSON review response.
+- Validate that response against the actual selected PO with `validateTranslationReview` in `src/translation.ts` before accepting the text. Reviewer approval alone is insufficient. Apply this to directly delegated writing as well as the TUI; do not invent a separate translation table from memory.
+- A missing report, incorrect context, or mismatched translation blocks completion. Keep the evidence outside the published body. The TUI saves verified PO lines and PO/changelog hashes under `dist/.reviews/`; failed runs preserve their temporary review inputs and responses.
 
 ## Post format
 

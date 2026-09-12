@@ -16,6 +16,11 @@ import { dirname, fromFileUrl, join, resolve } from "@std/path"
 
 import { reviewPrompt, translationGuide } from "../src/dcinside.ts"
 import { rangesBetween, weeklyRanges, type WeekRange } from "../src/weeks.ts"
+import {
+  parsePo,
+  validateTranslationReview,
+  type VerifiedTerm,
+} from "../src/translation.ts"
 
 const scriptDir = dirname(fromFileUrl(import.meta.url))
 const appRoot = dirname(scriptDir)
@@ -179,7 +184,7 @@ const reviewerAgents = `# Changelog Reviewer Subagent Rules
 
 You are a hostile senior Korean editor for DCInside 밝밤 changelogs.
 
-- Output only the corrected final post body.
+- Return only the JSON review object requested in the prompt: changelog and terms. Keep the published text inside changelog; list every game name with its exact PO context and the expression used in terms.
 - Treat the draft as guilty until proven useful to a Korean player.
 - Remove every Korean sentence that sounds like machine translation or developer-only jargon.
 - Compare the draft against PR evidence and restore concrete gameplay details.
@@ -277,18 +282,28 @@ const generateWithPi = async (
   }
 }
 
-const reviewWithPi = async (
+export const reviewWithPi = async (
   range: WeekRange,
   options: Options,
   sourcePrompt: string,
   draft: string,
   reviewPromptFile: string,
-): Promise<string> => {
-  if (options.noReview) return draft
+): Promise<
+  {
+    changelog: string
+    audit?: { poFile: string; poSha256: string; terms: VerifiedTerm[] }
+  }
+> => {
+  if (options.noReview) return { changelog: draft }
 
   await Deno.writeTextFile(
     reviewPromptFile,
-    reviewPrompt({ draft, sourcePrompt, title: range.title }),
+    reviewPrompt({
+      draft,
+      sourcePrompt,
+      title: range.title,
+      glossaryPo: resolve(options.glossaryPo),
+    }),
   )
 
   const workspace = await makePiWorkspace("reviewer")
@@ -303,17 +318,52 @@ const reviewWithPi = async (
         "dry-run",
         piArgs(options, reviewPromptFile, workspace).join(" "),
       )
-      return draft
+      return { changelog: draft }
     }
 
     $.logStep("pi reviewer", range.label)
-    return await runPiText(options, reviewPromptFile, workspace)
+    const poFile = resolve(options.glossaryPo)
+    const poText = await Deno.readTextFile(poFile)
+    const entries = parsePo(poText)
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const response = await runPiText(options, reviewPromptFile, workspace)
+      await Deno.writeTextFile(`${reviewPromptFile}.response.json`, response)
+      try {
+        const { changelog, terms } = validateTranslationReview(
+          response,
+          entries,
+        )
+        return {
+          changelog,
+          audit: { poFile, poSha256: await sha256(poText), terms },
+        }
+      } catch (error) {
+        if (attempt === 1) throw error
+        const reason = error instanceof Error ? error.message : String(error)
+        $.logStep("review correction", reason)
+        await Deno.writeTextFile(
+          reviewPromptFile,
+          `${await Deno.readTextFile(
+            reviewPromptFile,
+          )}\n\n# 프로그램 대조 실패\n${reason}\n이전 응답을 실제 PO와 다시 대조해 본문과 terms를 고치고, 완전한 JSON 객체를 반환하세요.\n\n# 이전 응답\n${response}\n`,
+        )
+      }
+    }
+    throw new Error("PO 검수를 완료하지 못했습니다")
   } finally {
     if (!options.keepTemp && !options.dryRun) {
       await Deno.remove(workspace.root, { recursive: true })
     }
   }
 }
+
+const sha256 = async (text: string): Promise<string> =>
+  Array.from(
+    new Uint8Array(
+      await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)),
+    ),
+  )
+    .map((byte) => byte.toString(16).padStart(2, "0")).join("")
 
 const normalizeImageReferences = (text: string): string =>
   text.replace(/^!\[\]\((pr-\d+-\d+\.(?:png|jpe?g|gif|webp))\)$/gimu, "$1")
@@ -363,6 +413,7 @@ const run = async (options: Options): Promise<void> => {
   const outputDir = resolve(runOptions.outputDir)
   await ensureDir(outputDir)
   const tempDir = await Deno.makeTempDir({ prefix: "dc-changelog-prompts-" })
+  let failed = false
 
   try {
     for (const range of selected) {
@@ -376,23 +427,43 @@ const run = async (options: Options): Promise<void> => {
       await buildPrompt(range, runOptions, promptFile, weekDir)
       const sourcePrompt = await Deno.readTextFile(promptFile)
       const draft = await generateWithPi(range, runOptions, promptFile)
-      const changelog = normalizeImageReferences(
-        await reviewWithPi(
-          range,
-          runOptions,
-          sourcePrompt,
-          draft,
-          reviewerPromptFile,
-        ),
+      const review = await reviewWithPi(
+        range,
+        runOptions,
+        sourcePrompt,
+        draft,
+        reviewerPromptFile,
       )
+      const changelog = `${
+        normalizeImageReferences(review.changelog).trimEnd()
+      }\n`
       if (!runOptions.dryRun) {
+        if (review.audit) {
+          const reviewDir = join(outputDir, ".reviews")
+          await ensureDir(reviewDir)
+          await Deno.writeTextFile(
+            join(reviewDir, `${slug}.json`),
+            JSON.stringify(
+              {
+                ...review.audit,
+                changelogSha256: await sha256(changelog),
+              },
+              null,
+              2,
+            ) + "\n",
+          )
+        }
         await removeUnreferencedImages(weekDir, changelog)
-        await Deno.writeTextFile(outputFile, `${changelog.trimEnd()}\n`)
+        await Deno.writeTextFile(outputFile, changelog)
         $.logStep("wrote", outputFile)
       }
     }
+  } catch (error) {
+    failed = true
+    $.logStep("failed", `검수 입력과 응답 보존: ${tempDir}`)
+    throw error
   } finally {
-    if (!runOptions.keepTemp && !runOptions.dryRun) {
+    if (!failed && !runOptions.keepTemp && !runOptions.dryRun) {
       await Deno.remove(tempDir, { recursive: true })
     }
   }
@@ -425,7 +496,7 @@ const main = new Command()
   .option(
     "--pi-tools <tools:string>",
     "pi --tools value, 'all' to leave enabled, or 'none' for --no-tools",
-    { default: "none" },
+    { default: "read,grep" },
   )
   .option(
     "--newest <index:string>",

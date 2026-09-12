@@ -28,9 +28,11 @@ export type DraftOptions = {
   title?: string
   includeBody?: boolean
   glossary?: string
+  glossaryPo?: string
 }
 
 export type ReviewPromptOptions = {
+  glossaryPo?: string
   draft: string
   sourcePrompt: string
   title?: string
@@ -131,9 +133,10 @@ export const draftPost = (
 }
 
 export const translationGuide = `한국어 용어 확인:
-- 생성 프롬프트의 "# 한국어 PO 용어 근거"에 있는 msgid/msgstr를 우선합니다.
-- 근거에 없는 보이는 영어 이름은 /home/scarf/repo/cata/translations/lang/po/ko.po에서 \`rg -n -C2 -i '<English term>'\`로 찾은 뒤 반영합니다.
-- 단어를 쪼개 추측 번역하지 말고, 같은 msgid/context의 msgstr를 씁니다.`
+- 생성 프롬프트의 "# 한국어 PO 용어 근거"에서 같은 msgid/context의 msgstr를 확인합니다.
+- 근거에 없는 보이는 영어 이름은 지정된 "PO 파일"을 읽기 전용 grep/read 도구로 직접 조회합니다. 쉘 도구가 있으면 \`rg -n -C2 -i '<English term>'\`를 사용할 수 있습니다. 조회 도구가 없으면 제공된 근거만 사용하고 확인되지 않은 이름은 원문으로 남깁니다.
+- msgid는 원문의 전체 명칭으로 조회하고 msgctxt를 함께 확인합니다. 문맥이 불명확하면 추가 조회하며 임의로 고르지 않습니다.
+- 항목이 없거나 msgstr가 비어 있거나 fuzzy이면 영문 명칭을 그대로 유지합니다. 단어를 쪼개 추측 번역하거나 다른 항목의 번역으로 새 이름을 만들지 않습니다.`
 
 const styleGuide = `DCInside 밝밤 패치글 형식:
 - 제목은 "밝밤) M월 D일 ~ M월 D일 패치".
@@ -152,7 +155,7 @@ ${translationGuide}
 - 말투는 간결하고 갤러리 패치글처럼 담백하게 씁니다. 홍보 문구, 기여자 목록, 개발 과정 설명은 넣지 않습니다.
 - 추측으로 내용을 만들지 말고 PR 근거가 부족한 항목은 빼거나 보수적으로 씁니다.
 - "수정", "개선", "변경"만 쓰고 무엇이 달라졌는지 없는 불릿은 실패입니다. 하위 불릿으로 구체적 전/후, 조건, 예시를 붙입니다.
-- 출력은 게시글 본문만 반환합니다.`
+`
 
 const indent = (text: string, prefix: string): string =>
   text.split("\n").map((line) => `${prefix}${line}`).join("\n")
@@ -185,7 +188,7 @@ const prEvidence = (pullRequest: PullRequestDetails): string => {
 }
 
 export const rewritePrompt = (
-  { commits, title, includeBody = true, glossary }: DraftOptions,
+  { commits, title, includeBody = true, glossary, glossaryPo }: DraftOptions,
 ): string => {
   const rawEntries = [...groupedCommits(commits)]
     .map(([date, items]) => {
@@ -214,11 +217,13 @@ export const rewritePrompt = (
 
   return `${styleGuide}\n\n목표 제목: ${
     title ?? titleRange(commits)
-  }${glossarySection}\n\n아래 커밋/PR 근거를 읽고 위 형식의 한국어 패치글로 재작성해 주세요. 커밋 제목만 보고 쓰면 실패입니다. 플레이어가 읽고 "뭐가 어떻게 바뀌었는지" 알 수 없는 항목은 고치거나 삭제하세요.\n\n${rawEntries}\n`
+  }\nPO 파일: ${
+    glossaryPo ?? "/home/scarf/repo/cata/translations/lang/po/ko.po"
+  }\n출력은 게시글 본문만 반환합니다.${glossarySection}\n\n아래 커밋/PR 근거를 읽고 위 형식의 한국어 패치글로 재작성해 주세요. 커밋 제목만 보고 쓰면 실패입니다. 플레이어가 읽고 "뭐가 어떻게 바뀌었는지" 알 수 없는 항목은 고치거나 삭제하세요.\n\n${rawEntries}\n`
 }
 
 export const reviewPrompt = (
-  { draft, sourcePrompt, title }: ReviewPromptOptions,
+  { draft, sourcePrompt, title, glossaryPo }: ReviewPromptOptions,
 ): string =>
   `${styleGuide}
 
@@ -231,7 +236,13 @@ export const reviewPrompt = (
 - 다운로드된 이미지가 해당 항목 이해에 도움이 되면 파일명만 불릿 바로 위에 추가합니다. 예: "pr-8621-1.png".
 - 후속 PR이 앞 PR을 고친 경우 최종 결과만 하나로 합칩니다.
 - 날짜별 형식과 불릿 형식을 유지합니다.
-- 출력은 최종 게시글 본문만 반환합니다.
+- 최종 본문에 사용한 모든 게임 명칭의 원문 msgid, PO 문맥(msgctxt, 문맥 없으면 null), 실제 본문 표현(used)을 terms에 기록합니다. 같은 명칭·문맥·표현은 한 번만 기록합니다.
+- terms는 실제 PO 조회 근거와 최종 본문에 일치해야 합니다. 확인하지 않은 번역을 검수 완료로 처리하지 마세요.
+- used는 확정된 msgstr와 정확히 같아야 합니다. 번역이 없으면 msgid와 대소문자까지 같아야 합니다. 조사나 영문 병기는 used 밖의 본문에 붙입니다.
+- 게임 명칭이 없는 글만 terms를 빈 배열로 반환할 수 있습니다.
+- 아래 JSON 객체만 반환합니다. changelog에는 게시글 본문만 넣고, 용어 대조표와 검수 설명은 넣지 않습니다. 코드 블록이나 앞뒤 설명을 붙이지 않습니다.
+{"changelog":"수정된 게시글 본문","terms":[{"msgid":"원문의 전체 명칭","msgctxt":null,"used":"본문에 사용한 표현"}]}
+PO 파일: ${glossaryPo ?? "/home/scarf/repo/cata/translations/lang/po/ko.po"}
 ${title ? `- 목표 제목: ${title}\n` : ""}
 
 # 원본 근거
