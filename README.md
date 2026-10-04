@@ -30,6 +30,16 @@ dist/2026-06-15_to_2026-06-21/
 deno task tui --yes --dry-run --newest 0 --oldest 0
 ```
 
+이미지 업로드만 실행하기 (`playwright-cli`와 Firefox 설치 필요):
+
+```sh
+deno task upload dist/2026-09-13_to_2026-09-29 dist/2026-09-28_to_2026-10-04
+```
+
+각 `changelog.txt`에서 파일명만 적힌 이미지 줄을 찾아 업로드하고, 내용이 같은 이미지는 한 번만 올립니다. 50개씩 나눠 처리하며 서버에서 표시되는지 확인한 뒤 각 폴더의 `uploads.json`에 파일명별 `src`·`tempno`·크기를 저장합니다. 원본 텍스트와 HTML은 수정하지 않으며 게시글도 등록하지 않습니다. 미게시 이미지의 보존 기간은 보장하지 않습니다.
+
+기본 권한은 `dist/` 읽기·쓰기와 `playwright-cli` 실행으로 제한합니다. 다른 입력 폴더나 실행 파일은 해당 경로의 권한을 추가로 요청합니다. 기존 `uploads.json`이 있으면 업로드 전에 중단합니다. 의도적인 재업로드에는 `--force`, 다른 실행 파일에는 `--playwright /path/to/playwright-cli`를 사용하세요. CAPTCHA나 사이트 변경으로 실패하면 원본은 유지되지만, 이미 올라간 임시 이미지와 일부 폴더에 저장된 `uploads.json`은 남을 수 있습니다.
+
 프롬프트 생성:
 
 ```sh

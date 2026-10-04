@@ -32,6 +32,12 @@ Use this for `밝밤)` DCInside posts.
    rg -C2 -i '<English term>' /home/scarf/repo/cata/translations/lang/po/ko.po | rg -v '^(#:|--)' | head -n 20
    ```
 
+## Image upload
+
+- Use `deno task upload <dist-directory> [<dist-directory> ...]` to upload only images referenced by bare filename lines in `changelog.txt`. Identical files across directories upload once.
+- The command stores server URLs, temporary image IDs, and dimensions in each directory's `uploads.json`. It does not modify posts, replace placeholders, or publish a thread.
+- Existing mappings block uploads unless `--force` is explicit. Use `--playwright <executable>` when the default CLI is unavailable. Do not bypass CAPTCHA; report it. Unpublished image retention is not guaranteed.
+
 ## Translation review
 
 - Keep the existing writer → reviewer sequence. The reviewer must report every game name in the final text as `msgid`, `msgctxt` (null for no context), and `used`, alongside the corrected `changelog` in the JSON review response.
