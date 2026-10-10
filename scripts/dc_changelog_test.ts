@@ -3,6 +3,7 @@ import { fromFileUrl, join } from "@std/path"
 
 Deno.test("weekly CLI selects and groups commits by local integration dates", async () => {
   const appRoot = fromFileUrl(new URL("../", import.meta.url))
+  await Deno.mkdir(join(appRoot, "dist"), { recursive: true })
   const repo = await Deno.makeTempDir({ dir: join(appRoot, "dist") })
   const env: Record<string, string> = {
     GIT_CONFIG_NOSYSTEM: "1",

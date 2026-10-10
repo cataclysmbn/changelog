@@ -74,9 +74,13 @@ const parsePositiveInt = (value: string | number): number => {
   return parsed
 }
 
+const gitDate = (value: string): string =>
+  /^\d{4}-\d{2}-\d{2}$/u.test(value) ? `${value}T00:00:00` : value
+
 const gitRangeArgs = (
   { range, since, until }: Options & { range?: string },
-): string[] => range ? [range] : [`--since=${since}`, `--until=${until}`]
+): string[] =>
+  range ? [range] : [`--since=${gitDate(since)}`, `--until=${gitDate(until)}`]
 
 const decode = (bytes: Uint8Array): string => new TextDecoder().decode(bytes)
 
@@ -133,9 +137,9 @@ const readCommits = async (
       repo,
       "log",
       "--reverse",
-      "--date=short",
+      "--date=format-local:%Y-%m-%d",
       ...gitRangeArgs(options),
-      "--pretty=format:%x1f%h%x1f%ad%x1f%s%x1f%an%x1f%b%x1e",
+      "--pretty=format:%x1f%h%x1f%cd%x1f%s%x1f%an%x1f%b%x1e",
     ],
     stdout: "piped",
     stderr: "piped",
