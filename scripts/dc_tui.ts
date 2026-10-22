@@ -56,8 +56,10 @@ type Options = {
   repo: string
   outputDir: string
   maxCommits: number
+  agent: "pi" | "claude"
   model?: string
   pi: string
+  claude: string
   piTools: string
   dryRun?: boolean
   yes?: boolean
@@ -208,11 +210,47 @@ const makePiWorkspace = async (
   return { root, cwd, instructions }
 }
 
+const defaultPiModel = "openai-codex/gpt-5.6-terra:medium"
+
+const claudeArgs = (
+  options: Options,
+  workspace: PiWorkspace,
+  skill: string,
+): string[] => {
+  const args = [
+    options.claude,
+    "-p",
+    "--no-session-persistence",
+    "--permission-mode",
+    "dontAsk",
+    "--setting-sources",
+    "",
+    "--strict-mcp-config",
+    "--disable-slash-commands",
+    "--append-system-prompt",
+    `${workspace.instructions}\n\n${skill}`,
+  ]
+  if (options.model) {
+    args.push("--model", options.model)
+  }
+  if (options.piTools === "none") {
+    args.push("--tools", "")
+  } else if (options.piTools !== "all") {
+    const tools = options.piTools.split(",").map((tool) =>
+      tool === "grep" ? "Grep" : tool === "read" ? "Read" : tool
+    ).join(",")
+    args.push("--tools", tools, "--allowedTools", tools)
+  }
+  return args
+}
+
 const piArgs = (
   options: Options,
   promptFile: string,
   workspace: PiWorkspace,
+  skill = "",
 ): string[] => {
+  if (options.agent === "claude") return claudeArgs(options, workspace, skill)
   const args = [
     options.pi,
     "--no-session",
@@ -226,10 +264,9 @@ const piArgs = (
     skillPath,
     "--append-system-prompt",
     workspace.instructions,
+    "--model",
+    options.model ?? defaultPiModel,
   ]
-  if (options.model) {
-    args.push("--model", options.model)
-  }
   if (options.piTools === "none") {
     args.push("--no-tools")
   } else if (options.piTools !== "all") {
@@ -246,13 +283,25 @@ const runPiText = async (
   promptFile: string,
   workspace: PiWorkspace,
 ): Promise<string> => {
-  const args = piArgs(options, promptFile, workspace)
-  const result = await new Deno.Command(args[0], {
+  const skill = options.agent === "claude"
+    ? await Deno.readTextFile(skillPath)
+    : ""
+  const args = piArgs(options, promptFile, workspace, skill)
+  const child = new Deno.Command(args[0], {
     args: args.slice(1),
     cwd: workspace.cwd,
+    stdin: options.agent === "claude" ? "piped" : "null",
     stdout: "piped",
     stderr: "piped",
-  }).output()
+  }).spawn()
+  if (options.agent === "claude") {
+    const writer = child.stdin.getWriter()
+    await writer.write(
+      new TextEncoder().encode(await Deno.readTextFile(promptFile)),
+    )
+    await writer.close()
+  }
+  const result = await child.output()
   if (!result.success) {
     throw new Error(`${args.join(" ")} failed: ${decode(result.stderr).trim()}`)
   }
@@ -491,11 +540,23 @@ const main = new Command()
     default: 180,
     value: parsePositiveInt,
   })
-  .option("--model <model:string>", "Optional pi model argument")
+  .option("--agent <agent:string>", "Agent CLI to run: pi or claude", {
+    default: "pi",
+    value: (value: string) => {
+      if (value !== "pi" && value !== "claude") {
+        throw new Error(`Expected pi or claude, got ${value}`)
+      }
+      return value
+    },
+  })
+  .option("--model <model:string>", "Optional agent model argument")
   .option("--pi <command:string>", "pi executable", { default: "pi" })
+  .option("--claude <command:string>", "claude executable", {
+    default: "claude",
+  })
   .option(
     "--pi-tools <tools:string>",
-    "pi --tools value, 'all' to leave enabled, or 'none' for --no-tools",
+    "Agent tools (read,grep), 'all' to leave enabled, or 'none' to disable",
     { default: "read,grep" },
   )
   .option(

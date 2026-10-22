@@ -24,6 +24,8 @@ dist/2026-06-15_to_2026-06-21/
 
 `--no-review`는 기존처럼 검수와 PO 대조를 명시적으로 건너뜁니다. `--pi-tools none`은 직접 조회 도구를 끄지만 기본 검수의 PO 대조는 유지합니다. `--skip-glossary`는 프롬프트에 자동 첨부하는 용어 근거만 생략합니다.
 
+`--agent claude`를 주면 pi 대신 `claude -p`로 같은 작성자/검수자 2회를 실행합니다. 사용자 설정·MCP·슬래시 명령을 끄고 `Read,Grep`만 허용하며, 모델은 `--model`로 지정합니다. 기본값은 `--agent pi`(모델 `openai-codex/gpt-5.6-terra:medium`)입니다.
+
 이번 주만 pi 실행 없이 프롬프트/명령 확인:
 
 ```sh
