@@ -104,6 +104,20 @@ export type VerifiedTerm = v.InferOutput<typeof TermSchema> & {
   status: "translated" | "untranslated" | "fuzzy" | "missing"
 }
 
+const escapeRegExp = (text: string): string =>
+  text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+
+/** True when `used` is in `body`, or its leading words sit in a ·-joined list that shares the last words (`A·B 탄약대`). */
+const appearsIn = (body: string, used: string): boolean =>
+  body.includes(used) ||
+  Array.from(used.matchAll(/ /g)).some(({ index }) =>
+    new RegExp(
+      `(?:[^\\s·]+·)*${escapeRegExp(used.slice(0, index))}(?:·[^\\s·]+)*${
+        escapeRegExp(used.slice(index))
+      }`,
+    ).test(body)
+  )
+
 export const validateTranslationReview = (
   response: string,
   entries: readonly PoEntry[],
@@ -134,7 +148,7 @@ export const validateTranslationReview = (
         }`,
       )
     }
-    if (!review.changelog.includes(term.used)) {
+    if (!appearsIn(review.changelog, term.used)) {
       throw new Error(`대조한 표현이 검수 본문에 없습니다: ${term.used}`)
     }
     return { ...term, poLine: entry?.line ?? null, status }

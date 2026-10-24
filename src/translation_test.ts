@@ -228,3 +228,32 @@ Deno.test("review evidence must refer to the final body and cannot be omitted", 
     [],
   )
 })
+
+Deno.test("review accepts a term whose shared last word is written once after a ·-joined list", () => {
+  const entries = parsePo(`msgid "pistol bandolier"
+msgstr "권총용 탄약대"
+
+msgid "rifle bandolier"
+msgstr "소총용 탄약대"
+`)
+  const report = {
+    changelog: "* 권총용·소총용 탄약대 적재량 통일",
+    terms: [
+      { msgid: "pistol bandolier", msgctxt: null, used: "권총용 탄약대" },
+      { msgid: "rifle bandolier", msgctxt: null, used: "소총용 탄약대" },
+    ],
+  }
+  assertEquals(
+    validateTranslationReview(JSON.stringify(report), entries).terms.length,
+    2,
+  )
+  assertThrows(
+    () =>
+      validateTranslationReview(
+        JSON.stringify({ ...report, changelog: "* 권총용 소총용 탄약대" }),
+        entries,
+      ),
+    Error,
+    "검수 본문에 없습니다",
+  )
+})
