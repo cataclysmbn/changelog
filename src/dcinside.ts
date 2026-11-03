@@ -7,19 +7,13 @@ export type Commit = {
   pullRequest?: PullRequestDetails
 }
 
-export type PullRequestImage = {
-  sourceUrl: string
-  filename?: string
-  error?: string
-}
-
 export type PullRequestDetails = {
   number: number
   title: string
   url: string
   body: string
   files: string[]
-  images: PullRequestImage[]
+  images: string[]
   lookupError?: string
 }
 
@@ -38,28 +32,20 @@ export type ReviewPromptOptions = {
   title?: string
 }
 
-const monthDay = (date: string, pad: boolean): string => {
+const monthDay = (date: string): string => {
   const [month = "", day = ""] = date.split("-").slice(1)
   const parsedMonth = Number(month)
   const parsedDay = Number(day)
   if (Number.isNaN(parsedMonth) || Number.isNaN(parsedDay)) {
     return date
   }
-  const monthText = pad
-    ? parsedMonth.toString().padStart(2, "0")
-    : parsedMonth.toString()
-  const dayText = pad
-    ? parsedDay.toString().padStart(2, "0")
-    : parsedDay.toString()
-  return `${monthText}월 ${dayText}일`
+  return `${parsedMonth}월 ${parsedDay}일`
 }
 
 export const titleRange = (commits: Commit[]): string => {
   if (commits.length === 0) return "밝밤) 패치"
   const dates = commits.map((commit) => commit.date).toSorted()
-  return `밝밤) ${monthDay(dates[0], false)} ~ ${
-    monthDay(dates.at(-1)!, false)
-  } 패치`
+  return `밝밤) ${monthDay(dates[0])} ~ ${monthDay(dates.at(-1)!)} 패치`
 }
 
 const cleanMarkdown = (body: string): string =>
@@ -105,32 +91,107 @@ export const groupedCommits = (commits: Commit[]): Map<string, Commit[]> => {
 export const draftPost = (
   { commits, title, includeBody = false }: DraftOptions,
 ): string => {
-  const sections = [...groupedCommits(commits)]
-    .map(([date, items]) => {
-      const bullets = items
-        .map((commit) => {
-          const refs = [`${commit.hash}`]
-          const pr = prNumber(commit.subject)
-          if (pr) refs.unshift(`#${pr}`)
-          const details = includeBody
-            ? bodySummary(commit.body).map((line) => `ㄴ ${line}`).join("\n")
-            : ""
-          return [
-            `* ${stripConventionalPrefix(commit.subject)} (${refs.join(", ")})`,
-            details,
-          ]
-            .filter((line) => line.length > 0)
-            .join("\n")
-        })
-        .join("\n")
-      return `${monthDay(date, true)}\n${bullets}`
+  const sections = commits
+    .map((commit) => {
+      const refs = [`${commit.hash}`]
+      const pr = prNumber(commit.subject)
+      if (pr) refs.unshift(`#${pr}`)
+      return [
+        `## ${stripConventionalPrefix(commit.subject)} (${refs.join(", ")})`,
+        ...(includeBody ? bodySummary(commit.body) : []),
+      ].join("\n")
     })
     .join("\n\n")
 
-  return `${
-    title ?? titleRange(commits)
-  }\n\n${sections}\n\n---\n\n일부 누락될 수 있음\n`
+  return `# ${title ?? titleRange(commits)}\n\n${sections}\n`
 }
+
+const permanentImageUrl =
+  /^https:\/\/(?:github\.com\/(?:user-attachments\/assets|[^/]+\/[^/]+\/assets)\/|user-images\.githubusercontent\.com\/)/u
+
+/** Permanent GitHub image candidates in a raw PR body; signed `private-user-images` URLs expire and never match. */
+export const githubImageUrls = (markdown: string): string[] =>
+  [
+    ...new Set(
+      [...markdown.matchAll(/https:\/\/[^\s)\]"'<>]+/gu)]
+        .map(([url]) => url.replace(/[.,;:!*]+$/u, "")),
+    ),
+  ].filter((url) => permanentImageUrl.test(url))
+
+const imageLine = /^!\[([^\]]*)\]\((\S+)\)$/u
+const linkLine = /^\[([^\]]+)\]\((\S+)\)$/u
+
+const postLines = (post: string): string[] =>
+  post.split("\n").map((line) => line.trim()).filter(Boolean)
+
+const evidenceUrls = (source: string, label: string): Set<string> =>
+  new Set(
+    [...source.matchAll(new RegExp(`^  ${label}: (\\S+)$`, "gmu"))]
+      .map((match) => match[1]),
+  )
+
+/** Rejects text outside the post template and URLs that the PR evidence does not list. */
+export const assertPostFormat = (post: string, source: string): void => {
+  const images = evidenceUrls(source, "Image")
+  const links = evidenceUrls(source, "URL")
+  const lines = postLines(post)
+  if (!lines[0]?.startsWith("# ")) {
+    throw new Error("글 형식 오류: 첫 줄은 '# 제목'이어야 합니다")
+  }
+  if (!lines.some((line) => line.startsWith("## "))) {
+    throw new Error("글 형식 오류: '## 항목' 줄이 없습니다")
+  }
+  for (const [index, line] of lines.entries()) {
+    const image = line.match(imageLine)
+    const link = line.match(linkLine)
+    if (image && !images.has(image[2])) {
+      throw new Error(`PR 근거에 없는 이미지: ${image[2]}`)
+    }
+    if (link && !links.has(link[2])) {
+      throw new Error(`PR 근거에 없는 링크: ${link[2]}`)
+    }
+    if (
+      !image && !link &&
+      (/^(?:ㄴ|\* |- |```|\d+월 \d+일$)|https?:\/\//u.test(line) ||
+        (index > 0 && /^#+ /u.test(line) && !line.startsWith("## ")))
+    ) throw new Error(`템플릿에 없는 줄: ${line}`)
+  }
+}
+
+const escapeHtml = (text: string): string =>
+  text.replace(/&/gu, "&amp;").replace(/</gu, "&lt;").replace(/>/gu, "&gt;")
+    .replace(/"/gu, "&quot;")
+
+const linkStyle =
+  "margin:4px 8px 4px 0;font-size:14px;line-height:20px;text-decoration:none;padding:10px 20px;background:#09090b;color:#fafafa;border:1px solid #3f3f46;font-weight:600;"
+
+/** Renders a post to the HTML fragment for the DCInside HTML editor; the title goes in its own form field. */
+export const renderPostHtml = (post: string): string =>
+  postLines(post)
+    .filter((line) => !line.startsWith("# "))
+    .map((line, index, lines) => {
+      const image = line.match(imageLine)
+      const link = line.match(linkLine)
+      if (line.startsWith("## ")) {
+        const gap = index > 0 ? "<p><br></p>\n<p><b><br></b></p>\n" : ""
+        return `${gap}<p><b>${escapeHtml(line.slice(3))}</b></p>`
+      }
+      if (image) {
+        const [, caption, url] = image
+        const tag = `<p><img src="${escapeHtml(url)}" alt="${
+          escapeHtml(caption)
+        }" width="425" style="width:425px;height:auto;"></p>`
+        return caption ? `${tag}\n<p>▲ ${escapeHtml(caption)}</p>` : tag
+      }
+      if (link) {
+        const gap = linkLine.test(lines[index - 1] ?? "") ? "" : "<p><br></p>\n"
+        return `${gap}<p><a href="${
+          escapeHtml(link[2])
+        }" style="${linkStyle}" target="_blank">${escapeHtml(link[1])}</a></p>`
+      }
+      return `<p>${escapeHtml(line)}</p>`
+    })
+    .join("\n") + "\n"
 
 export const translationGuide = `한국어 용어 확인:
 - 생성 프롬프트의 "# 한국어 PO 용어 근거"에서 같은 msgid/context의 msgstr를 확인합니다.
@@ -139,22 +200,35 @@ export const translationGuide = `한국어 용어 확인:
 - 항목이 없거나 msgstr가 비어 있거나 fuzzy이면 영문 명칭을 그대로 유지합니다. 단어를 쪼개 추측 번역하거나 다른 항목의 번역으로 새 이름을 만들지 않습니다.`
 
 const styleGuide = `DCInside 밝밤 패치글 형식:
-- 제목은 "밝밤) M월 D일 ~ M월 D일 패치".
-- 본문은 날짜별로 "MM월 DD일" 머리말을 쓰고, 변경점은 "*" 불릿으로 적습니다.
-- 세부 설명은 "ㄴ" 하위 불릿으로 짧게 붙입니다.
+- 아래 템플릿을 줄 단위로 따릅니다. 프로그램이 각 줄을 게시용 HTML로 바꿉니다.
+
+# 밝밤) M월 D일 ~ M월 D일 패치
+
+## 변경 항목 이름
+![](대표 이미지 URL)
+무엇이 바뀌었는지 한 문장
+어떻게 달라지는지 조건, 수치, 예시를 붙인 1~2문장
+✓ 핵심 1   ✓ 핵심 2   ✓ 핵심 3
+![이미지 설명](추가 이미지 URL)
+[GitHub에서 보기 ↗](PR URL)
+
+- 첫 줄은 "# " 제목이고, 항목마다 "## " 줄로 시작합니다. 플레이어 체감이 큰 항목을 먼저 씁니다.
+- 날짜 머리말, "*" 불릿, "ㄴ" 하위 불릿, 마크다운 강조, 코드 블록은 쓰지 않습니다.
+- 대표 이미지, 설명 문장, ✓ 줄, 추가 이미지는 근거가 있을 때만 넣습니다. 작은 수정은 "##" 줄, 한 문장, 링크만 씁니다.
+- 이미지 URL은 근거의 "Image:" 값을, 링크 URL은 근거의 "URL:" 값을 그대로 복사합니다. 추가 이미지에는 설명을 붙입니다.
+- 문장은 "~함", "~추가"처럼 짧게 끝냅니다.
 - 한국어 위주로 쓰고 필요한 경우 첫 언급에만 영어 원문을 괄호로 병기합니다.
 - 플레이어가 체감하는 기능, 콘텐츠, 밸런스, UI, 버그 수정을 우선합니다.
 - PR 제목만 번역하지 말고 PR 본문/파일/이미지 근거에서 Where + What + Result를 뽑아 씁니다.
 - PR 근거가 내부 개발/CI/리팩터링/Lua 타입체크뿐이면 게시글에서 뺍니다. 단, 실험판 다운로드 파일, 기본 포함 모드, 플레이 가능한 모드 콘텐츠처럼 플레이어가 직접 보는 변화는 남깁니다.
 - 되돌림/후속 수정 관계가 보이면 최종 플레이어 결과 하나로 합칩니다.
-- PR에 다운로드된 이미지가 있고 해당 불릿을 설명하는 데 도움이 되면 불릿 바로 위에 파일명만 한 줄로 붙입니다. 예: "pr-8621-1.png".
 - "번들 배포", "레지스트리 모드", "전용 위치", "정리", "공용 팩토리", "갱신"처럼 한국 플레이어가 바로 이해 못 하는 개발자 말을 금지합니다. 예: "실험판에 기본 포함 모드 추가", "크라켄이 호수의 난파선 특수 장소에서만 스폰", "크라켄 본체가 촉수를 소환하고 촉수가 공격을 담당".
 - 갤러리에서 쓰는 말은 짧고 구체적입니다: 밝밤, ㅋㅌㅋㅂㅂ, ㅂㅂ, 실험판, 안정판, 최신버전, 하늘섬, 람쥐모드, 파암, 한글패치, 시작 지점, 스폰, 타일, 줍기, 자동운전.
 ${translationGuide}
 - 손작성 기준은 "밝밤) 1월 3일 ~ 1월 13일 패치", "밝밤) 1월 14일 ~ 2월 9일 패치"처럼 구체적 효과/수치/예시를 붙이는 방식입니다.
 - 말투는 간결하고 갤러리 패치글처럼 담백하게 씁니다. 홍보 문구, 기여자 목록, 개발 과정 설명은 넣지 않습니다.
 - 추측으로 내용을 만들지 말고 PR 근거가 부족한 항목은 빼거나 보수적으로 씁니다.
-- "수정", "개선", "변경"만 쓰고 무엇이 달라졌는지 없는 불릿은 실패입니다. 하위 불릿으로 구체적 전/후, 조건, 예시를 붙입니다.
+- "수정", "개선", "변경"만 쓰고 무엇이 달라졌는지 없는 항목은 실패입니다. 구체적 전/후, 조건, 예시를 붙입니다.
 `
 
 const indent = (text: string, prefix: string): string =>
@@ -168,13 +242,6 @@ const prEvidence = (pullRequest: PullRequestDetails): string => {
   const body = bodySummary(pullRequest.body, 18).join("\n")
   const files = pullRequest.files.slice(0, 20).map((file) => `  - ${file}`)
     .join("\n")
-  const images = pullRequest.images.length > 0
-    ? pullRequest.images.map((image) =>
-      `  - ${image.filename ?? "not downloaded"}: ${image.sourceUrl}${
-        image.error ? ` (${image.error})` : ""
-      }`
-    ).join("\n")
-    : "  - none"
 
   return [
     `  PR: #${pullRequest.number} ${pullRequest.title}`,
@@ -183,7 +250,7 @@ const prEvidence = (pullRequest: PullRequestDetails): string => {
       ? `  Body evidence:\n${indent(body, "    ")}`
       : "  Body evidence: none",
     files ? `  Changed files:\n${files}` : "  Changed files: none",
-    `  Downloaded images:\n${images}`,
+    ...pullRequest.images.map((image) => `  Image: ${image}`),
   ].join("\n")
 }
 
@@ -233,9 +300,9 @@ export const reviewPrompt = (
 - 한국인이 안 쓰는 비문, 개발자 은어, 번역투를 전부 제거합니다.
 - 플레이어에게 의미 없는 Lua/CI/리팩터링/팩토리/타입체크 항목은 삭제합니다.
 - PR을 읽어야 알 수 있는 세부사항(무엇에서 무엇으로 바뀜, 어떤 버그가 고쳐짐, 어디서 체감됨)을 복원합니다.
-- 다운로드된 이미지가 해당 항목 이해에 도움이 되면 파일명만 불릿 바로 위에 추가합니다. 예: "pr-8621-1.png".
+- 근거의 "Image:" 이미지가 해당 항목 이해에 도움이 되면 템플릿 위치에 추가합니다.
 - 후속 PR이 앞 PR을 고친 경우 최종 결과만 하나로 합칩니다.
-- 날짜별 형식과 불릿 형식을 유지합니다.
+- 템플릿 형식을 지킵니다. 초안의 날짜 머리말, "*", "ㄴ" 줄은 템플릿으로 바꿉니다.
 - 최종 본문에 사용한 모든 게임 명칭의 원문 msgid, PO 문맥(msgctxt, 문맥 없으면 null), 실제 본문 표현(used)을 terms에 기록합니다. 같은 명칭·문맥·표현은 한 번만 기록합니다.
 - terms는 실제 PO 조회 근거와 최종 본문에 일치해야 합니다. 확인하지 않은 번역을 검수 완료로 처리하지 마세요.
 - used는 확정된 msgstr와 정확히 같아야 합니다. 번역이 없으면 msgid와 대소문자까지 같아야 합니다. 조사나 영문 병기는 used 밖의 본문에 붙입니다.

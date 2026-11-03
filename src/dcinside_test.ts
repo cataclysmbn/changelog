@@ -1,8 +1,11 @@
-import { assertEquals, assertStringIncludes } from "@std/assert"
+import { assertEquals, assertStringIncludes, assertThrows } from "@std/assert"
 
 import {
+  assertPostFormat,
   type Commit,
   draftPost,
+  githubImageUrls,
+  renderPostHtml,
   reviewPrompt,
   rewritePrompt,
   titleRange,
@@ -30,23 +33,20 @@ Deno.test("titleRange uses DCInside title spacing", () => {
   assertEquals(titleRange(commits), "밝밤) 1월 4일 ~ 1월 5일 패치")
 })
 
-Deno.test("draftPost groups commits by padded body dates", () => {
+Deno.test("draftPost writes one template entry per commit", () => {
   const draft = draftPost({ commits, includeBody: true })
 
-  assertStringIncludes(draft, "01월 04일")
-  assertStringIncludes(draft, "* improve zone manager UI (#100, abc1234)")
-  assertStringIncludes(draft, "ㄴ Adds a display toggle.")
-  assertEquals(draft.includes("Assisted-by"), false)
-  assertStringIncludes(draft, "01월 05일")
-  assertStringIncludes(draft, "* stop crash while lockpicking (#101, def5678)")
+  assertEquals(
+    draft,
+    "# 밝밤) 1월 4일 ~ 1월 5일 패치\n\n## improve zone manager UI (#100, abc1234)\nAdds a display toggle.\n\n## stop crash while lockpicking (#101, def5678)\n",
+  )
 })
 
 Deno.test("rewritePrompt carries the DCInside style guide", () => {
   const prompt = rewritePrompt({ commits })
 
   assertStringIncludes(prompt, "DCInside 밝밤 패치글 형식")
-  assertStringIncludes(prompt, '세부 설명은 "ㄴ" 하위 불릿')
-  assertStringIncludes(prompt, "pr-8621-1.png")
+  assertStringIncludes(prompt, "## 변경 항목 이름")
   assertStringIncludes(prompt, "rg -n -C2 -i '<English term>'")
   assertStringIncludes(prompt, "같은 msgid/context의 msgstr")
   assertStringIncludes(prompt, "feat(ui): improve zone manager UI (#100)")
@@ -62,7 +62,7 @@ Deno.test("rewritePrompt includes supplied PO glossary evidence", () => {
   assertStringIncludes(prompt, 'msgstr "표시 전환"')
 })
 
-Deno.test("rewritePrompt includes PR evidence and downloaded images", () => {
+Deno.test("rewritePrompt includes PR evidence and image URLs", () => {
   const prompt = rewritePrompt({
     commits: [{
       ...commits[0],
@@ -72,17 +72,104 @@ Deno.test("rewritePrompt includes PR evidence and downloaded images", () => {
         url: "https://github.com/cataclysmbn/Cataclysm-BN/pull/100",
         body: "## Purpose of change (The Why)\nPlayers saw a bad menu.",
         files: ["src/menu.cpp"],
-        images: [{
-          sourceUrl: "https://github.com/user-attachments/assets/example",
-          filename: "pr-100-1.png",
-        }],
+        images: ["https://github.com/user-attachments/assets/example"],
       },
     }],
   })
 
   assertStringIncludes(prompt, "PR: #100 fix: player-facing bug")
   assertStringIncludes(prompt, "src/menu.cpp")
-  assertStringIncludes(prompt, "pr-100-1.png")
+  assertStringIncludes(
+    prompt,
+    "  Image: https://github.com/user-attachments/assets/example\n",
+  )
+})
+
+Deno.test("githubImageUrls keeps only permanent GitHub addresses once each", () => {
+  const asset = "https://github.com/user-attachments/assets/b8f2f31a"
+  const repoAsset = "https://github.com/cataclysmbn/Cataclysm-BN/assets/1/a2"
+  const legacy = "https://user-images.githubusercontent.com/1/a.png"
+  assertEquals(
+    githubImageUrls(`<img src="${asset}">
+![x](${repoAsset})
+${legacy} ${asset}
+![signed](https://private-user-images.githubusercontent.com/1/a.png?jwt=x)
+![other](https://i.imgur.com/a.png)
+https://github.com/cataclysmbn/Cataclysm-BN/pull/1`),
+    [asset, repoAsset, legacy],
+  )
+  assertEquals(githubImageUrls(`see ${asset}.\n[${legacy}]`), [asset, legacy])
+})
+
+const image = "https://github.com/user-attachments/assets/a"
+const pr = "https://github.com/cataclysmbn/Cataclysm-BN/pull/100"
+const source = `  URL: ${pr}\n  Image: ${image}\n`
+// Body evidence is indented four spaces and must not widen the URL lists.
+const post = `# 밝밤) 1월 4일 ~ 1월 5일 패치
+
+## 구역 <관리> & 표시
+![](${image})
+구역 표시 전환 추가
+✓ 전환   ✓ 표시
+![전환 화면](${image})
+[GitHub에서 보기 ↗](${pr})
+
+## 자물쇠 따기 충돌 수정
+따는 도중 멈추던 문제 해결
+[GitHub에서 보기 ↗](${pr})
+`
+
+Deno.test("renderPostHtml renders the static reference layout without the title", () => {
+  const html = renderPostHtml(post)
+
+  assertEquals(html.includes("패치"), false)
+  assertEquals(html.split("\n").slice(0, 6), [
+    "<p><b>구역 &lt;관리&gt; &amp; 표시</b></p>",
+    `<p><img src="${image}" alt="" width="425" style="width:425px;height:auto;"></p>`,
+    "<p>구역 표시 전환 추가</p>",
+    "<p>✓ 전환   ✓ 표시</p>",
+    `<p><img src="${image}" alt="전환 화면" width="425" style="width:425px;height:auto;"></p>`,
+    "<p>▲ 전환 화면</p>",
+  ])
+  assertStringIncludes(
+    html,
+    `<p><br></p>\n<p><a href="${pr}" style="`,
+  )
+  assertStringIncludes(
+    html,
+    "</a></p>\n<p><br></p>\n<p><b><br></b></p>\n<p><b>자물쇠 따기 충돌 수정</b></p>",
+  )
+})
+
+Deno.test("assertPostFormat accepts the template and rejects everything outside it", () => {
+  assertPostFormat(post, source)
+  assertPostFormat("# 제목\n## 항목\n-10% 피해\n*표시 추가", source)
+  assertThrows(
+    () =>
+      assertPostFormat(
+        "# 제목\n## 항목\n![](https://example.test/a.png)",
+        `${source}    Image: https://example.test/a.png\n`,
+      ),
+    Error,
+    "없는 이미지",
+  )
+  for (
+    const [text, message] of [
+      ["## 제목 없음\n내용", "첫 줄"],
+      ["# 제목\n내용", "'## 항목'"],
+      ["# 제목\n## 항목\nㄴ 하위 불릿", "템플릿에 없는 줄"],
+      ["# 제목\n## 항목\n* 불릿", "템플릿에 없는 줄"],
+      ["# 제목\n01월 04일\n## 항목", "템플릿에 없는 줄"],
+      ["# 제목\n## 항목\n# 제목 둘", "템플릿에 없는 줄"],
+      ["# 제목\n## 항목\n### 소제목", "템플릿에 없는 줄"],
+      [`# 제목\n## 항목\n${image}`, "템플릿에 없는 줄"],
+      ["# 제목\n## 항목\n![](https://github.com/x.png)", "없는 이미지"],
+      [`# 제목\n## 항목\n![](${pr})`, "없는 이미지"],
+      [`# 제목\n## 항목\n[링크](${image})`, "없는 링크"],
+    ]
+  ) {
+    assertThrows(() => assertPostFormat(text, source), Error, message)
+  }
 })
 
 Deno.test("reviewPrompt injects hostile senior editor pass", () => {
@@ -93,7 +180,7 @@ Deno.test("reviewPrompt injects hostile senior editor pass", () => {
   })
 
   assertStringIncludes(prompt, "표독한 senior 한국어 편집자 reviewer subagent")
-  assertStringIncludes(prompt, "pr-8621-1.png")
+  assertStringIncludes(prompt, "## 변경 항목 이름")
   assertStringIncludes(prompt, "같은 msgid/context의 msgstr")
   assertStringIncludes(prompt, "번들 배포")
   assertStringIncludes(prompt, "PR evidence")

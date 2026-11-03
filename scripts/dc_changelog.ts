@@ -5,19 +5,20 @@
  * Generate a DCInside-style Cataclysm: Bright Nights changelog draft or rewrite prompt.
  *
  * The script reads a Cataclysm-BN git range, enriches commits with PR evidence and
- * downloadable PR images, then emits either a paste-ready skeleton or a prompt that asks
+ * permanent GitHub image URLs, then emits either a paste-ready skeleton or a prompt that asks
  * an editor/LLM to rewrite the entries in the compact Korean format used by DCInside
  * roguelike gallery patch posts.
  */
 
 import { Command } from "@cliffy/command"
 import { ensureDir } from "@std/fs"
-import { dirname, extname, fromFileUrl, resolve } from "@std/path"
+import { dirname, fromFileUrl, resolve } from "@std/path"
 import * as v from "@valibot/valibot"
 
 import {
   type Commit,
   draftPost,
+  githubImageUrls,
   type PullRequestDetails,
   rewritePrompt,
 } from "../src/dcinside.ts"
@@ -38,7 +39,6 @@ const OptionsSchema = v.object({
   includeBody: v.boolean(),
   output: v.optional(v.string()),
   title: v.optional(v.string()),
-  assetDir: v.optional(v.string()),
   repoSlug: v.optional(v.string()),
   noPrDetails: v.optional(v.boolean()),
   allowMissingPrDetails: v.optional(v.boolean()),
@@ -206,108 +206,31 @@ const resolveRepoSlug = async (
   )
 }
 
-const imageUrls = (markdown: string): string[] => {
-  const urls = new Set<string>()
-  for (
-    const match of markdown.matchAll(
-      /<img\b[^>]*\bsrc=["']([^"']+)["'][^>]*>/giu,
-    )
-  ) {
-    urls.add(match[1])
-  }
-  for (
-    const match of markdown.matchAll(/!\[[^\]]*\]\((https?:\/\/[^\s)]+)\)/giu)
-  ) {
-    urls.add(match[1])
-  }
-  for (const match of markdown.matchAll(/https?:\/\/[^\s)"']+/giu)) {
-    const url = match[0]
-    if (
-      /\.(?:png|jpe?g|gif|webp)(?:\?|$)/iu.test(url) ||
-      url.includes("/user-attachments/assets/")
-    ) {
-      urls.add(url)
-    }
-  }
-  return [...urls]
-}
-
-const extensionFromContentType = (
-  contentType: string | null,
-): string | null => {
-  const type = contentType?.split(";")[0]?.trim().toLowerCase()
-  if (type === "image/png") return ".png"
-  if (type === "image/jpeg") return ".jpg"
-  if (type === "image/gif") return ".gif"
-  if (type === "image/webp") return ".webp"
-  return null
-}
-
-const extensionFromUrl = (
-  url: string,
-  contentType: string | null,
-): string | null => {
-  const parsed = new URL(url)
-  const ext = extname(parsed.pathname).toLowerCase()
-  return /^\.(?:png|jpe?g|gif|webp)$/u.test(ext)
-    ? ext
-    : extensionFromContentType(contentType)
-}
-
-const downloadPrImages = async (
-  pr: number,
-  body: string,
-  assetDir?: string,
-): Promise<PullRequestDetails["images"]> => {
-  const urls = imageUrls(body)
-  if (!assetDir || urls.length === 0) {
-    return urls.map((sourceUrl) => ({ sourceUrl }))
-  }
-
-  await ensureDir(assetDir)
-  const images: PullRequestDetails["images"] = []
-  let saved = 0
-  for (const sourceUrl of urls) {
-    try {
-      const response = await fetch(sourceUrl, {
-        headers: { "User-Agent": "dc-changelog" },
-      })
-      if (!response.ok) {
-        images.push({
-          sourceUrl,
-          error: `${response.status} ${response.statusText}`,
-        })
-        continue
-      }
-      const contentType = response.headers.get("content-type")
-      const ext = extensionFromUrl(sourceUrl, contentType)
-      if (!ext) {
-        images.push({
-          sourceUrl,
-          error: `skipped non-image content-type: ${contentType ?? "unknown"}`,
-        })
-        continue
-      }
-      saved += 1
-      const filename = `pr-${pr}-${saved}${ext}`
-      await Deno.writeFile(
-        resolve(assetDir, filename),
-        new Uint8Array(await response.arrayBuffer()),
+// GET because the signed S3 redirect target answers HEAD with 403.
+const isAnonymousImage = async (url: string): Promise<boolean> => {
+  try {
+    const response = await fetch(url, {
+      headers: { "User-Agent": "dc-changelog" },
+    })
+    await response.body?.cancel()
+    return response.ok &&
+      /^image\/(?:png|jpeg|gif|webp)\b/iu.test(
+        response.headers.get("content-type") ?? "",
       )
-      images.push({ sourceUrl, filename })
-    } catch (error) {
-      images.push({
-        sourceUrl,
-        error: error instanceof Error ? error.message : String(error),
-      })
-    }
+  } catch {
+    return false
   }
-  return images
+}
+
+const permanentImages = async (body: string): Promise<string[]> => {
+  const urls = githubImageUrls(body)
+  const usable = await Promise.all(urls.map(isAnonymousImage))
+  return urls.filter((_, index) => usable[index])
 }
 
 const fetchPullRequest = async (
   pr: number,
-  options: { repoSlug: string; assetDir?: string },
+  options: { repoSlug: string },
 ): Promise<PullRequestDetails> => {
   const json = await commandText("gh", [
     "pr",
@@ -326,7 +249,7 @@ const fetchPullRequest = async (
     url: parsed.url,
     body,
     files: parsed.files.map((file) => file.path),
-    images: await downloadPrImages(pr, body, options.assetDir),
+    images: await permanentImages(body),
   }
 }
 
@@ -343,10 +266,8 @@ const withPullRequestDetails = async (
     const number = prNumber(commit.subject)
     if (!number) return commit
 
-    const cached = cache.get(number) ?? fetchPullRequest(number, {
-      repoSlug,
-      assetDir: options.assetDir ? resolve(options.assetDir) : undefined,
-    })
+    const cached = cache.get(number) ??
+      fetchPullRequest(number, { repoSlug })
     cache.set(number, cached)
 
     try {
@@ -423,10 +344,6 @@ const main = new Command()
     { default: false },
   )
   .option(
-    "--asset-dir <dir:string>",
-    "Download PR images into this output directory",
-  )
-  .option(
     "--repo-slug <owner/repo:string>",
     "GitHub repository slug for PR lookups",
   )
@@ -455,7 +372,7 @@ const main = new Command()
   )
   .example(
     "weekly prompt",
-    "deno task dc --repo ../Cataclysm-BN --since 2026-01-01 --until 2026-01-07 --asset-dir dist/2026-01-01_to_2026-01-07 -o /tmp/prompt.md",
+    "deno task dc --repo ../Cataclysm-BN --since 2026-01-01 --until 2026-01-07 -o /tmp/prompt.md",
   )
   .example("tag range draft", "deno task dc v0.10.0..HEAD --mode draft")
   .action(async (rawOptions, range?: string) => {

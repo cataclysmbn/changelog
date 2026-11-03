@@ -1,7 +1,7 @@
 import { assertEquals, assertStringIncludes } from "@std/assert"
 import { fromFileUrl, join } from "@std/path"
 
-Deno.test("weekly CLI selects and groups commits by local integration dates", async () => {
+Deno.test("weekly CLI selects and titles commits by local integration dates", async () => {
   const appRoot = fromFileUrl(new URL("../", import.meta.url))
   await Deno.mkdir(join(appRoot, "dist"), { recursive: true })
   const repo = await Deno.makeTempDir({ dir: join(appRoot, "dist") })
@@ -77,9 +77,9 @@ Deno.test("weekly CLI selects and groups commits by local integration dates", as
     assertEquals(result.success, true, new TextDecoder().decode(result.stderr))
     const text = new TextDecoder().decode(result.stdout)
     assertStringIncludes(text, "밝밤) 1월 5일 ~ 1월 11일 패치")
-    assertStringIncludes(text, "01월 05일\n* monday midnight")
-    assertStringIncludes(text, "* monday morning")
-    assertStringIncludes(text, "01월 11일\n* sunday night")
+    assertStringIncludes(text, "## monday midnight")
+    assertStringIncludes(text, "## monday morning")
+    assertStringIncludes(text, "## sunday night")
     assertEquals(text.includes("previous week"), false)
     assertEquals(text.includes("next week"), false)
   } finally {

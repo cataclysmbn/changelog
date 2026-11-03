@@ -6,7 +6,7 @@
  *
  * Uses dax prompts to choose a contiguous set of weekly ranges, generates a prompt for each
  * week in a temp directory, then invokes isolated pi writer/reviewer passes. Final output is
- * a per-week folder with changelog.txt and any PR images referenced by the text.
+ * a per-week folder with changelog.txt and the static changelog.html to post.
  */
 
 import { Command } from "@cliffy/command"
@@ -14,7 +14,12 @@ import $ from "@david/dax"
 import { ensureDir } from "@std/fs"
 import { dirname, fromFileUrl, join, resolve } from "@std/path"
 
-import { reviewPrompt, translationGuide } from "../src/dcinside.ts"
+import {
+  assertPostFormat,
+  renderPostHtml,
+  reviewPrompt,
+  translationGuide,
+} from "../src/dcinside.ts"
 import { rangesBetween, weeklyRanges, type WeekRange } from "../src/weeks.ts"
 import {
   parsePo,
@@ -127,7 +132,6 @@ const buildPrompt = async (
   range: WeekRange,
   options: Options,
   promptFile: string,
-  assetDir: string,
 ): Promise<void> => {
   const args = [
     "deno",
@@ -148,8 +152,6 @@ const buildPrompt = async (
     options.maxCommits.toString(),
     "--title",
     range.title,
-    "--asset-dir",
-    assetDir,
     "--glossary-po",
     options.glossaryPo,
     "-o",
@@ -173,7 +175,7 @@ You are a Korean DCInside Cataclysm: Bright Nights changelog writer.
 - Use the supplied PR evidence. Never write from commit titles alone.
 - Delete internal-only CI, build plumbing, Lua typecheck, refactor, and factory entries unless the player-visible result is clear.
 - Merge follow-up/revert pairs into the final player-visible result.
-- If a downloaded image helps explain an entry, add the filename alone immediately before that bullet, e.g. "pr-8621-1.png".
+- Follow the post template in the prompt line by line. If an "Image:" URL helps explain an entry, add it to that entry as "![caption](url)".
 - Prefer concrete words: 실험판, 안정판, 기본 포함 모드, 시작 지점, 스폰, 타일, 줍기, 자동운전.
 - Use the supplied Korean PO snippets before choosing Korean game terms:
 ${translationGuide}
@@ -192,7 +194,7 @@ You are a hostile senior Korean editor for DCInside 밝밤 changelogs.
 - Compare the draft against PR evidence and restore concrete gameplay details.
 - Enforce the supplied Korean PO snippets before accepting Korean game terms:
 ${translationGuide}
-- Add the filename alone immediately before bullets illustrated by downloaded images, e.g. "pr-8621-1.png".
+- Enforce the post template in the prompt line by line. Add "Image:" URLs that illustrate an entry as "![caption](url)".
 - Delete low-utility internal Lua/CI/refactor/build entries unless the final player-facing effect matters.
 - Collapse superseded entries into one final result.
 - Reject vague wording such as 갱신/정리/개선 unless the same entry explains exactly what changed.
@@ -382,6 +384,7 @@ export const reviewWithPi = async (
           response,
           entries,
         )
+        assertPostFormat(changelog, sourcePrompt)
         return {
           changelog,
           audit: { poFile, poSha256: await sha256(poText), terms },
@@ -414,35 +417,6 @@ const sha256 = async (text: string): Promise<string> =>
   )
     .map((byte) => byte.toString(16).padStart(2, "0")).join("")
 
-const normalizeImageReferences = (text: string): string =>
-  text.replace(/^!\[\]\((pr-\d+-\d+\.(?:png|jpe?g|gif|webp))\)$/gimu, "$1")
-
-const referencedImages = (text: string): Set<string> =>
-  new Set(
-    [...text.matchAll(
-      /(?:^|\s)(pr-\d+-\d+\.(?:png|jpe?g|gif|webp))(?=\s|$)/gimu,
-    )]
-      .map((match) => match[1]),
-  )
-
-const removeUnreferencedImages = async (
-  weekDir: string,
-  changelog: string,
-): Promise<void> => {
-  const keep = referencedImages(changelog)
-  for await (const entry of Deno.readDir(weekDir)) {
-    if (
-      !entry.isFile ||
-      !/^pr-\d+-\d+\.(?:png|jpe?g|gif|webp)$/iu.test(entry.name)
-    ) {
-      continue
-    }
-    if (!keep.has(entry.name)) {
-      await Deno.remove(join(weekDir, entry.name))
-    }
-  }
-}
-
 const run = async (options: Options): Promise<void> => {
   const ranges = weeklyRanges(new Date(), options.weeks)
   const selected = await chooseRange(ranges, options)
@@ -473,7 +447,7 @@ const run = async (options: Options): Promise<void> => {
       const promptFile = join(tempDir, `${slug}.prompt.md`)
       const reviewerPromptFile = join(tempDir, `${slug}.review.prompt.md`)
       const outputFile = join(weekDir, "changelog.txt")
-      await buildPrompt(range, runOptions, promptFile, weekDir)
+      await buildPrompt(range, runOptions, promptFile)
       const sourcePrompt = await Deno.readTextFile(promptFile)
       const draft = await generateWithPi(range, runOptions, promptFile)
       const review = await reviewWithPi(
@@ -483,10 +457,9 @@ const run = async (options: Options): Promise<void> => {
         draft,
         reviewerPromptFile,
       )
-      const changelog = `${
-        normalizeImageReferences(review.changelog).trimEnd()
-      }\n`
+      const changelog = `${review.changelog.trimEnd()}\n`
       if (!runOptions.dryRun) {
+        assertPostFormat(changelog, sourcePrompt)
         if (review.audit) {
           const reviewDir = join(outputDir, ".reviews")
           await ensureDir(reviewDir)
@@ -502,9 +475,10 @@ const run = async (options: Options): Promise<void> => {
             ) + "\n",
           )
         }
-        await removeUnreferencedImages(weekDir, changelog)
         await Deno.writeTextFile(outputFile, changelog)
-        $.logStep("wrote", outputFile)
+        const htmlFile = join(weekDir, "changelog.html")
+        await Deno.writeTextFile(htmlFile, renderPostHtml(changelog))
+        $.logStep("wrote", htmlFile)
       }
     }
   } catch (error) {
