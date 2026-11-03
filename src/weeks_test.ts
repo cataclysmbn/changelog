@@ -26,6 +26,15 @@ Deno.test("weeklyRanges starts with current week and walks older weeks", () => {
   assertEquals(ranges[0].title, "밝밤) 6월 8일 ~ 6월 14일 패치")
 })
 
+Deno.test("weeklyRanges ends the current week today and keeps its query window", () => {
+  const [current, previous] = weeklyRanges(new Date(2026, 10, 3, 12), 2)
+
+  assertEquals(current.endInclusive, "2026-11-03")
+  assertEquals(current.endExclusive, "2026-11-09")
+  assertEquals(current.title, "밝밤) 11월 2일 ~ 11월 3일 패치")
+  assertEquals(previous.title, "밝밤) 10월 26일 ~ 11월 1일 패치")
+})
+
 Deno.test("rangesBetween returns contiguous newest-to-oldest weekly ranges", () => {
   const ranges = weeklyRanges(new Date(2026, 5, 14, 12), 4)
 

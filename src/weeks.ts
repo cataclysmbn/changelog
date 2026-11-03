@@ -37,7 +37,9 @@ export const weeklyRanges = (baseDate: Date, count: number): WeekRange[] => {
   return Array.from({ length: count }, (_, index) => {
     const start = addDays(currentWeek, -index * 7)
     const endExclusive = addDays(start, 7)
-    const endInclusive = addDays(endExclusive, -1)
+    const endInclusive = index === 0
+      ? toLocalDate(baseDate)
+      : addDays(endExclusive, -1)
     const prefix = index === 0 ? "이번 주" : `${index}주 전`
     const title = `밝밤) ${monthDay(start)} ~ ${monthDay(endInclusive)} 패치`
     return {
