@@ -158,6 +158,23 @@ export const assertPostFormat = (post: string, source: string): void => {
   }
 }
 
+/** Distinct image URLs of a post, in order of first use. */
+export const postImageUrls = (post: string): string[] => [
+  ...new Set(
+    postLines(post).flatMap((line) => line.match(imageLine)?.[2] ?? []),
+  ),
+]
+
+/** Replaces the URL of each image line; other lines keep their URLs. */
+export const mapPostImages = (
+  post: string,
+  replace: (url: string) => string,
+): string =>
+  post.split("\n").map((line) => {
+    const image = line.trim().match(imageLine)
+    return image ? `![${image[1]}](${replace(image[2])})` : line
+  }).join("\n")
+
 const escapeHtml = (text: string): string =>
   text.replace(/&/gu, "&amp;").replace(/</gu, "&lt;").replace(/>/gu, "&gt;")
     .replace(/"/gu, "&quot;")

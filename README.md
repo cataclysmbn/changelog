@@ -18,7 +18,13 @@ dist/2026-05-25_to_2026-06-21/
 └── changelog.html
 ```
 
-`changelog.html`을 DCInside 글쓰기의 HTML 모드에 붙여 넣고, `changelog.txt` 첫 줄의 제목을 제목 칸에 넣습니다. 이미지는 PR 본문에 적힌 GitHub 영구 주소(`https://github.com/user-attachments/assets/...`)를 그대로 씁니다. 익명으로 내려받을 수 없는 이미지와 GitHub 밖의 이미지는 쓰지 않습니다.
+`changelog.html`을 DCInside 글쓰기의 HTML 모드에 붙여 넣고, `changelog.txt` 첫 줄의 제목을 제목 칸에 넣습니다. 이미지는 PR 본문에 적힌 GitHub 영구 주소(`https://github.com/user-attachments/assets/...`)에서 가져옵니다. 익명으로 내려받을 수 없는 이미지와 GitHub 밖의 이미지는 쓰지 않습니다. DCInside가 GitHub 이미지 주소를 지우므로, `changelog.html`에는 이미지 사본을 이 저장소의 `images` 브랜치에 push한 뒤 jsDelivr 주소를 넣습니다. `changelog.txt`에는 GitHub 주소가 남습니다.
+
+`changelog.txt`를 고친 뒤 HTML만 다시 만들 때:
+
+```sh
+deno task html dist/2026-05-25_to_2026-06-21/changelog.txt
+```
 
 `changelog.txt` 템플릿:
 

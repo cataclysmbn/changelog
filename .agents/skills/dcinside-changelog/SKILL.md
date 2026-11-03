@@ -36,6 +36,7 @@ Use this for `밝밤)` DCInside posts.
 
 - Use only the `Image:` URLs in the PR evidence. They are permanent GitHub addresses from the raw PR body (`gh pr view --json body`), e.g. `https://github.com/user-attachments/assets/<id>`.
 - Do not use signed `private-user-images` URLs from rendered HTML. They expire.
+- `changelog.txt` keeps the GitHub URLs. DCInside deletes them, so `changelog.html` uses jsDelivr URLs of copies on the `images` branch (`mirrorPostImages` in `scripts/mirror_images.ts`).
 
 ## Translation review
 

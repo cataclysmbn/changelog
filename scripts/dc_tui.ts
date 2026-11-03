@@ -1,4 +1,4 @@
-#!/usr/bin/env -S deno run --allow-read --allow-write --allow-run --allow-env
+#!/usr/bin/env -S deno run --allow-read --allow-write --allow-run --allow-env --allow-net
 /**
  * @module
  *
@@ -31,6 +31,7 @@ import {
   validateTranslationReview,
   type VerifiedTerm,
 } from "../src/translation.ts"
+import { mirrorPostImages } from "./mirror_images.ts"
 
 const scriptDir = dirname(fromFileUrl(import.meta.url))
 const appRoot = dirname(scriptDir)
@@ -469,6 +470,7 @@ const run = async (options: Options): Promise<void> => {
     const changelog = `${review.changelog.trimEnd()}\n`
     if (!runOptions.dryRun) {
       assertPostFormat(changelog, sourcePrompt)
+      const html = renderPostHtml(await mirrorPostImages(changelog))
       if (review.audit) {
         const reviewDir = join(outputDir, ".reviews")
         await ensureDir(reviewDir)
@@ -486,7 +488,7 @@ const run = async (options: Options): Promise<void> => {
       }
       await Deno.writeTextFile(outputFile, changelog)
       const htmlFile = join(postDir, "changelog.html")
-      await Deno.writeTextFile(htmlFile, renderPostHtml(changelog))
+      await Deno.writeTextFile(htmlFile, html)
       $.logStep("wrote", htmlFile)
     }
   } catch (error) {
