@@ -18,7 +18,7 @@ dist/2026-05-25_to_2026-06-21/
 └── changelog.html
 ```
 
-`changelog.html`을 DCInside 글쓰기의 HTML 모드에 붙여 넣고, `changelog.txt` 첫 줄의 제목을 제목 칸에 넣습니다. 이미지는 PR 본문에 적힌 GitHub 영구 주소(`https://github.com/user-attachments/assets/...`)에서 가져옵니다. 익명으로 내려받을 수 없는 이미지와 GitHub 밖의 이미지는 쓰지 않습니다. DCInside가 GitHub 이미지 주소를 지우므로, `changelog.html`에는 이미지 사본을 이 저장소의 `images` 브랜치에 push한 뒤 jsDelivr 주소를 넣습니다. 픽셀 아트(긴 변 128 px 이하 또는 256색 이하)와 GIF는 원본 그대로 두고, 나머지 PNG·JPEG는 WebP(품질 50)로 압축합니다(ImageMagick 필요). `changelog.txt`에는 GitHub 주소가 남습니다.
+`changelog.html`을 DCInside 글쓰기의 HTML 모드에 붙여 넣고, `changelog.txt` 첫 줄의 제목을 제목 칸에 넣습니다. 이미지는 PR 본문에 적힌 GitHub 영구 주소(`https://github.com/user-attachments/assets/...`)에서 가져옵니다. 익명으로 내려받을 수 없는 이미지와 GitHub 밖의 이미지는 쓰지 않습니다. DCInside가 GitHub 이미지 주소를 지우므로, `changelog.html`에는 이미지 사본을 이 저장소의 `images` 브랜치에 push한 뒤 jsDelivr 주소를 넣습니다. 모든 이미지를 WebP로 변환해 보고 원본보다 작을 때만 WebP를 올립니다. 픽셀 아트(긴 변 128 px 이하 또는 256색 이하)는 무손실, 나머지는 품질 50입니다(ImageMagick 필요). `changelog.txt`에는 GitHub 주소가 남습니다.
 
 `changelog.txt`를 고친 뒤 HTML만 다시 만들 때:
 

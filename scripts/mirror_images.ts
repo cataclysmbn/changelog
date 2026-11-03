@@ -4,7 +4,7 @@
  *
  * DCInside deletes GitHub image URLs from posts, so post images are copied to the `images` branch of this public
  * repository and served through jsDelivr. Files are named by content hash and URLs pin the commit, so they never change.
- * Pixel art and GIFs are kept as they are; other PNG and JPEG images are compressed to WebP. Requires ImageMagick.
+ * Each image is also converted to WebP (lossless for pixel art) and the smaller file is kept. Requires ImageMagick.
  *
  * Usage: deno task html dist/<period>/changelog.txt
  */
@@ -40,7 +40,6 @@ const defaults: MirrorOptions = {
 const webpQuality = 50
 const pixelArtMaxSide = 128
 const pixelArtMaxColors = 256
-const webpMaxSide = 16383
 
 const fetchWithTimeout = (url: string): Promise<Response> =>
   fetch(url, { signal: AbortSignal.timeout(60_000) })
@@ -56,29 +55,38 @@ const download = async (url: string) => {
   return compress(new Uint8Array(await response.arrayBuffer()), extension)
 }
 
-/** Pixel art is small or palette-sized, and lossy compression would blur it. Images beyond the WebP size limit stay as they are. */
-const keepsOriginal = async (
+/** Pixel art is small or palette-sized, and lossy compression would blur it. Returns nothing when ImageMagick cannot read the image. */
+const isPixelArt = async (
   bytes: Uint8Array<ArrayBuffer>,
-): Promise<boolean> => {
-  const info = await $`magick identify -format ${"%w %h %k"} -`.stdin(bytes)
-    .text()
-  const [width, height, colors] = info.split(" ").map(Number)
-  const side = Math.max(width, height)
-  return side <= pixelArtMaxSide || colors <= pixelArtMaxColors ||
-    side > webpMaxSide
+): Promise<boolean | undefined> => {
+  const result = await $`magick identify -format ${"%w %h %k"} -[0]`
+    .stdin(bytes).stdout("piped").stderr("null").noThrow()
+  if (result.code !== 0) return undefined
+  const [width, height, colors] = result.stdout.split(" ").map(Number)
+  return Math.max(width, height) <= pixelArtMaxSide ||
+    colors <= pixelArtMaxColors
 }
 
+/** Returns WebP bytes, or nothing when ImageMagick cannot encode the image (for example beyond the WebP size limit). */
+const toWebp = async (bytes: Uint8Array<ArrayBuffer>) => {
+  const pixelArt = await isPixelArt(bytes)
+  if (pixelArt === undefined) return undefined
+  const mode = pixelArt
+    ? ["-define", "webp:lossless=true"]
+    : ["-quality", `${webpQuality}`]
+  const result = await $`magick - ${mode} webp:-`.stdin(bytes).stdout("piped")
+    .stderr("null").noThrow()
+  return result.code === 0 ? new Uint8Array(result.stdoutBytes) : undefined
+}
+
+/** Keeps whichever of the original and its WebP copy is smaller. */
 const compress = async (bytes: Uint8Array<ArrayBuffer>, extension: string) => {
-  const lossy = extension === "png" || extension === "jpg"
-  const converted = lossy && !(await keepsOriginal(bytes))
-  const output = converted
-    ? new Uint8Array(
-      await $`magick - -quality ${webpQuality} webp:-`.stdin(bytes).bytes(),
-    )
-    : bytes
+  const webp = extension === "webp" ? undefined : await toWebp(bytes)
+  const smaller = webp && webp.length < bytes.length
+  const output = smaller ? webp : bytes
   const digest = await crypto.subtle.digest("SHA-256", output)
   return {
-    name: `${encodeHex(digest)}.${converted ? "webp" : extension}`,
+    name: `${encodeHex(digest)}.${smaller ? "webp" : extension}`,
     bytes: output,
   }
 }
