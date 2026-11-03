@@ -110,7 +110,8 @@ const post = `# 밝밤) 1월 4일 ~ 1월 5일 패치
 ## 구역 <관리> & 표시
 ![](${image})
 구역 표시 전환 추가
-✓ 전환   ✓ 표시
+- 전환
+- 표시
 ![전환 화면](${image})
 [GitHub에서 보기 ↗](${pr})
 
@@ -123,11 +124,12 @@ Deno.test("renderPostHtml renders the static reference layout without the title"
   const html = renderPostHtml(post)
 
   assertEquals(html.includes("패치"), false)
-  assertEquals(html.split("\n").slice(0, 6), [
+  assertEquals(html.split("\n").slice(0, 7), [
     "<p><b>구역 &lt;관리&gt; &amp; 표시</b></p>",
     `<p><img src="${image}" alt="" width="425" style="width:425px;height:auto;"></p>`,
     "<p>구역 표시 전환 추가</p>",
-    "<p>✓ 전환   ✓ 표시</p>",
+    "<p>• 전환</p>",
+    "<p>• 표시</p>",
     `<p><img src="${image}" alt="전환 화면" width="425" style="width:425px;height:auto;"></p>`,
     "<p>▲ 전환 화면</p>",
   ])
@@ -159,6 +161,8 @@ Deno.test("assertPostFormat accepts the template and rejects everything outside 
       ["# 제목\n내용", "'## 항목'"],
       ["# 제목\n## 항목\nㄴ 하위 불릿", "템플릿에 없는 줄"],
       ["# 제목\n## 항목\n* 불릿", "템플릿에 없는 줄"],
+      ["# 제목\n## 항목\n✓ 핵심", "템플릿에 없는 줄"],
+      [`# 제목\n## 항목\n- ${image}`, "템플릿에 없는 줄"],
       ["# 제목\n01월 04일\n## 항목", "템플릿에 없는 줄"],
       ["# 제목\n## 항목\n# 제목 둘", "템플릿에 없는 줄"],
       ["# 제목\n## 항목\n### 소제목", "템플릿에 없는 줄"],

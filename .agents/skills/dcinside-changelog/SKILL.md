@@ -54,7 +54,9 @@ Write `changelog.txt` with this template. `renderPostHtml` in `src/dcinside.ts` 
 ![](대표 이미지 URL)
 무엇이 바뀌었는지 한 문장
 어떻게 달라지는지 조건, 수치, 예시를 붙인 1~2문장
-✓ 핵심 1   ✓ 핵심 2   ✓ 핵심 3
+- 핵심 1
+- 핵심 2
+- 핵심 3
 ![이미지 설명](추가 이미지 URL)
 [GitHub에서 보기 ↗](PR URL)
 ```
@@ -73,7 +75,7 @@ Write `changelog.txt` with this template. `renderPostHtml` in `src/dcinside.ts` 
 - Merge follow-up/revert chains into one entry with the final visible result.
 - Use the detail sentence for conditions, examples, exact numeric changes, and "what changed from what to what" details.
 - Include important numeric before/after values when present: `(300 -> 3000)`, `(50kw -> 5kw)`.
-- Follow the layout of the [reference post](https://gall.dcinside.com/mgallery/board/view/?id=rimworld&no=953751&exception_mode=recommend&page=1): name, image, one-line summary, detail, `✓` highlights, captioned images, link button.
+- Follow the layout of the [reference post](https://gall.dcinside.com/mgallery/board/view/?id=rimworld&no=953751&exception_mode=recommend&page=1): name, image, one-line summary, detail, highlight bullets, captioned images, link button.
 
 ## Avoid
 

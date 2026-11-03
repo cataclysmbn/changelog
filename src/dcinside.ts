@@ -152,7 +152,7 @@ export const assertPostFormat = (post: string, source: string): void => {
     }
     if (
       !image && !link &&
-      (/^(?:ㄴ|\* |- |```|\d+월 \d+일$)|https?:\/\//u.test(line) ||
+      (/^(?:ㄴ|\* |✓|```|\d+월 \d+일$)|https?:\/\//u.test(line) ||
         (index > 0 && /^#+ /u.test(line) && !line.startsWith("## ")))
     ) throw new Error(`템플릿에 없는 줄: ${line}`)
   }
@@ -189,6 +189,7 @@ export const renderPostHtml = (post: string): string =>
           escapeHtml(link[2])
         }" style="${linkStyle}" target="_blank">${escapeHtml(link[1])}</a></p>`
       }
+      if (line.startsWith("- ")) return `<p>• ${escapeHtml(line.slice(2))}</p>`
       return `<p>${escapeHtml(line)}</p>`
     })
     .join("\n") + "\n"
@@ -208,13 +209,15 @@ const styleGuide = `DCInside 밝밤 패치글 형식:
 ![](대표 이미지 URL)
 무엇이 바뀌었는지 한 문장
 어떻게 달라지는지 조건, 수치, 예시를 붙인 1~2문장
-✓ 핵심 1   ✓ 핵심 2   ✓ 핵심 3
+- 핵심 1
+- 핵심 2
+- 핵심 3
 ![이미지 설명](추가 이미지 URL)
 [GitHub에서 보기 ↗](PR URL)
 
 - 첫 줄은 "# " 제목이고, 항목마다 "## " 줄로 시작합니다. 플레이어 체감이 큰 항목을 먼저 씁니다.
 - 날짜 머리말, "*" 불릿, "ㄴ" 하위 불릿, 마크다운 강조, 코드 블록은 쓰지 않습니다.
-- 대표 이미지, 설명 문장, ✓ 줄, 추가 이미지는 근거가 있을 때만 넣습니다. 작은 수정은 "##" 줄, 한 문장, 링크만 씁니다.
+- 대표 이미지, 설명 문장, "- " 불릿 줄, 추가 이미지는 근거가 있을 때만 넣습니다. 작은 수정은 "##" 줄, 한 문장, 링크만 씁니다.
 - 이미지 URL은 근거의 "Image:" 값을, 링크 URL은 근거의 "URL:" 값을 그대로 복사합니다. 추가 이미지에는 설명을 붙입니다.
 - 문장은 "~함", "~추가"처럼 짧게 끝냅니다.
 - 한국어 위주로 쓰고 필요한 경우 첫 언급에만 영어 원문을 괄호로 병기합니다.
