@@ -4,6 +4,7 @@
  *
  * DCInside deletes GitHub image URLs from posts, so post images are copied to the `images` branch of this public
  * repository and served through jsDelivr. Files are named by content hash and URLs pin the commit, so they never change.
+ * Pixel art and GIFs are kept as they are; other PNG and JPEG images are compressed to WebP. Requires ImageMagick.
  *
  * Usage: deno task html dist/<period>/changelog.txt
  */
@@ -36,6 +37,11 @@ const defaults: MirrorOptions = {
   cdn: "https://cdn.jsdelivr.net/gh/scarf005/cbn-dc-changelog",
 }
 
+const webpQuality = 50
+const pixelArtMaxSide = 128
+const pixelArtMaxColors = 256
+const webpMaxSide = 16383
+
 const fetchWithTimeout = (url: string): Promise<Response> =>
   fetch(url, { signal: AbortSignal.timeout(60_000) })
 
@@ -47,9 +53,34 @@ const download = async (url: string) => {
     await response.body?.cancel()
     throw new Error(`이미지 다운로드 실패: ${url} (${response.status} ${type})`)
   }
-  const bytes = new Uint8Array(await response.arrayBuffer())
-  const digest = await crypto.subtle.digest("SHA-256", bytes)
-  return { name: `${encodeHex(digest)}.${extension}`, bytes }
+  return compress(new Uint8Array(await response.arrayBuffer()), extension)
+}
+
+/** Pixel art is small or palette-sized, and lossy compression would blur it. Images beyond the WebP size limit stay as they are. */
+const keepsOriginal = async (
+  bytes: Uint8Array<ArrayBuffer>,
+): Promise<boolean> => {
+  const info = await $`magick identify -format ${"%w %h %k"} -`.stdin(bytes)
+    .text()
+  const [width, height, colors] = info.split(" ").map(Number)
+  const side = Math.max(width, height)
+  return side <= pixelArtMaxSide || colors <= pixelArtMaxColors ||
+    side > webpMaxSide
+}
+
+const compress = async (bytes: Uint8Array<ArrayBuffer>, extension: string) => {
+  const lossy = extension === "png" || extension === "jpg"
+  const converted = lossy && !(await keepsOriginal(bytes))
+  const output = converted
+    ? new Uint8Array(
+      await $`magick - -quality ${webpQuality} webp:-`.stdin(bytes).bytes(),
+    )
+    : bytes
+  const digest = await crypto.subtle.digest("SHA-256", output)
+  return {
+    name: `${encodeHex(digest)}.${converted ? "webp" : extension}`,
+    bytes: output,
+  }
 }
 
 const assertServed = async (url: string): Promise<void> => {
