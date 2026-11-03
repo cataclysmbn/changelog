@@ -46,7 +46,7 @@ Deno.test("rewritePrompt carries the DCInside style guide", () => {
   const prompt = rewritePrompt({ commits })
 
   assertStringIncludes(prompt, "DCInside 밝밤 패치글 형식")
-  assertStringIncludes(prompt, "## 변경 항목 이름")
+  assertStringIncludes(prompt, "## [변경 항목 이름](PR URL)")
   assertStringIncludes(prompt, "rg -n -C2 -i '<English term>'")
   assertStringIncludes(prompt, "같은 msgid/context의 msgstr")
   assertStringIncludes(prompt, "feat(ui): improve zone manager UI (#100)")
@@ -107,17 +107,15 @@ const source = `  URL: ${pr}\n  Image: ${image}\n`
 // Body evidence is indented four spaces and must not widen the URL lists.
 const post = `# 밝밤) 1월 4일 ~ 1월 5일 패치
 
-## 구역 <관리> & 표시
+## [구역 <관리> & 표시](${pr})
 ![](${image})
 구역 표시 전환 추가
 - 전환
 - 표시
 ![전환 화면](${image})
-[GitHub에서 보기 ↗](${pr})
 
 ## 자물쇠 따기 충돌 수정
 따는 도중 멈추던 문제 해결
-[GitHub에서 보기 ↗](${pr})
 `
 
 Deno.test("renderPostHtml renders the static reference layout without the title", () => {
@@ -125,7 +123,7 @@ Deno.test("renderPostHtml renders the static reference layout without the title"
 
   assertEquals(html.includes("패치"), false)
   assertEquals(html.split("\n").slice(0, 7), [
-    "<p><b>구역 &lt;관리&gt; &amp; 표시</b></p>",
+    `<p><b><a href="${pr}" target="_blank">구역 &lt;관리&gt; &amp; 표시</a></b></p>`,
     `<p><img src="${image}" alt="" width="425" style="width:425px;height:auto;"></p>`,
     "<p>구역 표시 전환 추가</p>",
     "<p>• 전환</p>",
@@ -135,17 +133,16 @@ Deno.test("renderPostHtml renders the static reference layout without the title"
   ])
   assertStringIncludes(
     html,
-    `<p><br></p>\n<p><a href="${pr}" style="`,
-  )
-  assertStringIncludes(
-    html,
-    "</a></p>\n<p><br></p>\n<p><b><br></b></p>\n<p><b>자물쇠 따기 충돌 수정</b></p>",
+    "<p>▲ 전환 화면</p>\n<p><br></p>\n<p><b><br></b></p>\n<p><b>자물쇠 따기 충돌 수정</b></p>",
   )
 })
 
 Deno.test("assertPostFormat accepts the template and rejects everything outside it", () => {
   assertPostFormat(post, source)
-  assertPostFormat("# 제목\n## 항목\n-10% 피해\n*표시 추가", source)
+  assertPostFormat(
+    "# 제목\n## 항목\n-10% 피해\n*표시 추가\n[밝밤] 설명",
+    source,
+  )
   assertThrows(
     () =>
       assertPostFormat(
@@ -169,7 +166,9 @@ Deno.test("assertPostFormat accepts the template and rejects everything outside 
       [`# 제목\n## 항목\n${image}`, "템플릿에 없는 줄"],
       ["# 제목\n## 항목\n![](https://github.com/x.png)", "없는 이미지"],
       [`# 제목\n## 항목\n![](${pr})`, "없는 이미지"],
-      [`# 제목\n## 항목\n[링크](${image})`, "없는 링크"],
+      [`# 제목\n## [항목](${image})`, "없는 링크"],
+      [`# 제목\n## 항목\n[GitHub에서 보기 ↗](${pr})`, "템플릿에 없는 줄"],
+      [`# 제목\n## [항목](${pr}) [둘](${pr})`, "템플릿에 없는 줄"],
     ]
   ) {
     assertThrows(() => assertPostFormat(text, source), Error, message)
@@ -184,7 +183,7 @@ Deno.test("reviewPrompt injects hostile senior editor pass", () => {
   })
 
   assertStringIncludes(prompt, "표독한 senior 한국어 편집자 reviewer subagent")
-  assertStringIncludes(prompt, "## 변경 항목 이름")
+  assertStringIncludes(prompt, "## [변경 항목 이름](PR URL)")
   assertStringIncludes(prompt, "같은 msgid/context의 msgstr")
   assertStringIncludes(prompt, "번들 배포")
   assertStringIncludes(prompt, "PR evidence")

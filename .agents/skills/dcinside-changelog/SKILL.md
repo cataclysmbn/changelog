@@ -50,7 +50,7 @@ Write `changelog.txt` with this template. `renderPostHtml` in `src/dcinside.ts` 
 ```text
 # 밝밤) M월 D일 ~ M월 D일 패치
 
-## 변경 항목 이름
+## [변경 항목 이름](PR URL)
 ![](대표 이미지 URL)
 무엇이 바뀌었는지 한 문장
 어떻게 달라지는지 조건, 수치, 예시를 붙인 1~2문장
@@ -58,11 +58,11 @@ Write `changelog.txt` with this template. `renderPostHtml` in `src/dcinside.ts` 
 - 핵심 2
 - 핵심 3
 ![이미지 설명](추가 이미지 URL)
-[GitHub에서 보기 ↗](PR URL)
 ```
 
 - Put the entries with the largest player impact first. Do not use date headings, `*` bullets, or `ㄴ` sub-bullets.
-- Small fixes use only the `##` line, one sentence, and the link.
+- Small fixes use only the `##` line and one sentence.
+- The `##` name links directly to the PR. An entry with several PRs links only the first.
 - Keep lines short and player-facing.
 - First mention may include English in parentheses: `불굴의 괴물(Relentless Hulk)`.
 
@@ -75,7 +75,7 @@ Write `changelog.txt` with this template. `renderPostHtml` in `src/dcinside.ts` 
 - Merge follow-up/revert chains into one entry with the final visible result.
 - Use the detail sentence for conditions, examples, exact numeric changes, and "what changed from what to what" details.
 - Include important numeric before/after values when present: `(300 -> 3000)`, `(50kw -> 5kw)`.
-- Follow the layout of the [reference post](https://gall.dcinside.com/mgallery/board/view/?id=rimworld&no=953751&exception_mode=recommend&page=1): name, image, one-line summary, detail, highlight bullets, captioned images, link button.
+- Follow the layout of the [reference post](https://gall.dcinside.com/mgallery/board/view/?id=rimworld&no=953751&exception_mode=recommend&page=1): linked name, image, one-line summary, detail, highlight bullets, captioned images.
 
 ## Avoid
 

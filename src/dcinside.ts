@@ -119,7 +119,7 @@ export const githubImageUrls = (markdown: string): string[] =>
   ].filter((url) => permanentImageUrl.test(url))
 
 const imageLine = /^!\[([^\]]*)\]\((\S+)\)$/u
-const linkLine = /^\[([^\]]+)\]\((\S+)\)$/u
+const linkedHeading = /^## \[([^\]]+)\]\((\S+)\)$/u
 
 const postLines = (post: string): string[] =>
   post.split("\n").map((line) => line.trim()).filter(Boolean)
@@ -143,7 +143,7 @@ export const assertPostFormat = (post: string, source: string): void => {
   }
   for (const [index, line] of lines.entries()) {
     const image = line.match(imageLine)
-    const link = line.match(linkLine)
+    const link = line.match(linkedHeading)
     if (image && !images.has(image[2])) {
       throw new Error(`PR 근거에 없는 이미지: ${image[2]}`)
     }
@@ -162,19 +162,21 @@ const escapeHtml = (text: string): string =>
   text.replace(/&/gu, "&amp;").replace(/</gu, "&lt;").replace(/>/gu, "&gt;")
     .replace(/"/gu, "&quot;")
 
-const linkStyle =
-  "margin:4px 8px 4px 0;font-size:14px;line-height:20px;text-decoration:none;padding:10px 20px;background:#09090b;color:#fafafa;border:1px solid #3f3f46;font-weight:600;"
-
 /** Renders a post to the HTML fragment for the DCInside HTML editor; the title goes in its own form field. */
 export const renderPostHtml = (post: string): string =>
   postLines(post)
     .filter((line) => !line.startsWith("# "))
-    .map((line, index, lines) => {
+    .map((line, index) => {
       const image = line.match(imageLine)
-      const link = line.match(linkLine)
+      const link = line.match(linkedHeading)
       if (line.startsWith("## ")) {
         const gap = index > 0 ? "<p><br></p>\n<p><b><br></b></p>\n" : ""
-        return `${gap}<p><b>${escapeHtml(line.slice(3))}</b></p>`
+        const name = link
+          ? `<a href="${escapeHtml(link[2])}" target="_blank">${
+            escapeHtml(link[1])
+          }</a>`
+          : escapeHtml(line.slice(3))
+        return `${gap}<p><b>${name}</b></p>`
       }
       if (image) {
         const [, caption, url] = image
@@ -182,12 +184,6 @@ export const renderPostHtml = (post: string): string =>
           escapeHtml(caption)
         }" width="425" style="width:425px;height:auto;"></p>`
         return caption ? `${tag}\n<p>▲ ${escapeHtml(caption)}</p>` : tag
-      }
-      if (link) {
-        const gap = linkLine.test(lines[index - 1] ?? "") ? "" : "<p><br></p>\n"
-        return `${gap}<p><a href="${
-          escapeHtml(link[2])
-        }" style="${linkStyle}" target="_blank">${escapeHtml(link[1])}</a></p>`
       }
       if (line.startsWith("- ")) return `<p>• ${escapeHtml(line.slice(2))}</p>`
       return `<p>${escapeHtml(line)}</p>`
@@ -205,7 +201,7 @@ const styleGuide = `DCInside 밝밤 패치글 형식:
 
 # 밝밤) M월 D일 ~ M월 D일 패치
 
-## 변경 항목 이름
+## [변경 항목 이름](PR URL)
 ![](대표 이미지 URL)
 무엇이 바뀌었는지 한 문장
 어떻게 달라지는지 조건, 수치, 예시를 붙인 1~2문장
@@ -213,11 +209,11 @@ const styleGuide = `DCInside 밝밤 패치글 형식:
 - 핵심 2
 - 핵심 3
 ![이미지 설명](추가 이미지 URL)
-[GitHub에서 보기 ↗](PR URL)
 
 - 첫 줄은 "# " 제목이고, 항목마다 "## " 줄로 시작합니다. 플레이어 체감이 큰 항목을 먼저 씁니다.
 - 날짜 머리말, "*" 불릿, "ㄴ" 하위 불릿, 마크다운 강조, 코드 블록은 쓰지 않습니다.
-- 대표 이미지, 설명 문장, "- " 불릿 줄, 추가 이미지는 근거가 있을 때만 넣습니다. 작은 수정은 "##" 줄, 한 문장, 링크만 씁니다.
+- 대표 이미지, 설명 문장, "- " 불릿 줄, 추가 이미지는 근거가 있을 때만 넣습니다. 작은 수정은 "##" 줄과 한 문장만 씁니다.
+- 항목 이름에 PR 링크를 겁니다. 한 항목에 PR이 여럿이면 첫 번째 PR만 겁니다. 따로 된 링크 줄은 쓰지 않습니다.
 - 이미지 URL은 근거의 "Image:" 값을, 링크 URL은 근거의 "URL:" 값을 그대로 복사합니다. 추가 이미지에는 설명을 붙입니다.
 - 문장은 "~함", "~추가"처럼 짧게 끝냅니다.
 - 한국어 위주로 쓰고 필요한 경우 첫 언급에만 영어 원문을 괄호로 병기합니다.
