@@ -4,16 +4,16 @@ DCInside 로그라이크 갤러리용 Cataclysm: Bright Nights 패치글 초안�
 
 ## 사용법
 
-대화형 주간 생성:
+대화형 생성:
 
 ```sh
 deno task tui
 ```
 
-결과는 주별 폴더에 생성됩니다.
+고른 주들을 기간 하나로 합쳐 글 하나를 만듭니다. 결과는 `<시작일>_to_<종료일>` 폴더에 생성됩니다.
 
 ```text
-dist/2026-06-15_to_2026-06-21/
+dist/2026-05-25_to_2026-06-21/
 ├── changelog.txt
 └── changelog.html
 ```

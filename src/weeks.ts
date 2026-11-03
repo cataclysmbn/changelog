@@ -53,6 +53,25 @@ export const weeklyRanges = (baseDate: Date, count: number): WeekRange[] => {
   })
 }
 
+const isoMonthDay = (date: string): string => {
+  const [, month, day] = date.split("-").map(Number)
+  return `${month}월 ${day}일`
+}
+
+/** One post range covering newest-first contiguous weeks. */
+export const mergeRanges = (ranges: WeekRange[]): WeekRange => {
+  const newest = ranges[0]
+  const { start } = ranges.at(-1)!
+  return {
+    ...newest,
+    start,
+    label: `${start} ~ ${newest.endInclusive}`,
+    title: `밝밤) ${isoMonthDay(start)} ~ ${
+      isoMonthDay(newest.endInclusive)
+    } 패치`,
+  }
+}
+
 export const rangesBetween = (
   ranges: WeekRange[],
   newestIndex: number,

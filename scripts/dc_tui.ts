@@ -4,9 +4,9 @@
  *
  * Interactive DCInside changelog runner.
  *
- * Uses dax prompts to choose a contiguous set of weekly ranges, generates a prompt for each
- * week in a temp directory, then invokes isolated pi writer/reviewer passes. Final output is
- * a per-week folder with changelog.txt and the static changelog.html to post.
+ * Uses dax prompts to choose a contiguous set of weekly ranges, merges them into one period, generates its
+ * prompt in a temp directory, then invokes isolated pi writer/reviewer passes. Final output is
+ * one folder with changelog.txt and the static changelog.html to post.
  */
 
 import { Command } from "@cliffy/command"
@@ -20,7 +20,12 @@ import {
   reviewPrompt,
   translationGuide,
 } from "../src/dcinside.ts"
-import { rangesBetween, weeklyRanges, type WeekRange } from "../src/weeks.ts"
+import {
+  mergeRanges,
+  rangesBetween,
+  weeklyRanges,
+  type WeekRange,
+} from "../src/weeks.ts"
 import {
   parsePo,
   validateTranslationReview,
@@ -423,11 +428,12 @@ const run = async (options: Options): Promise<void> => {
   if (selected.length === 0) {
     throw new Error("No weekly ranges selected")
   }
+  const range = mergeRanges(selected)
 
   const runOptions = await promptForRunOptions(options)
   if (!runOptions.yes) {
     const confirmed = await $.confirm({
-      message: `${selected.length}개 주간 패치글을 pi로 생성할까요?`,
+      message: `${range.label} 패치글을 pi로 생성할까요?`,
       default: true,
     })
     if (!confirmed) return
@@ -439,47 +445,49 @@ const run = async (options: Options): Promise<void> => {
   let failed = false
 
   try {
-    for (const range of selected) {
-      const slug = rangeSlug(range)
-      const weekDir = join(outputDir, slug)
-      await ensureDir(weekDir)
+    const slug = rangeSlug(range)
+    const postDir = join(outputDir, slug)
+    await ensureDir(postDir)
 
-      const promptFile = join(tempDir, `${slug}.prompt.md`)
-      const reviewerPromptFile = join(tempDir, `${slug}.review.prompt.md`)
-      const outputFile = join(weekDir, "changelog.txt")
-      await buildPrompt(range, runOptions, promptFile)
-      const sourcePrompt = await Deno.readTextFile(promptFile)
-      const draft = await generateWithPi(range, runOptions, promptFile)
-      const review = await reviewWithPi(
-        range,
-        runOptions,
-        sourcePrompt,
-        draft,
-        reviewerPromptFile,
-      )
-      const changelog = `${review.changelog.trimEnd()}\n`
-      if (!runOptions.dryRun) {
-        assertPostFormat(changelog, sourcePrompt)
-        if (review.audit) {
-          const reviewDir = join(outputDir, ".reviews")
-          await ensureDir(reviewDir)
-          await Deno.writeTextFile(
-            join(reviewDir, `${slug}.json`),
-            JSON.stringify(
-              {
-                ...review.audit,
-                changelogSha256: await sha256(changelog),
-              },
-              null,
-              2,
-            ) + "\n",
-          )
-        }
-        await Deno.writeTextFile(outputFile, changelog)
-        const htmlFile = join(weekDir, "changelog.html")
-        await Deno.writeTextFile(htmlFile, renderPostHtml(changelog))
-        $.logStep("wrote", htmlFile)
+    const promptFile = join(tempDir, `${slug}.prompt.md`)
+    const reviewerPromptFile = join(tempDir, `${slug}.review.prompt.md`)
+    const outputFile = join(postDir, "changelog.txt")
+    await buildPrompt(
+      range,
+      { ...runOptions, maxCommits: runOptions.maxCommits * selected.length },
+      promptFile,
+    )
+    const sourcePrompt = await Deno.readTextFile(promptFile)
+    const draft = await generateWithPi(range, runOptions, promptFile)
+    const review = await reviewWithPi(
+      range,
+      runOptions,
+      sourcePrompt,
+      draft,
+      reviewerPromptFile,
+    )
+    const changelog = `${review.changelog.trimEnd()}\n`
+    if (!runOptions.dryRun) {
+      assertPostFormat(changelog, sourcePrompt)
+      if (review.audit) {
+        const reviewDir = join(outputDir, ".reviews")
+        await ensureDir(reviewDir)
+        await Deno.writeTextFile(
+          join(reviewDir, `${slug}.json`),
+          JSON.stringify(
+            {
+              ...review.audit,
+              changelogSha256: await sha256(changelog),
+            },
+            null,
+            2,
+          ) + "\n",
+        )
       }
+      await Deno.writeTextFile(outputFile, changelog)
+      const htmlFile = join(postDir, "changelog.html")
+      await Deno.writeTextFile(htmlFile, renderPostHtml(changelog))
+      $.logStep("wrote", htmlFile)
     }
   } catch (error) {
     failed = true
@@ -496,7 +504,7 @@ const main = new Command()
   .name("dc-tui")
   .version("0.1.0")
   .description(
-    "Choose weekly Cataclysm-BN ranges and generate DCInside changelogs with isolated pi writer/reviewer passes.",
+    "Choose a range of Cataclysm-BN weeks and generate one DCInside changelog with isolated pi writer/reviewer passes.",
   )
   .option("--weeks <count:string>", "Number of weekly ranges to list", {
     default: 12,
@@ -507,10 +515,10 @@ const main = new Command()
   })
   .option(
     "-o, --output-dir <path:string>",
-    "Directory for generated weekly folders",
+    "Directory for generated post folders",
     { default: defaultOutputDir },
   )
-  .option("--max-commits <count:string>", "Maximum commits per weekly prompt", {
+  .option("--max-commits <count:string>", "Maximum commits per selected week", {
     default: 180,
     value: parsePositiveInt,
   })

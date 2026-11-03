@@ -10,13 +10,13 @@ Use this for `밝밤)` DCInside posts.
 
 ## Source gathering
 
-1. For interactive weekly generation, use the dax TUI:
+1. For interactive generation, use the dax TUI:
 
    ```sh
    deno task tui
    ```
 
-   It lists this week first, lets the user choose an older contiguous week range, crawls PR evidence and image URLs, writes prompts only in a temp directory, and invokes isolated pi writer/reviewer passes per week. Pi runs with `--no-context-files` plus role-specific AGENTS content injected through the system prompt, while keeping the user's normal pi auth/model settings. Output is a folder like `dist/2026-06-15_to_2026-06-21/` with `changelog.txt` and the `changelog.html` to paste into the DCInside HTML editor.
+   It lists this week first, lets the user choose an older contiguous week range, crawls PR evidence and image URLs, writes prompts only in a temp directory, and merges the chosen weeks into one period, and invokes isolated pi writer/reviewer passes for that one post. Pi runs with `--no-context-files` plus role-specific AGENTS content injected through the system prompt, while keeping the user's normal pi auth/model settings. Output is one folder like `dist/2026-05-25_to_2026-06-21/` with `changelog.txt` and the `changelog.html` to paste into the DCInside HTML editor.
 
 2. Generate a prompt or skeleton manually from the Cataclysm-BN checkout:
 

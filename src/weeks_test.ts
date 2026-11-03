@@ -1,6 +1,11 @@
 import { assertEquals } from "@std/assert"
 
-import { rangesBetween, startOfWeek, weeklyRanges } from "./weeks.ts"
+import {
+  mergeRanges,
+  rangesBetween,
+  startOfWeek,
+  weeklyRanges,
+} from "./weeks.ts"
 
 Deno.test("startOfWeek returns the local Monday", () => {
   assertEquals(
@@ -33,6 +38,20 @@ Deno.test("weeklyRanges ends the current week today and keeps its query window",
   assertEquals(current.endExclusive, "2026-11-09")
   assertEquals(current.title, "밝밤) 11월 2일 ~ 11월 3일 패치")
   assertEquals(previous.title, "밝밤) 10월 26일 ~ 11월 1일 패치")
+})
+
+Deno.test("mergeRanges covers the oldest start through the newest end", () => {
+  const ranges = weeklyRanges(new Date(2026, 10, 3, 12), 3)
+  const merged = mergeRanges(rangesBetween(ranges, 0, 1))
+
+  assertEquals(merged.start, "2026-10-26")
+  assertEquals(merged.endInclusive, "2026-11-03")
+  assertEquals(merged.endExclusive, "2026-11-09")
+  assertEquals(merged.title, "밝밤) 10월 26일 ~ 11월 3일 패치")
+  assertEquals(mergeRanges(rangesBetween(ranges, 1, 1)), {
+    ...ranges[1],
+    label: "2026-10-26 ~ 2026-11-01",
+  })
 })
 
 Deno.test("rangesBetween returns contiguous newest-to-oldest weekly ranges", () => {
