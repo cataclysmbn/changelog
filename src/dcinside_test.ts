@@ -124,11 +124,11 @@ Deno.test("renderPostHtml renders the static reference layout without the title"
   assertEquals(html.includes("패치"), false)
   assertEquals(html.split("\n").slice(0, 7), [
     `<p><b><a href="${pr}" target="_blank">구역 &lt;관리&gt; &amp; 표시</a></b></p>`,
-    `<p><img src="${image}" alt="" width="425" style="width:425px;height:auto;"></p>`,
+    `<p><img src="${image}" alt="" style="max-width:425px;height:auto;"></p>`,
     "<p>구역 표시 전환 추가</p>",
     "<p>• 전환</p>",
     "<p>• 표시</p>",
-    `<p><img src="${image}" alt="전환 화면" width="425" style="width:425px;height:auto;"></p>`,
+    `<p><img src="${image}" alt="전환 화면" style="max-width:425px;height:auto;"></p>`,
     "<p>▲ 전환 화면</p>",
   ])
   assertStringIncludes(

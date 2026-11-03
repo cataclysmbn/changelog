@@ -199,7 +199,7 @@ export const renderPostHtml = (post: string): string =>
         const [, caption, url] = image
         const tag = `<p><img src="${escapeHtml(url)}" alt="${
           escapeHtml(caption)
-        }" width="425" style="width:425px;height:auto;"></p>`
+        }" style="max-width:425px;height:auto;"></p>`
         return caption ? `${tag}\n<p>▲ ${escapeHtml(caption)}</p>` : tag
       }
       if (line.startsWith("- ")) return `<p>• ${escapeHtml(line.slice(2))}</p>`
