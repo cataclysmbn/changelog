@@ -109,12 +109,16 @@ const source = `  URL: ${pr}\n  Image: ${image}\n`
 // Body evidence is indented four spaces and must not widen the URL lists.
 const post = `# 밝밤) 1월 4일 ~ 1월 5일 패치
 
+1월 4일
+
 ## [구역 <관리> & 표시](${pr})
 ![](${image})
 구역 표시 전환 추가
 - 전환
 - 표시
 ![전환 화면](${image})
+
+1월 5일
 
 ## 자물쇠 따기 충돌 수정
 따는 도중 멈추던 문제 해결
@@ -124,7 +128,8 @@ Deno.test("renderPostHtml renders the static reference layout without the title"
   const html = renderPostHtml(post)
 
   assertEquals(html.includes("패치"), false)
-  assertEquals(html.split("\n").slice(0, 7), [
+  assertEquals(html.split("\n").slice(0, 8), [
+    "<p><b>1월 4일</b></p>",
     `<p><b><a href="${pr}" target="_blank">구역 &lt;관리&gt; &amp; 표시</a></b></p>`,
     `<p><img src="${image}" alt="" style="max-width:425px;height:auto;"></p>`,
     "<p>구역 표시 전환 추가</p>",
@@ -135,7 +140,7 @@ Deno.test("renderPostHtml renders the static reference layout without the title"
   ])
   assertStringIncludes(
     html,
-    "<p>▲ 전환 화면</p>\n<p><br></p>\n<p><b><br></b></p>\n<p><b>자물쇠 따기 충돌 수정</b></p>",
+    "<p>▲ 전환 화면</p>\n<p><br></p>\n<p><b><br></b></p>\n<p><b>1월 5일</b></p>\n<p><b>자물쇠 따기 충돌 수정</b></p>",
   )
 })
 
@@ -162,7 +167,6 @@ Deno.test("assertPostFormat accepts the template and rejects everything outside 
       ["# 제목\n## 항목\n* 불릿", "템플릿에 없는 줄"],
       ["# 제목\n## 항목\n✓ 핵심", "템플릿에 없는 줄"],
       [`# 제목\n## 항목\n- ${image}`, "템플릿에 없는 줄"],
-      ["# 제목\n01월 04일\n## 항목", "템플릿에 없는 줄"],
       ["# 제목\n## 항목\n# 제목 둘", "템플릿에 없는 줄"],
       ["# 제목\n## 항목\n### 소제목", "템플릿에 없는 줄"],
       [`# 제목\n## 항목\n${image}`, "템플릿에 없는 줄"],
@@ -193,12 +197,16 @@ Deno.test("reviewPrompt injects hostile senior editor pass", () => {
 
 const english = `# Bright Nights changelog: 2026-01-04 ~ 2026-01-05
 
+Jan 4
+
 ## [Zone <manager> & display](${pr})
 ![](${image})
 Adds a zone display toggle
 - Toggle
 - Display
 ![Toggle screen](${image})
+
+Jan 5
 
 ## Fix lockpicking crash
 No more freeze while picking a lock

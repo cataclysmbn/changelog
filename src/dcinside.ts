@@ -120,6 +120,7 @@ export const githubImageUrls = (markdown: string): string[] =>
 
 const imageLine = /^!\[([^\]]*)\]\((\S+)\)$/u
 const linkedHeading = /^## \[([^\]]+)\]\((\S+)\)$/u
+const dateLine = /^(?:\d{1,2}월 \d{1,2}일|[A-Z][a-z]{2} \d{1,2})$/u
 
 const postLines = (post: string): string[] =>
   post.split("\n").map((line) => line.trim()).filter(Boolean)
@@ -152,7 +153,7 @@ export const assertPostFormat = (post: string, source: string): void => {
     }
     if (
       !image && !link &&
-      (/^(?:ㄴ|\* |✓|```|\d+월 \d+일$)|https?:\/\//u.test(line) ||
+      (/^(?:ㄴ|\* |✓|```)|https?:\/\//u.test(line) ||
         (index > 0 && /^#+ /u.test(line) && !line.startsWith("## ")))
     ) throw new Error(`템플릿에 없는 줄: ${line}`)
   }
@@ -183,11 +184,14 @@ const escapeHtml = (text: string): string =>
 export const renderPostHtml = (post: string): string =>
   postLines(post)
     .filter((line) => !line.startsWith("# "))
-    .map((line, index) => {
+    .map((line, index, lines) => {
       const image = line.match(imageLine)
       const link = line.match(linkedHeading)
+      const gap = index > 0 && !dateLine.test(lines[index - 1])
+        ? "<p><br></p>\n<p><b><br></b></p>\n"
+        : ""
+      if (dateLine.test(line)) return `${gap}<p><b>${escapeHtml(line)}</b></p>`
       if (line.startsWith("## ")) {
-        const gap = index > 0 ? "<p><br></p>\n<p><b><br></b></p>\n" : ""
         const name = link
           ? `<a href="${escapeHtml(link[2])}" target="_blank">${
             escapeHtml(link[1])
@@ -218,6 +222,8 @@ const styleGuide = `DCInside 밝밤 패치글 형식:
 
 # 밝밤) M월 D일 ~ M월 D일 패치
 
+M월 D일
+
 ## [변경 항목 이름](PR URL)
 ![](대표 이미지 URL)
 무엇이 바뀌었는지 한 문장
@@ -228,7 +234,8 @@ const styleGuide = `DCInside 밝밤 패치글 형식:
 ![이미지 설명](추가 이미지 URL)
 
 - 첫 줄은 "# " 제목이고, 항목마다 "## " 줄로 시작합니다. 플레이어 체감이 큰 항목을 먼저 씁니다.
-- 날짜 머리말, "*" 불릿, "ㄴ" 하위 불릿, 마크다운 강조, 코드 블록은 쓰지 않습니다.
+- 날짜 머리말은 "M월 D일" 단독 줄로, 그날 머지된 항목들 위에 한 번만 씁니다. 날짜는 근거의 날짜 머리말을 따르고 오름차순입니다. 항목 이름 옆에 날짜를 붙이지 않습니다.
+- "*" 불릿, "ㄴ" 하위 불릿, 마크다운 강조, 코드 블록은 쓰지 않습니다.
 - 대표 이미지, 설명 문장, "- " 불릿 줄, 추가 이미지는 근거가 있을 때만 넣습니다. 작은 수정은 "##" 줄과 한 문장만 씁니다.
 - 항목 이름에 PR 링크를 겁니다. 한 항목에 PR이 여럿이면 첫 번째 PR만 겁니다. 따로 된 링크 줄은 쓰지 않습니다.
 - 이미지 URL은 근거의 "Image:" 값을, 링크 URL은 근거의 "URL:" 값을 그대로 복사합니다. 추가 이미지에는 설명을 붙입니다.
@@ -318,7 +325,7 @@ export const reviewPrompt = (
 - PR을 읽어야 알 수 있는 세부사항(무엇에서 무엇으로 바뀜, 어떤 버그가 고쳐짐, 어디서 체감됨)을 복원합니다.
 - 근거의 "Image:" 이미지가 해당 항목 이해에 도움이 되면 템플릿 위치에 추가합니다.
 - 후속 PR이 앞 PR을 고친 경우 최종 결과만 하나로 합칩니다.
-- 템플릿 형식을 지킵니다. 초안의 날짜 머리말, "*", "ㄴ" 줄은 템플릿으로 바꿉니다.
+- 템플릿 형식을 지킵니다. 초안의 "*", "ㄴ" 줄은 템플릿으로 바꾸고, 날짜 머리말은 "M월 D일" 줄로 유지합니다.
 - 최종 본문에 사용한 모든 게임 명칭의 원문 msgid, PO 문맥(msgctxt, 문맥 없으면 null), 실제 본문 표현(used)을 terms에 기록합니다. 같은 명칭·문맥·표현은 한 번만 기록합니다.
 - terms는 실제 PO 조회 근거와 최종 본문에 일치해야 합니다. 확인하지 않은 번역을 검수 완료로 처리하지 마세요.
 - used는 확정된 msgstr와 정확히 같아야 합니다. 번역이 없으면 msgid와 대소문자까지 같아야 합니다. 조사나 영문 병기는 used 밖의 본문에 붙입니다.
@@ -346,6 +353,7 @@ const lineShape = (line: string): string => {
   const link = line.match(linkedHeading)
   if (image) return `image ${image[1] ? "caption" : "bare"} ${image[2]}`
   if (link) return `heading ${link[2]}`
+  if (dateLine.test(line)) return "date"
   return line.match(/^(?:## |# |- )/u)?.[0] ?? "text"
 }
 
@@ -374,7 +382,7 @@ export const translatePrompt = (
 
 Rules:
 - Return only the translated post. No code fence, preface, or notes.
-- Keep every line in the same order and of the same kind: "# " title, "## " heading, "![caption](url)" image, "- " bullet, plain text line. Do not add, drop, merge, or split lines.
+- Keep every line in the same order and of the same kind: "# " title, "M월 D일" date line (write "Oct 19"), "## " heading, "![caption](url)" image, "- " bullet, plain text line. Do not add, drop, merge, or split lines.
 - Copy every URL exactly. Translate image captions; keep an empty caption empty.
 - Replace the first line with: # ${title}
 - Use the original English game names below for the Korean names in the post. Drop the English names that the Korean post adds in parentheses, since the English name is already in the text.
