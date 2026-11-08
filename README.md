@@ -1,4 +1,4 @@
-# dc-changelog
+# changelog
 
 DCInside 로그라이크 갤러리용 Cataclysm: Bright Nights 패치글 초안을 만드는 도구입니다.
 

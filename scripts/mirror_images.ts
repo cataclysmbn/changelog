@@ -33,8 +33,8 @@ export type MirrorOptions = {
 }
 
 const defaults: MirrorOptions = {
-  remote: "https://github.com/scarf005/cbn-dc-changelog.git",
-  cdn: "https://cdn.jsdelivr.net/gh/scarf005/cbn-dc-changelog",
+  remote: "https://github.com/cataclysmbn/changelog.git",
+  cdn: "https://cdn.jsdelivr.net/gh/cataclysmbn/changelog",
 }
 
 const webpQuality = 50
