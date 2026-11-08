@@ -5,8 +5,8 @@
  * Interactive DCInside changelog runner.
  *
  * Uses dax prompts to choose a contiguous set of weekly ranges, merges them into one period, generates its
- * prompt in a temp directory, then invokes isolated pi writer/reviewer passes. Final output is
- * one folder with changelog.txt and the static changelog.html to post.
+ * prompt in a temp directory, then invokes isolated pi writer/reviewer/translator passes. Final output is
+ * one folder with the Korean changelog.txt and changelog.html, and the English changelog.en.txt and changelog.en.html.
  */
 
 import { Command } from "@cliffy/command"
@@ -16,8 +16,10 @@ import { dirname, fromFileUrl, join, resolve } from "@std/path"
 
 import {
   assertPostFormat,
+  assertSameLayout,
   renderPostHtml,
   reviewPrompt,
+  translatePrompt,
   translationGuide,
 } from "../src/dcinside.ts"
 import {
@@ -207,12 +209,27 @@ ${translationGuide}
 - Do not run notify or any completion hook.
 `
 
+const translatorAgents = `# Changelog Translator Rules
+
+You translate a finished Korean Cataclysm: Bright Nights changelog into English.
+
+- Output only the translated post. Do not add explanations, prefaces, tool logs, or notifications.
+- Translate line by line. Do not add, drop, or reorder entries, and do not add facts the Korean post does not state.
+- Do not run notify or any completion hook.
+`
+
+const roleAgents = {
+  writer: writerAgents,
+  reviewer: reviewerAgents,
+  translator: translatorAgents,
+}
+
 const makePiWorkspace = async (
-  role: "writer" | "reviewer",
+  role: keyof typeof roleAgents,
 ): Promise<PiWorkspace> => {
   const root = await Deno.makeTempDir({ prefix: `dc-changelog-pi-${role}-` })
   const cwd = join(root, "work")
-  const instructions = role === "writer" ? writerAgents : reviewerAgents
+  const instructions = roleAgents[role]
   await ensureDir(cwd)
   await Deno.writeTextFile(join(cwd, "AGENTS.md"), instructions)
   return { root, cwd, instructions }
@@ -415,6 +432,51 @@ export const reviewWithPi = async (
   }
 }
 
+/** English copy of the reviewed Korean post, with the same lines, links and images. */
+const translateWithPi = async (
+  range: WeekRange,
+  options: Options,
+  { changelog, terms }: { changelog: string; terms: VerifiedTerm[] },
+  promptFile: string,
+): Promise<string> => {
+  await Deno.writeTextFile(
+    promptFile,
+    translatePrompt({
+      post: changelog,
+      title: `Bright Nights changelog: ${range.start} ~ ${range.endInclusive}`,
+      terms,
+    }),
+  )
+  const workspace = await makePiWorkspace("translator")
+  try {
+    $.logStep("pi translator", range.label)
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const english = `${
+        (await runPiText(options, promptFile, workspace)).trim()
+      }\n`
+      try {
+        assertSameLayout(changelog, english)
+        return english
+      } catch (error) {
+        if (attempt === 1) throw error
+        const reason = error instanceof Error ? error.message : String(error)
+        $.logStep("translation correction", reason)
+        await Deno.writeTextFile(
+          promptFile,
+          `${await Deno.readTextFile(
+            promptFile,
+          )}\n\n# Program check failed\n${reason}\nFix the previous translation and return the whole post.\n\n# Previous translation\n${english}`,
+        )
+      }
+    }
+    throw new Error("영문 번역을 완료하지 못했습니다")
+  } finally {
+    if (!options.keepTemp) {
+      await Deno.remove(workspace.root, { recursive: true })
+    }
+  }
+}
+
 const sha256 = async (text: string): Promise<string> =>
   Array.from(
     new Uint8Array(
@@ -487,9 +549,21 @@ const run = async (options: Options): Promise<void> => {
         )
       }
       await Deno.writeTextFile(outputFile, changelog)
-      const htmlFile = join(postDir, "changelog.html")
-      await Deno.writeTextFile(htmlFile, html)
-      $.logStep("wrote", htmlFile)
+      await Deno.writeTextFile(join(postDir, "changelog.html"), html)
+      $.logStep("wrote", join(postDir, "changelog.html"))
+      // The Korean post is saved first so a failed translation keeps it.
+      const english = await translateWithPi(
+        range,
+        runOptions,
+        { changelog, terms: review.audit?.terms ?? [] },
+        join(tempDir, `${slug}.translate.prompt.md`),
+      )
+      await Deno.writeTextFile(join(postDir, "changelog.en.txt"), english)
+      await Deno.writeTextFile(
+        join(postDir, "changelog.en.html"),
+        renderPostHtml(await mirrorPostImages(english)),
+      )
+      $.logStep("wrote", join(postDir, "changelog.en.html"))
     }
   } catch (error) {
     failed = true

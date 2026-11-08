@@ -2,6 +2,7 @@ import { assertEquals, assertStringIncludes, assertThrows } from "@std/assert"
 
 import {
   assertPostFormat,
+  assertSameLayout,
   type Commit,
   draftPost,
   githubImageUrls,
@@ -9,6 +10,7 @@ import {
   reviewPrompt,
   rewritePrompt,
   titleRange,
+  translatePrompt,
 } from "./dcinside.ts"
 
 const commits: Commit[] = [
@@ -187,4 +189,47 @@ Deno.test("reviewPrompt injects hostile senior editor pass", () => {
   assertStringIncludes(prompt, "같은 msgid/context의 msgstr")
   assertStringIncludes(prompt, "번들 배포")
   assertStringIncludes(prompt, "PR evidence")
+})
+
+const english = `# Bright Nights changelog: 2026-01-04 ~ 2026-01-05
+
+## [Zone <manager> & display](${pr})
+![](${image})
+Adds a zone display toggle
+- Toggle
+- Display
+![Toggle screen](${image})
+
+## Fix lockpicking crash
+No more freeze while picking a lock
+`
+
+Deno.test("assertSameLayout accepts a line-by-line translation and rejects drift", () => {
+  assertSameLayout(post, english)
+  for (
+    const [text, message] of [
+      [english.replace("- Display\n", ""), "줄 구조"],
+      [english.replace("- Display", "Display"), "줄 구조"],
+      [english.replace(`](${pr})`, `](${pr}0)`), "줄 구조"],
+      [english.replace("![Toggle screen]", "![]"), "줄 구조"],
+      [english.replace("Toggle\n", "토글\n"), "한글"],
+    ]
+  ) {
+    assertThrows(() => assertSameLayout(post, text), Error, message)
+  }
+})
+
+Deno.test("translatePrompt keeps verified English names and the layout rules", () => {
+  const prompt = translatePrompt({
+    post,
+    title: "Bright Nights changelog: 2026-01-04 ~ 2026-01-05",
+    terms: [{ msgid: "lock picking", used: "자물쇠 따기" }],
+  })
+
+  assertStringIncludes(
+    prompt,
+    "# Bright Nights changelog: 2026-01-04 ~ 2026-01-05",
+  )
+  assertStringIncludes(prompt, "- 자물쇠 따기 -> lock picking")
+  assertStringIncludes(prompt, "## [구역 <관리> & 표시]")
 })

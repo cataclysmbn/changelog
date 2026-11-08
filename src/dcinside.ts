@@ -334,3 +334,59 @@ ${sourcePrompt}
 # 초안
 ${draft}
 `
+
+export type TranslatePromptOptions = {
+  post: string
+  title: string
+  terms: { msgid: string; used: string }[]
+}
+
+const lineShape = (line: string): string => {
+  const image = line.match(imageLine)
+  const link = line.match(linkedHeading)
+  if (image) return `image ${image[1] ? "caption" : "bare"} ${image[2]}`
+  if (link) return `heading ${link[2]}`
+  return line.match(/^(?:## |# |- )/u)?.[0] ?? "text"
+}
+
+/** Rejects a translation whose lines differ in kind, link or image from the original, or that still has Hangul. */
+export const assertSameLayout = (original: string, translation: string) => {
+  const lines = postLines(translation)
+  const hangul = lines.find((line) => /\p{Script=Hangul}/u.test(line))
+  if (hangul) throw new Error(`번역에 한글이 남음: ${hangul}`)
+  const expected = postLines(original).map(lineShape)
+  const actual = lines.map(lineShape)
+  const index = expected.findIndex((shape, i) => shape !== actual[i])
+  if (index !== -1 || expected.length !== actual.length) {
+    const at = index === -1 ? expected.length : index
+    throw new Error(
+      `번역 줄 구조 불일치 (${at + 1}번째 줄): ${expected[at]} -> ${
+        actual[at]
+      }`,
+    )
+  }
+}
+
+export const translatePrompt = (
+  { post, title, terms }: TranslatePromptOptions,
+): string =>
+  `Translate this Korean Cataclysm: Bright Nights changelog into English for English-speaking players.
+
+Rules:
+- Return only the translated post. No code fence, preface, or notes.
+- Keep every line in the same order and of the same kind: "# " title, "## " heading, "![caption](url)" image, "- " bullet, plain text line. Do not add, drop, merge, or split lines.
+- Copy every URL exactly. Translate image captions; keep an empty caption empty.
+- Replace the first line with: # ${title}
+- Use the original English game names below for the Korean names in the post. Drop the English names that the Korean post adds in parentheses, since the English name is already in the text.
+- Use short, plain patch-note sentences in Simplified Technical English. Keep numbers and "(a -> b)" values as they are.
+- Do not leave any Korean text.
+
+Game names (Korean -> English):
+${
+    terms.map(({ used, msgid }) => `- ${used} -> ${msgid}`).join("\n") ||
+    "- none"
+  }
+
+# Korean post
+${post}
+`

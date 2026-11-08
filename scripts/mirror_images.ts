@@ -6,12 +6,12 @@
  * repository and served through jsDelivr. Files are named by content hash and URLs pin the commit, so they never change.
  * Each image is also converted to WebP (lossless for pixel art) and the smaller file is kept. Requires ImageMagick.
  *
- * Usage: deno task html dist/<period>/changelog.txt
+ * Usage: deno task html dist/<period>/changelog.txt (or changelog.en.txt); writes the .html beside it.
  */
 
 import $ from "@david/dax"
 import { encodeHex } from "@std/encoding/hex"
-import { dirname, join } from "@std/path"
+import { join } from "@std/path"
 
 import {
   mapPostImages,
@@ -132,10 +132,12 @@ export const mirrorPostImages = async (
 
 if (import.meta.main) {
   const [changelog] = Deno.args
-  if (!changelog) throw new Error("Usage: deno task html <changelog.txt>")
+  if (!changelog?.endsWith(".txt")) {
+    throw new Error("Usage: deno task html <changelog.txt|changelog.en.txt>")
+  }
   const post = await Deno.readTextFile(changelog)
   await Deno.writeTextFile(
-    join(dirname(changelog), "changelog.html"),
+    changelog.replace(/\.txt$/u, ".html"),
     renderPostHtml(await mirrorPostImages(post)),
   )
 }
