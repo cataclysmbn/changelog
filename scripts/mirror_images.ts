@@ -45,6 +45,9 @@ const fetchWithTimeout = (url: string): Promise<Response> =>
   fetch(url, { signal: AbortSignal.timeout(60_000) })
 
 const download = async (url: string) => {
+  if (url.startsWith("file:")) {
+    return compress(await Deno.readFile(new URL(url)), url.split(".").at(-1)!)
+  }
   const response = await fetchWithTimeout(url)
   const type = response.headers.get("content-type")?.split(";")[0] ?? ""
   const extension = extensions[type]
