@@ -17,8 +17,11 @@ dist/2026-05-25_to_2026-06-21/
 ├── changelog.txt
 ├── changelog.html
 ├── changelog.en.txt
-└── changelog.en.html
+├── changelog.en.html
+└── commits.txt
 ```
+
+`commits.txt`에는 글에 넣은 커밋 해시가 있습니다. 다음 글을 만들 때 직전 글 시작일부터 새 글 시작일 전까지의 커밋 중 이 목록에 없는 것이 있으면 생성을 멈추고 그 커밋을 보여 줍니다. `commits.txt`가 없는 글은 폴더 이름의 기간 전체를 넣은 것으로 봅니다.
 
 `changelog.en.*`는 검수를 마친 한국어 글을 줄 단위로 옮긴 영문본입니다. 게임 명칭은 검수에서 확인한 PO 원문(`msgid`)을 씁니다. 줄 종류, 링크, 이미지가 한국어 글과 다르거나 한글이 남으면 한 번 다시 번역하고, 그래도 다르면 저장하지 않습니다.
 

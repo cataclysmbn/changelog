@@ -135,6 +135,63 @@ const promptForRunOptions = async (options: Options): Promise<Options> => {
 const rangeSlug = (range: WeekRange): string =>
   `${range.start}_to_${range.endInclusive}`
 
+/**
+ * Commits dated from the newest earlier post up to `start` that this post skipped.
+ * Read the post's commits.txt; for posts without it, take its whole date range as covered.
+ */
+export const missingCommits = async (
+  { repo, outputDir, start }: {
+    repo: string
+    outputDir: string
+    start: string
+  },
+): Promise<{ post: string; commits: string[] } | undefined> => {
+  const posts: { name: string; start: string; end: string }[] = []
+  for await (const entry of Deno.readDir(outputDir)) {
+    const match = entry.name.match(
+      /^(\d{4}-\d{2}-\d{2})_to_(\d{4}-\d{2}-\d{2})$/u,
+    )
+    if (entry.isDirectory && match && match[1] < start) {
+      posts.push({ name: entry.name, start: match[1], end: match[2] })
+    }
+  }
+  const previous = posts.sort((a, b) =>
+    `${a.end}${a.start}`.localeCompare(`${b.end}${b.start}`)
+  ).at(-1)
+  if (!previous) return undefined
+  const recorded = await Deno.readTextFile(
+    join(outputDir, previous.name, "commits.txt"),
+  ).then((text) => text.split("\n").filter(Boolean)).catch(() => undefined)
+  const result = await new Deno.Command("git", {
+    clearEnv: true,
+    args: [
+      "-C",
+      repo,
+      "log",
+      "--date=format-local:%Y-%m-%d",
+      `--since=${previous.start}T00:00:00`,
+      "--format=%H%x09%cd%x09%s",
+    ],
+    stdout: "piped",
+    stderr: "piped",
+  }).output()
+  if (!result.success) {
+    throw new Error(
+      `git log failed in ${repo}: ${decode(result.stderr).trim()}`,
+    )
+  }
+  const commits = decode(result.stdout).split("\n").filter(Boolean)
+    .map((line) => line.split("\t"))
+    .filter(([hash, date]) =>
+      date >= previous.start && date < start &&
+      !(recorded
+        ? recorded.some((short) => hash.startsWith(short))
+        : date <= previous.end)
+    )
+    .map(([hash, date, subject]) => `${hash.slice(0, 10)} ${date} ${subject}`)
+  return commits.length > 0 ? { post: previous.name, commits } : undefined
+}
+
 const buildPrompt = async (
   range: WeekRange,
   options: Options,
@@ -163,6 +220,8 @@ const buildPrompt = async (
     options.glossaryPo,
     "-o",
     promptFile,
+    "--commits-output",
+    `${promptFile}.commits.txt`,
   ]
   if (options.allowMissingPrDetails) {
     args.push("--allow-missing-pr-details")
@@ -493,6 +552,20 @@ const run = async (options: Options): Promise<void> => {
   const range = mergeRanges(selected)
 
   const runOptions = await promptForRunOptions(options)
+  const missing = await missingCommits({
+    repo: runOptions.repo,
+    outputDir: resolve(runOptions.outputDir),
+    start: range.start,
+  }).catch((error) =>
+    error instanceof Deno.errors.NotFound ? undefined : Promise.reject(error)
+  )
+  if (missing) {
+    throw new Error(
+      `지난 글 ${missing.post}에 없는 ${range.start} 이전 커밋 ${missing.commits.length}개. 지난 글을 다시 생성하세요:\n${
+        missing.commits.join("\n")
+      }`,
+    )
+  }
   if (!runOptions.yes) {
     const confirmed = await $.confirm({
       message: `${range.label} 패치글을 pi로 생성할까요?`,
@@ -548,6 +621,10 @@ const run = async (options: Options): Promise<void> => {
         )
       }
       await Deno.writeTextFile(outputFile, changelog)
+      await Deno.copyFile(
+        `${promptFile}.commits.txt`,
+        join(postDir, "commits.txt"),
+      )
       await Deno.writeTextFile(join(postDir, "changelog.html"), html)
       $.logStep("wrote", join(postDir, "changelog.html"))
       // The Korean post is saved first so a failed translation keeps it.

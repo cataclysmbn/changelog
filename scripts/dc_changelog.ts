@@ -38,6 +38,7 @@ const OptionsSchema = v.object({
   maxCommits: v.pipe(v.number(), v.integer(), v.minValue(1)),
   includeBody: v.boolean(),
   output: v.optional(v.string()),
+  commitsOutput: v.optional(v.string()),
   title: v.optional(v.string()),
   repoSlug: v.optional(v.string()),
   noPrDetails: v.optional(v.boolean()),
@@ -370,6 +371,10 @@ const main = new Command()
     "-o, --output <file:string>",
     "Write output to a file instead of stdout",
   )
+  .option(
+    "--commits-output <file:string>",
+    "Write the included commit hashes to a file, one per line",
+  )
   .example(
     "weekly prompt",
     "deno task dc --repo ../Cataclysm-BN --since 2026-01-01 --until 2026-01-07 -o /tmp/prompt.md",
@@ -404,6 +409,12 @@ const main = new Command()
         glossaryPo: resolve(options.glossaryPo),
       })
 
+    if (options.commitsOutput) {
+      await Deno.writeTextFile(
+        options.commitsOutput,
+        commits.map((commit) => `${commit.hash}\n`).join(""),
+      )
+    }
     if (options.output) {
       const outputDir = dirname(options.output)
       if (outputDir !== ".") {
