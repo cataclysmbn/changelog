@@ -37,7 +37,7 @@ const defaults: MirrorOptions = {
   cdn: "https://cdn.jsdelivr.net/gh/cataclysmbn/changelog",
 }
 
-const webpQuality = 50
+export const webpQuality = 50
 const pixelArtMaxSide = 128
 const pixelArtMaxColors = 256
 
@@ -59,7 +59,7 @@ const download = async (url: string) => {
 }
 
 /** Pixel art is small or palette-sized, and lossy compression would blur it. Returns nothing when ImageMagick cannot read the image. */
-const isPixelArt = async (
+export const isPixelArt = async (
   bytes: Uint8Array<ArrayBuffer>,
 ): Promise<boolean | undefined> => {
   const result = await $`magick identify -format ${"%w %h %k"} -[0]`

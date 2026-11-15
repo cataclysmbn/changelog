@@ -31,6 +31,14 @@ deno task html dist/2026-05-25_to_2026-06-21/changelog.txt
 deno task html dist/2026-05-25_to_2026-06-21/changelog.en.txt
 ```
 
+PR에 변경 전후 스크린샷 묶음이 있으면 짝마다 왼쪽에 변경 전, 오른쪽에 변경 후를 놓고 1초마다 다음 짝으로 넘어가는 animated WebP를 만들 수 있습니다. 인자는 `변경 전 변경 후` 순서의 짝이고 URL이나 파일 경로입니다.
+
+```sh
+deno task compare -o dist/2026-11-09_to_2026-11-14/10834-before-after.webp <전1> <후1> <전2> <후2>
+```
+
+만든 파일은 `changelog.txt`와 `changelog.en.txt`의 이미지 줄에 `file:///절대/경로.webp`로 넣고 `deno task html`로 HTML을 다시 만듭니다. 짝 맞추는 방법은 `.agents/skills/before-after/SKILL.md`에 있습니다.
+
 `changelog.txt` 템플릿:
 
 ```text

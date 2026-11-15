@@ -4,7 +4,9 @@
     "tui": "deno run --allow-read --allow-write --allow-run --allow-env --allow-net scripts/dc_tui.ts",
     // Re-render changelog.html from an edited changelog.txt
     "html": "deno run --allow-read --allow-write --allow-run --allow-env --allow-net scripts/mirror_images.ts",
-    "check": "deno check scripts/dc_changelog.ts scripts/dc_tui.ts scripts/mirror_images.ts src/dcinside.ts src/weeks.ts",
+    // Side-by-side before/after animated WebP: deno task compare -o out.webp BEFORE AFTER [BEFORE AFTER ...]
+    "compare": "deno run --allow-read --allow-write --allow-run --allow-env --allow-net scripts/before_after.ts",
+    "check": "deno check scripts/dc_changelog.ts scripts/dc_tui.ts scripts/mirror_images.ts scripts/before_after.ts src/dcinside.ts src/weeks.ts",
     "test": "deno test --allow-read --allow-write --allow-run --allow-env --allow-net",
   },
   "lint": {
