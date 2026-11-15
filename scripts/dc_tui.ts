@@ -17,7 +17,6 @@ import { dirname, fromFileUrl, join, resolve } from "@std/path"
 import {
   assertPostFormat,
   assertSameLayout,
-  renderPostHtml,
   reviewPrompt,
   translatePrompt,
   translationGuide,
@@ -33,7 +32,7 @@ import {
   validateTranslationReview,
   type VerifiedTerm,
 } from "../src/translation.ts"
-import { mirrorPostImages } from "./mirror_images.ts"
+import { mirrorPostHtml } from "./mirror_images.ts"
 
 const scriptDir = dirname(fromFileUrl(import.meta.url))
 const appRoot = dirname(scriptDir)
@@ -532,7 +531,7 @@ const run = async (options: Options): Promise<void> => {
     const changelog = `${review.changelog.trimEnd()}\n`
     if (!runOptions.dryRun) {
       assertPostFormat(changelog, sourcePrompt)
-      const html = renderPostHtml(await mirrorPostImages(changelog))
+      const html = await mirrorPostHtml(changelog)
       if (review.audit) {
         const reviewDir = join(outputDir, ".reviews")
         await ensureDir(reviewDir)
@@ -561,7 +560,7 @@ const run = async (options: Options): Promise<void> => {
       await Deno.writeTextFile(join(postDir, "changelog.en.txt"), english)
       await Deno.writeTextFile(
         join(postDir, "changelog.en.html"),
-        renderPostHtml(await mirrorPostImages(english)),
+        await mirrorPostHtml(english),
       )
       $.logStep("wrote", join(postDir, "changelog.en.html"))
     }

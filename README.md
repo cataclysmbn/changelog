@@ -22,7 +22,7 @@ dist/2026-05-25_to_2026-06-21/
 
 `changelog.en.*`는 검수를 마친 한국어 글을 줄 단위로 옮긴 영문본입니다. 게임 명칭은 검수에서 확인한 PO 원문(`msgid`)을 씁니다. 줄 종류, 링크, 이미지가 한국어 글과 다르거나 한글이 남으면 한 번 다시 번역하고, 그래도 다르면 저장하지 않습니다.
 
-`changelog.html`을 DCInside 글쓰기의 HTML 모드에 붙여 넣고, `changelog.txt` 첫 줄의 제목을 제목 칸에 넣습니다. 이미지는 PR 본문에 적힌 GitHub 영구 주소(`https://github.com/user-attachments/assets/...`)에서 가져옵니다. 익명으로 내려받을 수 없는 이미지와 GitHub 밖의 이미지는 쓰지 않습니다. DCInside가 GitHub 이미지 주소를 지우므로, `changelog.html`에는 이미지 사본을 이 저장소의 `images` 브랜치에 push한 뒤 jsDelivr 주소를 넣습니다. 모든 이미지를 WebP로 변환해 보고 원본보다 작을 때만 WebP를 올립니다. 픽셀 아트(긴 변 128 px 이하 또는 256색 이하)는 무손실, 나머지는 품질 50입니다(ImageMagick 필요). `changelog.txt`에는 GitHub 주소가 남습니다.
+`changelog.html`을 DCInside 글쓰기의 HTML 모드에 붙여 넣고, `changelog.txt` 첫 줄의 제목을 제목 칸에 넣습니다. 이미지는 PR 본문에 적힌 GitHub 영구 주소(`https://github.com/user-attachments/assets/...`)에서 가져옵니다. 익명으로 내려받을 수 없는 이미지와 GitHub 밖의 이미지는 쓰지 않습니다. DCInside가 GitHub 이미지 주소를 지우므로, `changelog.html`에는 이미지 사본을 이 저장소의 `images` 브랜치에 push한 뒤 jsDelivr 주소를 넣습니다. 모든 이미지를 WebP로 변환해 보고 원본보다 작을 때만 WebP를 올립니다. 픽셀 아트(긴 변 128 px 이하 또는 256색 이하)는 무손실, 나머지는 품질 50입니다(ImageMagick 필요). 이미지는 최대 425 px 폭으로 보이고, 가로가 세로의 2배 이상인 이미지(변경 전후 비교 등)는 850 px까지 보입니다. `changelog.txt`에는 GitHub 주소가 남습니다.
 
 `changelog.txt`나 `changelog.en.txt`를 고친 뒤 옆의 HTML만 다시 만들 때:
 

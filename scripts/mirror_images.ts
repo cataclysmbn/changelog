@@ -6,6 +6,8 @@
  * repository and served through jsDelivr. Files are named by content hash and URLs pin the commit, so they never change.
  * Each image is also converted to WebP (lossless for pixel art) and the smaller file is kept. Requires ImageMagick.
  *
+ * Images at least twice as wide as tall (side-by-side comparisons) get twice the normal width in the HTML.
+ *
  * Usage: deno task html dist/<period>/changelog.txt (or changelog.en.txt); writes the .html beside it.
  */
 
@@ -38,6 +40,7 @@ const defaults: MirrorOptions = {
 }
 
 export const webpQuality = 50
+const wideRatio = 2
 const pixelArtMaxSide = 128
 const pixelArtMaxColors = 256
 
@@ -102,21 +105,27 @@ const assertServed = async (url: string): Promise<void> => {
   }
 }
 
-/** Returns the post with its image URLs replaced by CDN URLs of copies pushed to the images branch. */
-export const mirrorPostImages = async (
+const isWide = async (bytes: Uint8Array<ArrayBuffer>): Promise<boolean> => {
+  const result = await $`magick identify -format ${"%w %h"} -[0]`
+    .stdin(bytes).stdout("piped").stderr("null").noThrow()
+  const [width, height] = result.stdout.split(" ").map(Number)
+  return result.code === 0 && width >= wideRatio * height
+}
+
+const mirror = async (
   post: string,
-  { remote, cdn }: MirrorOptions = defaults,
-): Promise<string> => {
+  { remote, cdn }: MirrorOptions,
+): Promise<{ post: string; wide: Set<string> }> => {
   const urls = postImageUrls(post)
-  if (urls.length === 0) return post
+  if (urls.length === 0) return { post, wide: new Set() }
 
   const dir = await Deno.makeTempDir({ prefix: "dc-changelog-images-" })
   try {
     await $`git clone --quiet --depth 1 --branch ${branch} ${remote} ${dir}`
-    const names = await Promise.all(urls.map(async (url) => {
+    const files = await Promise.all(urls.map(async (url) => {
       const { name, bytes } = await download(url)
       await Deno.writeFile(join(dir, name), bytes)
-      return name
+      return { name, wide: await isWide(bytes) }
     }))
     await $`git -C ${dir} add --all`
     const unchanged = await $`git -C ${dir} diff --cached --quiet`.noThrow()
@@ -125,12 +134,30 @@ export const mirrorPostImages = async (
       await $`git -C ${dir} push --quiet origin HEAD:${branch}`
     }
     const commit = await $`git -C ${dir} rev-parse HEAD`.text()
-    const mirrored = names.map((name) => `${cdn}@${commit}/${name}`)
+    const mirrored = files.map(({ name }) => `${cdn}@${commit}/${name}`)
     await Promise.all(mirrored.map(assertServed))
-    return mapPostImages(post, (url) => mirrored[urls.indexOf(url)])
+    return {
+      post: mapPostImages(post, (url) => mirrored[urls.indexOf(url)]),
+      wide: new Set(mirrored.filter((_, index) => files[index].wide)),
+    }
   } finally {
     await Deno.remove(dir, { recursive: true })
   }
+}
+
+/** Returns the post with its image URLs replaced by CDN URLs of copies pushed to the images branch. */
+export const mirrorPostImages = async (
+  post: string,
+  options: MirrorOptions = defaults,
+): Promise<string> => (await mirror(post, options)).post
+
+/** Mirrors the post images and renders the post HTML with the CDN URLs. */
+export const mirrorPostHtml = async (
+  post: string,
+  options: MirrorOptions = defaults,
+): Promise<string> => {
+  const mirrored = await mirror(post, options)
+  return renderPostHtml(mirrored.post, mirrored.wide)
 }
 
 if (import.meta.main) {
@@ -141,6 +168,6 @@ if (import.meta.main) {
   const post = await Deno.readTextFile(changelog)
   await Deno.writeTextFile(
     changelog.replace(/\.txt$/u, ".html"),
-    renderPostHtml(await mirrorPostImages(post)),
+    await mirrorPostHtml(post),
   )
 }

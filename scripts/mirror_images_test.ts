@@ -3,7 +3,7 @@ import { assertEquals, assertRejects, assertStringIncludes } from "@std/assert"
 import { encodeHex } from "@std/encoding/hex"
 import { join } from "@std/path"
 
-import { mirrorPostImages } from "./mirror_images.ts"
+import { mirrorPostHtml, mirrorPostImages } from "./mirror_images.ts"
 
 const magick = async (...args: string[]) =>
   new Uint8Array(await $`magick ${args}`.bytes())
@@ -17,6 +17,7 @@ const webp = await magick(
   "webp:-",
 )
 const photo = await magick("-size", "300x300", "plasma:fractal", "png:-")
+const wide = await magick("-size", "20x10", "xc:blue", "png:-")
 const sha256 = async (bytes: Uint8Array<ArrayBuffer>) =>
   encodeHex(await crypto.subtle.digest("SHA-256", bytes))
 const pngName = `${await sha256(png)}.png`
@@ -61,6 +62,9 @@ const withMirror = async (
     }
     if (pathname === "/photo.png") {
       return new Response(photo, { headers: { "content-type": "image/png" } })
+    }
+    if (pathname === "/wide.png") {
+      return new Response(wide, { headers: { "content-type": "image/png" } })
     }
     if (pathname === "/broken.png") {
       return new Response(new Uint8Array(100).fill(7), {
@@ -140,6 +144,20 @@ Deno.test("mirrorPostImages keeps the smaller of the original and its WebP copy"
       )
     }
     assertEquals(names.includes(pngName), png.length <= webp.length)
+  })
+})
+
+Deno.test("mirrorPostHtml doubles the width of images at least twice as wide as tall", async () => {
+  await withMirror(async ({ remote, cdn, source }) => {
+    // 20x10 (ratio 2) gets 850px, 8x8 keeps 425px.
+    const html = await mirrorPostHtml(
+      `# 제목\n## 항목\n![](${source}/wide.png)\n![](${source}/small.png)\n`,
+      { remote, cdn },
+    )
+    assertEquals(
+      [...html.matchAll(/max-width:(\d+)px/gu)].map((match) => match[1]),
+      ["850", "425"],
+    )
   })
 })
 

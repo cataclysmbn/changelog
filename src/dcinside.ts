@@ -180,8 +180,11 @@ const escapeHtml = (text: string): string =>
   text.replace(/&/gu, "&amp;").replace(/</gu, "&lt;").replace(/>/gu, "&gt;")
     .replace(/"/gu, "&quot;")
 
-/** Renders a post to the HTML fragment for the DCInside HTML editor; the title goes in its own form field. */
-export const renderPostHtml = (post: string): string =>
+/** Renders a post to the HTML fragment for the DCInside HTML editor; the title goes in its own form field. Images in `wide` may grow to two normal widths. */
+export const renderPostHtml = (
+  post: string,
+  wide: ReadonlySet<string> = new Set(),
+): string =>
   postLines(post)
     .filter((line) => !line.startsWith("# "))
     .map((line, index, lines) => {
@@ -203,7 +206,7 @@ export const renderPostHtml = (post: string): string =>
         const [, caption, url] = image
         const tag = `<p><img src="${escapeHtml(url)}" alt="${
           escapeHtml(caption)
-        }" style="max-width:425px;height:auto;"></p>`
+        }" style="max-width:${wide.has(url) ? 850 : 425}px;height:auto;"></p>`
         return caption ? `${tag}\n<p>▲ ${escapeHtml(caption)}</p>` : tag
       }
       if (line.startsWith("- ")) return `<p>• ${escapeHtml(line.slice(2))}</p>`
