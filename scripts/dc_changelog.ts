@@ -39,6 +39,7 @@ const OptionsSchema = v.object({
   includeBody: v.boolean(),
   output: v.optional(v.string()),
   commitsOutput: v.optional(v.string()),
+  excludeCommits: v.optional(v.string()),
   title: v.optional(v.string()),
   repoSlug: v.optional(v.string()),
   noPrDetails: v.optional(v.boolean()),
@@ -150,6 +151,10 @@ const readCommits = async (
   if (!success) {
     throw new Error(`git log failed in ${repo}: ${decode(stderr).trim()}`)
   }
+  const excluded = options.excludeCommits
+    ? (await Deno.readTextFile(options.excludeCommits)).split("\n")
+      .filter(Boolean)
+    : []
 
   return decode(stdout)
     .split("\x1e")
@@ -165,7 +170,10 @@ const readCommits = async (
         body: body.join("\x1f").trim(),
       })
     })
-    .filter((commit) => inRequestedDateWindow(commit, options))
+    .filter((commit) =>
+      inRequestedDateWindow(commit, options) &&
+      !excluded.some((hash) => hash.startsWith(commit.hash))
+    )
     .slice(0, options.maxCommits)
 }
 
@@ -373,7 +381,11 @@ const main = new Command()
   )
   .option(
     "--commits-output <file:string>",
-    "Write the included commit hashes to a file, one per line",
+    "Write the included and excluded commit hashes to a file, one per line",
+  )
+  .option(
+    "--exclude-commits <file:string>",
+    "Skip commits whose full hashes are listed in a file, one per line",
   )
   .example(
     "weekly prompt",
@@ -409,10 +421,14 @@ const main = new Command()
         glossaryPo: resolve(options.glossaryPo),
       })
 
+    // Record excluded commits too, so the next post does not add them again.
     if (options.commitsOutput) {
       await Deno.writeTextFile(
         options.commitsOutput,
-        commits.map((commit) => `${commit.hash}\n`).join(""),
+        commits.map((commit) => `${commit.hash}\n`).join("") +
+          (options.excludeCommits
+            ? await Deno.readTextFile(options.excludeCommits)
+            : ""),
       )
     }
     if (options.output) {

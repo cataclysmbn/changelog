@@ -41,32 +41,55 @@ Deno.test("missingCommits lists commits the previous post skipped before the new
     await git(["commit", "--allow-empty", "-m", subject], date)
     return await git(["rev-parse", "--short", "HEAD"])
   }
-  const missingSubjects = async () =>
-    (await missingCommits({ repo, outputDir, start: "2026-01-12" }))
-      ?.commits.map((line) => line.split(" ").slice(2).join(" "))
+  const missing = async () => {
+    const result = await missingCommits({
+      repo,
+      outputDir,
+      start: "2026-01-12",
+    })
+    return result && {
+      since: result.since,
+      subjects: result.commits.map((line) =>
+        line.split(" ").slice(2).join(" ")
+      ),
+      covered: result.covered.map((hash) => hash.slice(0, 7)),
+    }
+  }
 
   try {
     await Deno.mkdir(repo)
     await git(["-c", "init.templateDir=", "init"])
     await commit("before previous post", 4)
-    const recorded = await commit("in previous post", 8, 8)
-    await commit("after previous post ran", 8, 20)
+    const earlier = await commit("earlier day", 6)
+    const linked = await commit("in previous post (#1)", 8, 8)
+    await commit("after previous post ran (#2)", 8, 20)
     await commit("between posts", 10)
     await commit("in new post", 12)
     const previous = join(outputDir, "2026-01-05_to_2026-01-08")
     await Deno.mkdir(previous, { recursive: true })
     await Deno.mkdir(join(outputDir, "2026-01-12_to_2026-01-13"))
-    await Deno.writeTextFile(join(previous, "commits.txt"), `${recorded}\n`)
+    // A dry run leaves an empty post folder; it is not a post.
+    await Deno.mkdir(join(outputDir, "2026-01-09_to_2026-01-11"))
+    await Deno.writeTextFile(
+      join(previous, "changelog.txt"),
+      "## [a](https://github.com/o/r/pull/1)\n",
+    )
+    const expected = {
+      since: "2026-01-08",
+      subjects: ["between posts", "after previous post ran (#2)"],
+      covered: [linked.slice(0, 7)],
+    }
 
-    // commits.txt lists only the 08:00 commit, so the 20:00 one on the same day is missing too.
-    assertEquals(await missingSubjects(), [
-      "between posts",
-      "after previous post ran",
-    ])
+    // commits.txt skips the 20:00 commit on 2026-01-08, so it is missing.
+    await Deno.writeTextFile(
+      join(previous, "commits.txt"),
+      `${earlier}\n${linked}\n`,
+    )
+    assertEquals(await missing(), expected)
 
-    // Without commits.txt, every commit up to 2026-01-08 counts as covered.
+    // Without commits.txt, earlier days count as covered, and on 2026-01-08 only the commit of linked PR #1.
     await Deno.remove(join(previous, "commits.txt"))
-    assertEquals(await missingSubjects(), ["between posts"])
+    assertEquals(await missing(), expected)
   } finally {
     const result = await new Deno.Command("gio", {
       args: ["trash", root],

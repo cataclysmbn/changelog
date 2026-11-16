@@ -11,7 +11,7 @@
 
 import { Command } from "@cliffy/command"
 import $ from "@david/dax"
-import { ensureDir } from "@std/fs"
+import { ensureDir, exists } from "@std/fs"
 import { dirname, fromFileUrl, join, resolve } from "@std/path"
 
 import {
@@ -136,8 +136,9 @@ const rangeSlug = (range: WeekRange): string =>
   `${range.start}_to_${range.endInclusive}`
 
 /**
- * Commits dated from the newest earlier post up to `start` that this post skipped.
- * Read the post's commits.txt; for posts without it, take its whole date range as covered.
+ * Commits dated from the newest earlier post (a folder with changelog.txt) up to `start` that it skipped.
+ * Read the post's commits.txt. For posts without it, take every day before its last day as covered,
+ * and on the last day only the commits whose PR the post links.
  */
 export const missingCommits = async (
   { repo, outputDir, start }: {
@@ -145,13 +146,19 @@ export const missingCommits = async (
     outputDir: string
     start: string
   },
-): Promise<{ post: string; commits: string[] } | undefined> => {
+): Promise<
+  | { post: string; since: string; commits: string[]; covered: string[] }
+  | undefined
+> => {
   const posts: { name: string; start: string; end: string }[] = []
   for await (const entry of Deno.readDir(outputDir)) {
     const match = entry.name.match(
       /^(\d{4}-\d{2}-\d{2})_to_(\d{4}-\d{2}-\d{2})$/u,
     )
-    if (entry.isDirectory && match && match[1] < start) {
+    if (
+      entry.isDirectory && match && match[1] < start &&
+      await exists(join(outputDir, entry.name, "changelog.txt"))
+    ) {
       posts.push({ name: entry.name, start: match[1], end: match[2] })
     }
   }
@@ -159,9 +166,15 @@ export const missingCommits = async (
     `${a.end}${a.start}`.localeCompare(`${b.end}${b.start}`)
   ).at(-1)
   if (!previous) return undefined
-  const recorded = await Deno.readTextFile(
-    join(outputDir, previous.name, "commits.txt"),
-  ).then((text) => text.split("\n").filter(Boolean)).catch(() => undefined)
+  const readPost = (file: string) =>
+    Deno.readTextFile(join(outputDir, previous.name, file)).catch(() =>
+      undefined
+    )
+  const recorded = (await readPost("commits.txt"))?.split("\n").filter(Boolean)
+  const linked = new Set(
+    [...((await readPost("changelog.txt")) ?? "").matchAll(/\/pull\/(\d+)\)/gu)]
+      .map((match) => match[1]),
+  )
   const result = await new Deno.Command("git", {
     clearEnv: true,
     args: [
@@ -180,22 +193,38 @@ export const missingCommits = async (
       `git log failed in ${repo}: ${decode(result.stderr).trim()}`,
     )
   }
-  const commits = decode(result.stdout).split("\n").filter(Boolean)
+  const window = decode(result.stdout).split("\n").filter(Boolean)
     .map((line) => line.split("\t"))
-    .filter(([hash, date]) =>
-      date >= previous.start && date < start &&
-      !(recorded
+    .filter(([, date]) => date >= previous.start && date < start)
+    .map(([hash, date, subject]) => ({
+      hash,
+      date,
+      subject,
+      covered: recorded
         ? recorded.some((short) => hash.startsWith(short))
-        : date <= previous.end)
-    )
-    .map(([hash, date, subject]) => `${hash.slice(0, 10)} ${date} ${subject}`)
-  return commits.length > 0 ? { post: previous.name, commits } : undefined
+        : date < previous.end || (date === previous.end &&
+          linked.has(subject.match(/\(#(\d+)\)$/u)?.[1] ?? "")),
+    }))
+  const missing = window.filter((commit) => !commit.covered)
+  if (missing.length === 0) return undefined
+  const since = missing.map((commit) => commit.date).sort()[0]
+  return {
+    post: previous.name,
+    since,
+    commits: missing.map(({ hash, date, subject }) =>
+      `${hash.slice(0, 10)} ${date} ${subject}`
+    ),
+    covered: window
+      .filter((commit) => commit.covered && commit.date >= since)
+      .map((commit) => commit.hash),
+  }
 }
 
 const buildPrompt = async (
   range: WeekRange,
   options: Options,
   promptFile: string,
+  excludeFile: string,
 ): Promise<void> => {
   const args = [
     "deno",
@@ -222,6 +251,8 @@ const buildPrompt = async (
     promptFile,
     "--commits-output",
     `${promptFile}.commits.txt`,
+    "--exclude-commits",
+    excludeFile,
   ]
   if (options.allowMissingPrDetails) {
     args.push("--allow-missing-pr-details")
@@ -549,19 +580,23 @@ const run = async (options: Options): Promise<void> => {
   if (selected.length === 0) {
     throw new Error("No weekly ranges selected")
   }
-  const range = mergeRanges(selected)
+  const weeks = mergeRanges(selected)
 
   const runOptions = await promptForRunOptions(options)
   const missing = await missingCommits({
     repo: runOptions.repo,
     outputDir: resolve(runOptions.outputDir),
-    start: range.start,
+    start: weeks.start,
   }).catch((error) =>
     error instanceof Deno.errors.NotFound ? undefined : Promise.reject(error)
   )
+  const range = missing
+    ? mergeRanges([weeks, { ...weeks, start: missing.since }])
+    : weeks
   if (missing) {
-    throw new Error(
-      `지난 글 ${missing.post}에 없는 ${range.start} 이전 커밋 ${missing.commits.length}개. 지난 글을 다시 생성하세요:\n${
+    $.logStep(
+      "지난 글에서 빠진 커밋 포함",
+      `${missing.post}: ${missing.commits.length}개\n${
         missing.commits.join("\n")
       }`,
     )
@@ -587,10 +622,20 @@ const run = async (options: Options): Promise<void> => {
     const promptFile = join(tempDir, `${slug}.prompt.md`)
     const reviewerPromptFile = join(tempDir, `${slug}.review.prompt.md`)
     const outputFile = join(postDir, "changelog.txt")
+    const excludeFile = `${promptFile}.exclude.txt`
+    await Deno.writeTextFile(
+      excludeFile,
+      (missing?.covered ?? []).map((hash) => `${hash}\n`).join(""),
+    )
     await buildPrompt(
       range,
-      { ...runOptions, maxCommits: runOptions.maxCommits * selected.length },
+      {
+        ...runOptions,
+        maxCommits: runOptions.maxCommits * selected.length +
+          (missing?.commits.length ?? 0),
+      },
       promptFile,
+      excludeFile,
     )
     const sourcePrompt = await Deno.readTextFile(promptFile)
     const draft = await generateWithPi(range, runOptions, promptFile)
