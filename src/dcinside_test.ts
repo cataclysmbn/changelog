@@ -172,8 +172,9 @@ Deno.test("postMarkdown ends with the AI footer that renderPostHtml shows after 
   assertEquals(renderPostHtml(post).includes("AI("), false)
 })
 
-Deno.test("postMarkdown keeps each post line and table row as a block that renderPostHtml reads back unchanged", () => {
-  // "a\nb" would join into one Markdown paragraph; table rows must stay together.
+Deno.test("postMarkdown keeps each post line, table and bullet list as a block that renderPostHtml reads back unchanged", () => {
+  // "a\nb" would join into one Markdown paragraph; table rows must stay together,
+  // and "- 전환\n\n- 표시" would make a loose list with a paragraph gap between bullets.
   const markdown = postMarkdown(
     `${post}| a | b |\n|---|---|\n| ![](x.png) | c |\n`,
   )
@@ -181,6 +182,7 @@ Deno.test("postMarkdown keeps each post line and table row as a block that rende
     markdown,
     "\n\n| a | b |\n|---|---|\n| ![](x.png) | c |\n",
   )
+  assertStringIncludes(markdown, "\n\n- 전환\n- 표시\n\n")
   assertEquals(markdown.includes("\n\n\n"), false)
   assertEquals(
     renderPostHtml(markdown),
