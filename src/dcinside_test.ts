@@ -8,6 +8,7 @@ import {
   draftPost,
   githubImageUrls,
   postMarkdown,
+  escapeHtml,
   renderPostHtml,
   reviewPrompt,
   rewritePrompt,
@@ -248,6 +249,20 @@ test("renderPostHtml keeps lines outside the template as text and keeps every ta
     "</table>",
     "",
   ])
+})
+
+test("renderPostHtml ends an unclosed fence or comment at the next blank line", () => {
+  // "```" and "<!--" open blocks that Markdown runs to the end of the post; later entries must still render.
+  for (const line of ["```", "<!-- 메모"]) {
+    expect(renderPostHtml(postMarkdown(`# 제목\n## 가\n${line}\n## 나\n`)).split("\n")).toEqual([
+      "<p><b>가</b></p>",
+      `<p>${escapeHtml(line)}</p>`,
+      "<p><br></p>",
+      "<p><b><br></b></p>",
+      "<p><b>나</b></p>",
+      "",
+    ])
+  }
 })
 
 test("assertPostFormat accepts image tables and before/after pairs from PR evidence", () => {
