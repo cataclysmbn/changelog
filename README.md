@@ -1,58 +1,63 @@
 # changelog
 
-DCInside 로그라이크 갤러리용 Cataclysm: Bright Nights 패치글 초안을 만드는 도구입니다.
+로그라이크 갤러리에 올릴 Cataclysm: Bright Nights 패치글 초안을 만들고 <https://changes.cataclysmbn.org/>에 올립니다.
 
-## 사용법
+## 설치
 
-Node.js 26과 [Vite+](https://viteplus.dev/guide/)의 `vp`(`curl -fsSL https://vite.plus | bash`)가 필요합니다. 처음 한 번 의존성을 설치합니다.
+Node.js 26, [Vite+](https://viteplus.dev/guide/), ImageMagick이 필요합니다.
 
 ```sh
+curl -fsSL https://vite.plus | bash
 vp install
 ```
 
-대화형 생성:
+## 글 만들기
 
 ```sh
 vp run tui
 ```
 
-고른 주들을 기간 하나로 합쳐 글 하나를 만듭니다. 결과는 `<시작일>_to_<종료일>` 폴더에 생성됩니다.
+고른 주를 글 하나로 묶어 `dist/<시작일>_to_<종료일>/`에 저장하고 사이트에 올립니다.
 
-```text
-dist/2026-05-25_to_2026-06-21/
-├── changelog.txt
-├── changelog.md
-├── changelog.html
-├── changelog.en.txt
-├── changelog.en.md
-├── changelog.en.html
-└── commits.txt
-```
+| 파일             | 내용                                        |
+| ---------------- | ------------------------------------------- |
+| `changelog.txt`  | 원고. 첫 줄이 제목이고 이미지는 GitHub 주소 |
+| `changelog.md`   | 이미지를 jsDelivr 주소로 바꾼 사이트용 글   |
+| `changelog.html` | `changelog.md`로 만든 DCInside용 HTML       |
+| `changelog.en.*` | 영문본                                      |
+| `commits.txt`    | 글에 넣은 커밋 해시                         |
 
-`commits.txt`에는 글에 넣은 커밋 해시가 있습니다. 다음 글을 만들 때 직전 글 시작일부터 새 글 시작일 전까지의 커밋 중 이 목록에 없는 커밋도 함께 넣고, 글 기간을 그 커밋 날짜부터로 늘립니다. `commits.txt`가 없는 글은 마지막 날 전까지의 커밋과, 마지막 날에는 글에 PR 링크가 있는 커밋만 넣은 것으로 봅니다.
+DCInside에 올릴 때는 `changelog.html`을 HTML 모드에 붙여 넣고, `changelog.txt` 첫 줄을 제목 칸에 넣습니다.
 
-`changelog.en.*`는 검수를 마친 한국어 글을 줄 단위로 옮긴 영문본입니다. 게임 명칭은 검수에서 확인한 PO 원문(`msgid`)을 씁니다. 줄 종류, 링크, 이미지가 한국어 글과 다르거나 한글이 남으면 한 번 다시 번역하고, 그래도 다르면 저장하지 않습니다.
+다음 글에는 직전 글 시작일부터 새 글 시작일 전까지의 커밋 중 `commits.txt`에 없는 커밋도 들어가고, 글 기간은 그 커밋 날짜부터로 늘어납니다. `commits.txt`가 없는 글은 마지막 날 전의 커밋 전부와, 마지막 날 커밋 중 글에 PR 링크가 있는 커밋을 넣은 것으로 봅니다.
 
-`changelog.html`을 DCInside 글쓰기의 HTML 모드에 붙여 넣고, `changelog.txt` 첫 줄의 제목을 제목 칸에 넣습니다. 이미지는 PR 본문에 적힌 GitHub 영구 주소(`https://github.com/user-attachments/assets/...`)에서 가져옵니다. 익명으로 내려받을 수 없는 이미지와 GitHub 밖의 이미지는 쓰지 않습니다. DCInside가 GitHub 이미지 주소를 지우므로, `changelog.html`에는 이미지 사본을 이 저장소의 `images` 브랜치에 push한 뒤 jsDelivr 주소를 넣습니다. 모든 이미지를 WebP로 변환해 보고 원본보다 작을 때만 WebP를 올립니다. 픽셀 아트(긴 변 128 px 이하 또는 256색 이하)는 무손실, 나머지는 품질 50입니다(ImageMagick 필요). 이미지는 최대 425 px 폭으로 보이고, 가로가 세로의 2배 이상인 이미지(변경 전후 비교 등)는 850 px까지 보입니다. `changelog.txt`에는 GitHub 주소가 남습니다.
+이미지는 PR 본문의 GitHub 이미지 주소(`https://github.com/user-attachments/assets/...` 등)에서 가져옵니다. 로그인해야 받을 수 있는 이미지와 GitHub 밖의 이미지는 뺍니다. DCInside가 GitHub 이미지 주소를 지우기 때문에 사본을 이 저장소의 `images` 브랜치에 push하고 jsDelivr 주소를 씁니다. WebP로 바꿔서 원본보다 작을 때만 WebP를 올립니다. 픽셀 아트(긴 변 128 px 이하 또는 256색 이하)는 무손실, 나머지는 품질 50입니다. 이미지는 폭 425 px까지 보이고, 가로가 세로의 2배 이상이면 850 px까지 보입니다.
 
-`changelog.md`는 이미지를 jsDelivr 주소로 바꾼 사이트용 글이고, `changelog.html`은 그 글로 만든 DCInside용 HTML입니다. `changelog.txt`나 `changelog.en.txt`를 고친 뒤 옆의 Markdown과 HTML만 다시 만들 때:
+영문본은 검수한 한국어 글을 줄마다 옮긴 글이고, 게임 명칭은 PO 원문(`msgid`)을 씁니다. 줄 종류, 링크, 이미지가 한국어 글과 다르거나 한글이 남으면 한 번 더 번역하고, 그래도 다르면 저장하지 않습니다.
+
+HTML 끝에는 `이 변경 내역은 AI(gpt-5.6-terra)로 자동 생성되었습니다.` 줄이 붙습니다. 모델 이름은 `vp run tui`에서는 실행한 모델이고, `vp run html`에서는 두 번째 인자입니다.
+
+## 고친 글 다시 올리기
+
+`changelog.txt`나 `changelog.en.txt`를 고쳤으면 옆의 Markdown과 HTML을 다시 만들고, 사이트에 다시 올립니다. `vp run pages`에는 기간 여러 개를 한 번에 줄 수 있습니다.
 
 ```sh
 vp run html dist/2026-05-25_to_2026-06-21/changelog.txt gpt-5.6-terra
 vp run html dist/2026-05-25_to_2026-06-21/changelog.en.txt gpt-5.6-terra
+vp run pages dist/2026-05-25_to_2026-06-21
 ```
 
-HTML 끝에는 글을 쓴 AI 모델을 밝히는 줄(`이 변경 내역은 AI(gpt-5.6-terra)로 자동 생성되었습니다.`)이 붙습니다. `vp run tui`는 실행에 쓴 모델 이름을 넣고, `vp run html`은 두 번째 인자로 받은 이름을 넣습니다.
+## 변경 전후 비교 이미지
 
-PR에 변경 전후 스크린샷 묶음이 있으면 짝마다 왼쪽에 변경 전, 오른쪽에 변경 후를 놓고 1초마다 다음 짝으로 넘어가는 animated WebP를 만들 수 있습니다. 인자는 `변경 전 변경 후` 순서의 짝이고 URL이나 파일 경로입니다.
+PR에 변경 전후 스크린샷이 여러 짝 있으면 animated WebP 하나로 합칠 수 있습니다. 짝마다 왼쪽에 변경 전, 오른쪽에 변경 후가 나오고 1초마다 다음 짝으로 넘어갑니다. 인자는 `변경 전 변경 후` 순서의 URL이나 파일 경로입니다.
 
 ```sh
 vp run compare -o dist/2026-11-09_to_2026-11-14/10834-before-after.webp <전1> <후1> <전2> <후2>
 ```
 
-만든 파일은 `changelog.txt`와 `changelog.en.txt`의 이미지 줄에 `file:///절대/경로.webp`로 넣고 `vp run html`로 HTML을 다시 만듭니다. 짝 맞추는 방법은 `.agents/skills/before-after/SKILL.md`에 있습니다.
+만든 파일을 `changelog.txt`와 `changelog.en.txt`의 이미지 줄에 `file:///절대/경로.webp`로 넣고 `vp run html`을 다시 실행합니다. 짝 맞추는 방법은 `.agents/skills/before-after/SKILL.md`에 있습니다.
 
-`changelog.txt` 템플릿:
+## 원고 형식
 
 ```text
 # 밝밤) 10월 26일 ~ 11월 1일 패치
@@ -67,13 +72,27 @@ vp run compare -o dist/2026-11-09_to_2026-11-14/10834-before-after.webp <전1> <
 ![이미지 설명](추가 이미지 URL)
 ```
 
-프롬프트와 pi 작업 디렉터리는 임시 디렉터리에만 만들고, pi는 `--no-context-files`로 전역 `AGENTS.md`를 막은 뒤 역할별 `AGENTS.md` 내용을 주입해 작성자, 검수자, 영문 번역자 순서로 실행합니다. 프롬프트에는 `/home/scarf/repo/cata/translations/lang/po/ko.po`에서 문맥과 번역 상태를 보존한 용어 근거를 넣습니다. 기본 도구는 읽기 전용 `read,grep`이며, 작성자와 검수자가 필요한 PO 항목을 직접 조회할 수 있습니다. pi 인증/모델 설정은 기존 사용자 설정을 그대로 사용합니다.
+작성 규칙은 `.agents/skills/dcinside-changelog/SKILL.md`에 있습니다.
 
-검수자는 수정된 본문과 게임 명칭별 `msgid`·`msgctxt`·본문 표현을 JSON으로 반환합니다. 프로그램은 실제 PO, 템플릿, PR 근거의 URL과 대조한 뒤에만 최종 `changelog.txt`와 `changelog.html`을 저장합니다. 정확한 번역이 없거나 fuzzy이면 영어 이름을 유지합니다. 검증 근거와 PO/본문 해시는 `dist/.reviews/<기간>.json`에 저장되며 게시글 본문에는 포함되지 않습니다. 대조에 실패하면 같은 검수 단계에 오류를 전달해 한 번 수정하도록 합니다. 재차 실패하면 기존 변경로그를 덮어쓰지 않고, 진단용 임시 입력·응답 경로를 표시합니다.
+## 작성과 검수
 
-`--no-review`는 기존처럼 검수와 PO 대조를 명시적으로 건너뜁니다. `--pi-tools none`은 직접 조회 도구를 끄지만 기본 검수의 PO 대조는 유지합니다. `--skip-glossary`는 프롬프트에 자동 첨부하는 용어 근거만 생략합니다.
+pi가 작성자, 검수자, 영문 번역자 순서로 글을 씁니다.
 
-`--agent claude`를 주면 pi 대신 `claude -p`로 같은 세 단계를 실행합니다. 사용자 설정·MCP·슬래시 명령을 끄고 `Read,Grep`만 허용하며, 모델은 `--model`로 지정합니다. `--agent`와 `--model`을 둘 다 주지 않으면 `claude auth status`의 요금제를 보고 고릅니다.
+- 프롬프트와 pi 작업 디렉터리는 임시 디렉터리에만 만들고, 전역 `AGENTS.md` 대신 역할별 지침을 줍니다(`--no-context-files`).
+- 프롬프트에 `/home/scarf/repo/cata/translations/lang/po/ko.po`의 용어 번역을 문맥(`msgctxt`), 번역 상태와 함께 넣습니다. 작성자와 검수자는 기본 도구인 읽기 전용 `read,grep`으로 PO를 직접 찾아볼 수 있습니다.
+- pi 인증과 모델은 사용자 설정을 씁니다.
+
+검수자는 고친 본문과 게임 명칭별 `msgid`, `msgctxt`, 본문 표현을 JSON으로 돌려줍니다. 게임 명칭은 PO와, 본문은 템플릿, PR 근거 URL과 맞춰 본 뒤에 글을 저장합니다. 정확한 번역이 없거나 fuzzy이면 영어 이름을 씁니다. 맞지 않으면 검수자에게 오류를 보내 한 번 더 고치게 하고, 또 틀리면 기존 글을 그대로 두고 진단용 임시 입력과 응답 경로를 출력합니다. 검증 근거와 PO·본문 해시는 글이 아닌 `dist/.reviews/<기간>.json`에 남습니다.
+
+| 옵션              | 동작                                                                              |
+| ----------------- | --------------------------------------------------------------------------------- |
+| `--no-review`     | 검수와 PO 대조를 건너뜀                                                           |
+| `--pi-tools none` | PO 조회 도구를 끔. PO 대조는 그대로 함                                            |
+| `--skip-glossary` | 프롬프트에 용어 번역만 넣지 않음. PO 대조는 그대로 함                             |
+| `--agent claude`  | pi 대신 `claude -p`로 실행. 사용자 설정, MCP, 슬래시 명령을 끄고 `Read,Grep`만 씀 |
+| `--model`         | 모델                                                                              |
+
+`--agent`와 `--model`을 둘 다 주지 않으면 `claude auth status`의 요금제로 고릅니다.
 
 | 요금제              | 실행                                 |
 | ------------------- | ------------------------------------ |
@@ -81,29 +100,25 @@ vp run compare -o dist/2026-11-09_to_2026-11-14/10834-before-after.webp <전1> <
 | Claude Max 5x       | `claude -p`, `claude-sonnet-5-5`     |
 | 그 밖               | pi, `openai-codex/gpt-6-luna:medium` |
 
-이번 주만 pi 실행 없이 프롬프트/명령 확인:
+pi를 실행하지 않고 이번 주 프롬프트와 명령만 보기:
 
 ```sh
 vp run tui --yes --dry-run --newest 0 --oldest 0
 ```
 
-프롬프트 생성:
+프롬프트만 만들기:
 
 ```sh
 vp run dc --repo /home/scarf/repo/cata/Cataclysm-BN --since 2026-01-01 --until 2026-01-07 -o /tmp/prompt.md
 ```
 
-바로 편집 가능한 날짜별 초안 생성:
+날짜별 초안 만들기:
 
 ```sh
 vp run dc --repo /home/scarf/repo/cata/Cataclysm-BN v0.10.0..HEAD --mode draft
 ```
 
-작성 규칙은 `.agents/skills/dcinside-changelog/SKILL.md`에 있습니다.
-
 ## 사이트
-
-이 저장소는 mdBook 책 두 권입니다. 한국어 책은 `book/ko/`, 영문 책은 `book/en/`에 있고, 글은 `book/<언어>/src/<기간>/index.md`입니다. `main`에 push하면 GitHub Actions가 사이트를 만들어 GitHub Pages(<https://changes.cataclysmbn.org/>)에 올립니다.
 
 | 주소           | 내용                                        |
 | -------------- | ------------------------------------------- |
@@ -113,15 +128,13 @@ vp run dc --repo /home/scarf/repo/cata/Cataclysm-BN v0.10.0..HEAD --mode draft
 | `/archive/`    | 전체 목록                                   |
 | `/en/...`      | 영문 책의 같은 주소                         |
 
-왼쪽 목록에는 모든 글이 최신순으로 나옵니다. 한국어 책은 브라우저 언어가 한국어가 아니면 영문 책으로 넘어갑니다. 위쪽 막대 왼쪽의 언어 아이콘으로 고른 언어는 기억되고, `?ko`를 붙이면 언제나 한국어 글을 엽니다. 그 옆 정렬 아이콘을 누르면 한 글 안의 날짜 순서가 오래된 날짜부터와 최근 날짜부터 사이에서 바뀌고, 고른 순서는 기억됩니다.
+- 왼쪽 목록에 모든 글이 최신순으로 나옵니다.
+- 브라우저 언어가 한국어가 아니면 영문 글이 열립니다. 주소에 `?ko`를 붙이면 한국어 글이 열립니다.
+- 위쪽 막대 왼쪽의 아이콘으로 언어와 날짜 순서(오래된 날짜부터, 최근 날짜부터)를 바꿉니다. 고른 값은 브라우저에 남습니다.
 
-`vp run tui`는 글을 만든 뒤 `changelog.md`와 `changelog.en.md`를 두 책에 넣고 목록(`SUMMARY.md`, `archive/index.md`)을 다시 써서 `main`에 push합니다. 로컬 저장소에는 `git pull`로 받습니다. 글을 고친 뒤 다시 올릴 때(여러 기간을 한 번에 줄 수 있음):
+사이트는 mdBook 책 두 권입니다. 한국어 책은 `book/ko/`, 영문 책은 `book/en/`이고, 글은 `book/<언어>/src/<기간>/index.md`입니다. `vp run tui`는 두 책에 글을 넣고 목록(`SUMMARY.md`, `archive/index.md`)을 다시 써서 `main`에 push합니다. `vp run pages`나 책을 직접 고친 커밋도 `main`에 push하면 GitHub Actions가 사이트를 GitHub Pages에 올립니다. 로컬 저장소는 `git pull`로 맞춥니다.
 
-```sh
-vp run pages dist/2026-05-25_to_2026-06-21
-```
-
-책을 직접 고쳐도 됩니다. 미리 보기와 사이트 빌드(`mdbook` 필요):
+책을 직접 고쳐도 됩니다. 미리 보기와 사이트 빌드에는 `mdbook`이 필요합니다.
 
 ```sh
 vp run serve
@@ -129,8 +142,6 @@ vp run site _site
 ```
 
 ## 개발
-
-검사와 테스트(ImageMagick 필요):
 
 ```sh
 vp check
