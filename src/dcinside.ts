@@ -247,10 +247,19 @@ const postBlocks = (lines: string[]): (string | string[])[] =>
       : [...blocks, [line]]
   }, [])
 
-/** Renders a post to the HTML fragment for the DCInside HTML editor; the title goes in its own form field. Images in `wide` may grow to two normal widths. */
+/** Last line of each post: names the AI model that wrote it. */
+export const aiFooter = (model: string, english = false): string =>
+  english
+    ? `This changelog was generated automatically by AI (${model}).`
+    : `이 변경 내역은 AI(${model})로 자동 생성되었습니다.`
+
+/** Renders a post to the HTML fragment for the DCInside HTML editor; the title goes in its own form field. Images in `wide` may grow to two normal widths, and `footer` becomes the last line. */
 export const renderPostHtml = (
   post: string,
-  wide: ReadonlySet<string> = new Set(),
+  { wide = new Set(), footer }: {
+    wide?: ReadonlySet<string>
+    footer?: string
+  } = {},
 ): string =>
   postBlocks(postLines(post).filter((line) => !line.startsWith("# ")))
     .map((line, index, lines) => {
@@ -281,6 +290,7 @@ export const renderPostHtml = (
       if (line.startsWith("- ")) return `<p>• ${escapeHtml(line.slice(2))}</p>`
       return `<p>${escapeHtml(line)}</p>`
     })
+    .concat(footer ? [`<p><br></p>\n<p>${escapeHtml(footer)}</p>`] : [])
     .join("\n") + "\n"
 
 export const translationGuide = `한국어 용어 확인:

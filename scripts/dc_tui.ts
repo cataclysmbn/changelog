@@ -15,6 +15,7 @@ import { ensureDir, exists } from "@std/fs"
 import { dirname, fromFileUrl, join, resolve } from "@std/path"
 
 import {
+  aiFooter,
   assertPostFormat,
   assertSameLayout,
   reviewPrompt,
@@ -325,6 +326,12 @@ const makePiWorkspace = async (
 }
 
 const defaultPiModel = "openai-codex/gpt-5.6-terra:medium"
+
+/** Model name for the post footer, without provider and thinking level. */
+const aiModel = ({ agent, model }: Options): string =>
+  agent === "claude"
+    ? model ?? "Claude"
+    : (model ?? defaultPiModel).split("/").at(-1)!.split(":")[0]
 
 const claudeArgs = (
   options: Options,
@@ -649,7 +656,9 @@ const run = async (options: Options): Promise<void> => {
     const changelog = `${review.changelog.trimEnd()}\n`
     if (!runOptions.dryRun) {
       assertPostFormat(changelog, sourcePrompt)
-      const html = await mirrorPostHtml(changelog)
+      const html = await mirrorPostHtml(changelog, {
+        footer: aiFooter(aiModel(runOptions)),
+      })
       if (review.audit) {
         const reviewDir = join(outputDir, ".reviews")
         await ensureDir(reviewDir)
@@ -682,7 +691,9 @@ const run = async (options: Options): Promise<void> => {
       await Deno.writeTextFile(join(postDir, "changelog.en.txt"), english)
       await Deno.writeTextFile(
         join(postDir, "changelog.en.html"),
-        await mirrorPostHtml(english),
+        await mirrorPostHtml(english, {
+          footer: aiFooter(aiModel(runOptions), true),
+        }),
       )
       $.logStep("wrote", join(postDir, "changelog.en.html"))
     }

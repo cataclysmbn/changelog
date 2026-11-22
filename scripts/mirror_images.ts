@@ -9,7 +9,8 @@
  * An image line with several URLs (before, after, ...) becomes one side-by-side animated WebP.
  * Images at least twice as wide as tall (side-by-side comparisons) get twice the normal width in the HTML.
  *
- * Usage: deno task html dist/<period>/changelog.txt (or changelog.en.txt); writes the .html beside it.
+ * Usage: deno task html dist/<period>/changelog.txt (or changelog.en.txt) [AI model]; writes the .html beside it.
+ * With an AI model name, the HTML ends with a footer that names it.
  */
 
 import $ from "@david/dax"
@@ -17,6 +18,7 @@ import { encodeHex } from "@std/encoding/hex"
 import { join } from "@std/path"
 
 import {
+  aiFooter,
   mapPostImages,
   postImageUrls,
   renderPostHtml,
@@ -166,20 +168,27 @@ export const mirrorPostImages = async (
 /** Mirrors the post images and renders the post HTML with the CDN URLs. */
 export const mirrorPostHtml = async (
   post: string,
-  options: MirrorOptions = defaults,
+  { footer, ...options }: Partial<MirrorOptions> & { footer?: string } = {},
 ): Promise<string> => {
-  const mirrored = await mirror(post, options)
-  return renderPostHtml(mirrored.post, mirrored.wide)
+  const { post: mirrored, wide } = await mirror(post, {
+    ...defaults,
+    ...options,
+  })
+  return renderPostHtml(mirrored, { wide, footer })
 }
 
 if (import.meta.main) {
-  const [changelog] = Deno.args
+  const [changelog, model] = Deno.args
   if (!changelog?.endsWith(".txt")) {
-    throw new Error("Usage: deno task html <changelog.txt|changelog.en.txt>")
+    throw new Error(
+      "Usage: deno task html <changelog.txt|changelog.en.txt> [AI model]",
+    )
   }
   const post = await Deno.readTextFile(changelog)
   await Deno.writeTextFile(
     changelog.replace(/\.txt$/u, ".html"),
-    await mirrorPostHtml(post),
+    await mirrorPostHtml(post, {
+      footer: model && aiFooter(model, changelog.endsWith(".en.txt")),
+    }),
   )
 }

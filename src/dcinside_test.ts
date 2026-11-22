@@ -1,6 +1,7 @@
 import { assertEquals, assertStringIncludes, assertThrows } from "@std/assert"
 
 import {
+  aiFooter,
   assertPostFormat,
   assertSameLayout,
   type Commit,
@@ -144,6 +145,30 @@ Deno.test("renderPostHtml renders the static reference layout without the title"
     html,
     "<p>▲ 전환 화면</p>\n<p><br></p>\n<p><b><br></b></p>\n<p><b>1월 5일</b></p>\n<p><b>자물쇠 따기 충돌 수정</b></p>",
   )
+})
+
+Deno.test("renderPostHtml ends with the AI footer after a blank line", () => {
+  // Korean and English footers name the same model.
+  for (
+    const [footer, text] of [
+      [
+        aiFooter("gpt-5.6-terra"),
+        "이 변경 내역은 AI(gpt-5.6-terra)로 자동 생성되었습니다.",
+      ],
+      [
+        aiFooter("gpt-5.6-terra", true),
+        "This changelog was generated automatically by AI (gpt-5.6-terra).",
+      ],
+    ]
+  ) {
+    assertEquals(
+      renderPostHtml(post, { footer }).endsWith(
+        `<p>따는 도중 멈추던 문제 해결</p>\n<p><br></p>\n<p>${text}</p>\n`,
+      ),
+      true,
+    )
+  }
+  assertEquals(renderPostHtml(post).includes("AI("), false)
 })
 
 Deno.test("assertPostFormat accepts the template and rejects everything outside it", () => {
