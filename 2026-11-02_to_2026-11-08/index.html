@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>밝밤) 11월 2일 ~ 11월 8일 패치</title>
+<meta name="description" content="밝밤) 11월 2일 ~ 11월 8일 패치">
+<meta property="og:type" content="article">
+<meta property="og:title" content="밝밤) 11월 2일 ~ 11월 8일 패치">
+<meta property="og:description" content="밝밤) 11월 2일 ~ 11월 8일 패치">
+<meta property="og:url" content="https://cataclysmbn.github.io/changelog/2026-11-02_to_2026-11-08/">
+<meta property="og:image" content="https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@f927f109d9f01758b8dd606b5fd7ce6cf64c33be/2bfb01a764c4a6fdc42c1f75488359cc0aca40c63900082f26bc3114915a9671.webp">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="alternate" hreflang="en" href="en.html">
+<script>if (!/^ko\b/iu.test(navigator.languages?.[0] ?? navigator.language) && !new URLSearchParams(location.search).has("ko")) location.replace("en.html")</script>
+<style>
+body { max-width: 850px; margin: 0 auto; padding: 0 16px; font-family: sans-serif; line-height: 1.5; background: #fff; color: #111; }
+img { max-width: 100% !important; }
+table { max-width: 100%; }
+</style>
+</head>
+<body>
+<p><a href="en.html" hreflang="en">English</a></p>
+<h1>밝밤) 11월 2일 ~ 11월 8일 패치</h1>
+<p><b>11월 2일</b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10780" target="_blank">군인/SWAT 좀비 방어력 조정</a></b></p>
+<p>설정상 입고 있는 방어구와 맞게 방어력 수치를 바꿈 (타격/베기/사격 순)</p>
+<p>• 케블라 좀비 14/34/53 -&gt; 18/23/53</p>
+<p>• Kevlar brute 18/45/70 -&gt; 24/30/70</p>
+<p>• 케블라 헐크 30/56/90 -&gt; 26/49/90</p>
+<p>• 이성을 잃은 흑색작전 요원 강산/화염 저항 17/16 -&gt; 18/17</p>
+<p>• SWAT, FPF 지휘관 계열 적도 착용 방어구 기준으로 조정. SWAT 계열은 강산 2/화염 1 저항이 생김</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10781" target="_blank">스켈레톤 계열 방어력 조정</a></b></p>
+<p>스켈레톤 계열이 근접공격과 활에 더 단단해지고 총에는 상대적으로 약해짐</p>
+<p>케블라 계열은 총알에 강하고, 스켈레톤 계열은 베기에 강하지만 총알엔 비교적 약하게 역할이 갈림 (타격/베기/사격 순)</p>
+<p>• 스켈레톤 저거너트 20/45/36 -&gt; 36/45/27, 강산 저항 6 추가</p>
+<p>• 스켈레톤 브루트 12/30/24 -&gt; 24/30/18, 강산 저항 3 추가</p>
+<p>• 스켈레톤 0/15/12 -&gt; 10/15/10, 스켈레톤 쇼커와 스켈레톤 개도 같이 조정</p>
+<p>• 스켈레톤 마스터/스켈레톤 리치 0/15/24 -&gt; 20/30/20</p>
+<p>• 관통 저항이 베기 저항과 같아짐. 관통 저항이 유독 높던 기본 스켈레톤은 너프, 나머지는 버프</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10769" target="_blank">새 장소 retirement community 추가</a></b></p>
+<p>DDA에서 가져온 큰 은퇴자 마을 특수 장소</p>
+<p>도구 같은 기본 물자가 나오고 지하실에서 특이한 물건이 나올 수 있음. 생성 확률은 DDA보다 높임 (20 -&gt; 35)</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10777" target="_blank">타코마 공동체 차량 위치 수정</a></b></p>
+<p><img src="https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@f927f109d9f01758b8dd606b5fd7ce6cf64c33be/2bfb01a764c4a6fdc42c1f75488359cc0aca40c63900082f26bc3114915a9671.webp" alt="" style="max-width:425px;height:auto;"></p>
+<p>타코마 공동체 차량이 맵 경계 밖으로 삐져나와 게임이 튕기던 문제 수정</p>
+<p>• 평상형 트럭을 목장 맵 안쪽으로 옮김</p>
+<p>• 경계 밖에 걸쳐 있다가 큐브 밴과 겹쳐 부서지던 버스를 안전한 자리로 옮겨 차량이 벽처럼 늘어서던 것도 없어짐</p>
+<p>• 현장감독 임무 진행 뒤 자동차 차대가 생기지 않음</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@f927f109d9f01758b8dd606b5fd7ce6cf64c33be/a9b2b633492f8514787f65efebee13f9604da8774f925bb5fa5907ac18caba10.webp" alt="정비소 주변 차량 배치" style="max-width:425px;height:auto;"></p>
+<p>▲ 정비소 주변 차량 배치</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10772" target="_blank">인챈트 없는 퍽 설명 표시</a></b></p>
+<p>인챈트가 없는 퍽은 설명이 아예 안 보이던 문제 수정</p><p><br></p>
+<p><b><br></b></p>
+<p><b>11월 3일</b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10785" target="_blank">화생방 좀비 방사능 진화 계열 추가</a></b></p>
+<p><img src="https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@f927f109d9f01758b8dd606b5fd7ce6cf64c33be/d823a5ce78725734c3d71d7cbc93a9ef6129829d966e7bc01ab4f4a4b1beaa07.webp" alt="" style="max-width:425px;height:auto;"></p>
+<p>화생방 좀비가 glowing zombie로, 다시 radioactive husk로 진화함</p>
+<p>둘 다 재생하고 빛을 내며 맞으면 방사능에 피폭됨. 피폭량은 방어구 적용 전 피해에 비례하고, 공격이 방어구를 뚫으면 방사능 보호 장비도 무시함</p>
+<p>• radioactive husk는 화염 면역에 독성 가스를 뿜고 능력치와 재생 속도도 더 높음</p>
+<p>• 처치하면 화생방 장비 조각과 무작위 방사성 물품을 떨굼. 소형핵이 너무 잘 나오던 드랍 확률은 후속 패치로 낮춤</p>
+<p>• 엘리트 과학자 좀비, 피폭된 방랑자, 그슬린 악몽, C.H.U.D, 진화한 돌연변이 실험체의 공격도 이제 방사능을 입힘</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10792" target="_blank">환각 몬스터 hat man 추가</a></b></p>
+<p>환각 상태에서만 보이는 모자 쓴 남자 추가</p>
+<p>움직이지 않고 몇 턴 뒤 사라지지만 회피가 극도로 높고 총으로는 못 맞힘. 공포로 플레이어를 마비시킬 수 있음</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10784" target="_blank">산탄총 탄 이름 앞에 12x70mm 붙음</a></b></p>
+<p>영문 이름 기준으로 모든 산탄총 탄 앞에 12x70mm가 붙고 산탄 탄피는 12x70mm hull로 바뀜</p>
+<p>자동 줍기, 정렬, 검색에서 맞는 탄을 찾기 쉬워짐</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10782" target="_blank">망치, 쇠지렛대 아스키 아트 추가</a></b></p>
+<p>그림이 없던 망치와 쇠지렛대 물품 정보 창에 아스키 그림이 생김</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b>11월 4일</b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10794" target="_blank">광맥 그림 오류 수정</a></b></p>
+<p>방연석 광맥, 호박 광맥이 그림 ID 오타 때문에 제 그림 대신 엉뚱한 그림으로 보이던 문제 수정. 줄무늬 철 광맥은 철 광맥 그림을 씀</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b>11월 5일</b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10804" target="_blank">디지털 파일 시스템 전면 개편</a></b></p>
+<p><img src="https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@f927f109d9f01758b8dd606b5fd7ce6cf64c33be/b6fd701e705fc85d24806a91e2d1adf2c85ccd46ca70124ea36f779e8403b163.webp" alt="" style="max-width:425px;height:auto;"></p>
+<p>디지털 파일이 실제 물품이 되어 SD 카드, USB 드라이브, hard drive, 전자기기 안에 저장됨</p>
+<p>파일을 둘러보고 호환되는 기기끼리 복사하거나 지울 수 있음. 저장매체는 맞는 포트가 있는 기기에서만 읽힘</p>
+<p>• 디지털 책, 제작법, 지도 추가. 음악/사진 파일도 새 방식으로 바뀜</p>
+<p>• 게놈 드라이브 대신 USB 드라이브를 씀. 전자잉크 태블릿 PC는 빠지고 대신 책을 스캔해 디지털 사본을 만들 수 있음</p>
+<p>• 암호화가 모든 디지털 매체에 똑같이 걸림</p>
+<p>• 새 직업 Data Hoarder 추가. 무작위 파일이 든 hard drive 몇 개와 노트북 컴퓨터를 들고 시작함</p>
+<p>• 후속 패치로 무술 수련 영상, 미리 스캔된 책 사본, 함정/무기 설계도, 홈 비디오, 음성 메모 추가</p>
+<p>• 손상된 파일을 열면 미니보스가 튀어나옴</p>
+<p>• 신문이나 리눅스 티셔츠처럼 글귀가 적힌 물건도 스캔 가능. 디지털 전용 희귀 NFT 파일도 추가</p>
+<p>• 기기 안 디지털 제작법이 제작 메뉴에서 안 잡히던 문제 수정. 디지털 책은 독서용 램프 없이 어두운 곳에서도 읽힘</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@f927f109d9f01758b8dd606b5fd7ce6cf64c33be/59ff7e758f38aab6d79f50ca8a442d9236e31c87ff8d13e3e8b6c93b01b9cdb8.webp" alt="디지털 콘텐츠 스크린샷" style="max-width:425px;height:auto;"></p>
+<p>▲ 디지털 콘텐츠 스크린샷</p>
+<p><img src="https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@f927f109d9f01758b8dd606b5fd7ce6cf64c33be/107b234e163d500e0a0a806f83e5222070dd14462072a2a8b144d2da4da3a96d.webp" alt="디지털 콘텐츠 스크린샷" style="max-width:425px;height:auto;"></p>
+<p>▲ 디지털 콘텐츠 스크린샷</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10758" target="_blank">전투 드론 추가 + 원격 조종 개편</a></b></p>
+<p>폭격 장치가 달린 군용 자폭 드론과 탄소섬유판으로 만드는 소형 바구니 차량 부품 추가</p>
+<p>드론은 군사 시설, 비활성 군용 로봇, 로봇공학 도구 등에서 나오고 조종기가 같이 나올 때도 있음</p>
+<p>• 원격 조종 차량 목록에 실제로 원격 조종되는 차량만 뜸</p>
+<p>• 조종 중일 때 &quot;차량 기능 실행&quot;을 누르면 차량 선택을 건너뛰고 바로 실행됨. 차량 조사 화면을 여는 메뉴도 생김</p>
+<p>• 조종하지 않는 차량에 &quot;차량 기능 실행&quot;을 쓰면 &quot;조종 장치가 없습니다.&quot;만 뜨던 문제 수정</p>
+<p>• 조종기 배터리가 다 닳으면 사라지지 않고 꺼진 상태로 돌아감. 꺼진 카메라가 배터리를 계속 먹던 문제도 수정</p>
+<p>• 조종 중인 차량인데도 합선시켜 시동걸기가 필요하다고 뜨던 문제 수정</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10797" target="_blank">EMP 맞은 탑승 로봇이 적으로 돌아서던 문제 수정</a></b></p>
+<p>영구히 우호적인 로봇이 EMP를 맞으면 일시적 우호로 바뀌어 나중에 적대하던 문제 수정. 탑승 로봇에서 내린 사이 로봇이 돌아서서 플레이어를 죽이던 일이 없어짐</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b>11월 6일</b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10787" target="_blank">커피 농사</a></b></p>
+<p><img src="https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@f927f109d9f01758b8dd606b5fd7ce6cf64c33be/61178355611babb3079685657ad5f54e67f4b900057f9a1620f51db376488d9c.webp" alt="" style="max-width:425px;height:auto;"></p>
+<p>커피를 씨앗부터 길러 마실 수 있음</p>
+<p>coffee seeds 심기 → coffee cherries 수확 → 커피콩 만들기 → 볶은 커피콩 → 갈아서 커피가루로 만든 뒤 끓이기</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10811" target="_blank">피난민 시나리오 시작 대피소 조정</a></b></p>
+<p>피난민 시나리오와 월드 경계가 있는 변형 시나리오에서 엉망이 된 대피소에서 시작하지 않음</p>
+<p>• 좀비가 들끓는 지하실은 이제 엉망이 된 대피소 밑에만 생기고 멀쩡한 대피소 밑에는 안 생김</p>
+<p>• 엉망이 된 대피소 지하실은 싱크대가 털려 있지만 대신 약물이 나올 때가 있음</p>
+<p>• 포스트 아포칼립스 시나리오 2종에서는 두 대피소가 모두 나옴</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10810" target="_blank">모텔 맵 교체</a></b></p>
+<p>DDA 0.I의 모텔 맵을 가져와 모텔에 있을 법한 물건이 거의 없던 낡은 구조를 새로 바꿈</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10814" target="_blank">돌출된 저장소 변이가 갈증을 줄임</a></b></p>
+<p>돌출된 저장소(Bulging Reservoir)가 설명과 반대로 갈증을 더 빨리 나게 하던 문제 수정 (갈증 배율 0.75 -&gt; -0.25)</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10812" target="_blank">소형 냉장고 끌고 다니는 데 필요한 체력 절반</a></b></p>
+<p>소형 냉장고가 냉장고와 같은 체력 10을 요구하던 것을 소형 냉동고처럼 5로 낮춤 (10 -&gt; 5)</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10747" target="_blank">번역 안 되던 문구 번역 가능</a></b></p>
+<p>한국어로 해도 영어로만 나오던 문구를 번역할 수 있게 함</p>
+<p>• 무술 버프 이름과 설명</p>
+<p>• 몬스터 공격 메시지 (빗나감, 장애물에 막힘 등)</p>
+<p>• 수련 메시지 같은 물품 사용 메시지</p>
+<p>• 유전자 스캐너/편집기 메시지와 샘플 이름. 스캐너 이름 대신 서식 오류가 뜨던 문제도 수정</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10808" target="_blank">리눅스 민트에서 실험판 실행 가능</a></b></p>
+<p>리눅스 빌드를 Ubuntu 24 기준으로 만들어 glibc가 오래된 리눅스 민트에서도 릴리스 파일이 실행됨</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b>11월 7일</b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10818" target="_blank">케이블 조명 켜기/끄기 + 제작법 복구</a></b></p>
+<p>케이블 조명을 일반 조명처럼 껐다 켤 수 있고 다시 만들 수 있음</p>
+<p>배터리를 연결하거나 빼는 식으로 켜고 끔. 제작법은 책 없이 자동으로 익힘</p>
+<p>• 조명 제작법이 전구를 먼저 쓰게 바뀌어 분해하면 전구가 나옴. 전구만 끼울 수 있는 조명 가구용 재료 구하기가 쉬워짐</p>
+<p>• 전구 설명이 LED 전구로 바뀌고 재질도 플라스틱으로 바뀜</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10813" target="_blank">버섯 수확 시 독/환각 성질 유지</a></b></p>
+<p>직접 따든 수확기로 거두든 기른 버섯의 독과 환각 성질이 그대로 남음</p>
+<p>• 약물이 나오는 곳에서 환각 성분이 있는 버섯도 나옴</p>
+<p>• 마약상 은신처에서 LSD 대량, 환각 성분이 있는 건조 버섯, 큰 통에 담긴 GHB가 나올 수 있음</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10752" target="_blank">음식 부패 예상 시간에 현재 온도 반영</a></b></p>
+<p>물품 정보의 부패 예상 시간이 온도를 무시하던 문제 수정. 냉장고, 차량 짐칸 등 놓인 자리의 현재 온도로 계산함</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10820" target="_blank">물에 닿으면 꺼지는 물품 버릴 때 튕김 수정</a></b></p>
+<p>물에 닿으면 꺼지는 물품(WATER_DISABLE)을 바닥에 버리면 게임이 튕기던 문제 수정</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b>11월 8일</b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10819" target="_blank">켜 둔 톱류가 다시 작동 소음을 냄</a></b></p>
+<p>엔진톱 (켜짐), 전투용 엔진톱 (켜짐), 엔진톱 월아산 (켜짐), 원형톱 (켜짐), 전정기 (켜짐), 전동칼 (켜짐), 석조 톱 (켜짐) 상태에서 계속 소음과 메시지가 나옴</p>
+<p>전기 공구는 조금 조용하고 큰 엔진톱은 더 시끄러움. 켤 때 나오던 옛날 시동 메시지도 다시 들어감</p>
+<p>• 전동칼 (꺼짐)을 켤 때 충전량 5가 빠지지 않음</p>
+<p>• 원형톱 (켜짐), 전동칼 (켜짐)의 전력 소모를 다른 전기 톱 수준으로 낮춤</p>
+<p>• 사운드팩에서 작동음 지원</p>
+<p>• 켜 둔 톱이 안 꺼지던 문제와 작동음이 끝없이 겹쳐 나던 문제 수정</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10827" target="_blank">새 직업 Vault Personnel</a></b></p>
+<p>네크로폴리스로 실려 가던 도중 대재앙을 맞은 민간 계약직 직업 추가</p>
+<p>방사선 차단복, 손목 컴퓨터, 휴대용 술병을 들고 시작함</p>
+<p>• 대피소에서, 중과부적, 도전 - 트랜스-코스트 로지스틱스 중앙 홀, Challenge - Emergency Shutdown 시나리오에서 고를 수 있음</p>
+<p><br></p>
+<p><b><br></b></p>
+<p><b><a href="https://github.com/cataclysmbn/Cataclysm-BN/pull/10829" target="_blank">아울렛 지붕 새 디자인</a></b></p>
+<p>아울렛 지붕에 빗물 홈통, 배수관, 각종 설비가 생김</p>
+
+</body>
+</html>
