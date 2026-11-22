@@ -107,7 +107,7 @@ export const draftPost = (
 }
 
 const permanentImageUrl =
-  /^https:\/\/(?:github\.com\/(?:user-attachments\/assets|[^/]+\/[^/]+\/assets)\/|user-images\.githubusercontent\.com\/)/u
+  /^https:\/\/(?:github\.com\/(?:user-attachments\/assets|[^/]+\/[^/]+\/assets)\/|user-images\.githubusercontent\.com\/|raw\.githubusercontent\.com\/)/u
 
 /** Permanent GitHub image candidates in a raw PR body; signed `private-user-images` URLs expire and never match. */
 export const githubImageUrls = (markdown: string): string[] =>
