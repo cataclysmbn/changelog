@@ -129,14 +129,19 @@ const postLines = (post: string): string[] =>
   post.split("\n").map((line) => line.trim()).filter(Boolean)
 
 /** Post lines that also read site Markdown ("## " date, "### " entry) back as the post's date and "## " entry lines. */
-const markdownLines = (post: string): string[] =>
-  postLines(post).map((line) =>
-    line.startsWith("### ")
-      ? line.slice(1)
-      : line.startsWith("## ") && dateLine.test(line.slice(3))
-      ? line.slice(3)
-      : line
-  )
+const markdownLines = (post: string): string[] => {
+  const lines = postLines(post)
+  // Only site Markdown has "### " entries; in a post "## Nov 14" is an entry titled like a date.
+  return lines.some((line) => line.startsWith("### "))
+    ? lines.map((line) =>
+      line.startsWith("### ")
+        ? line.slice(1)
+        : line.startsWith("## ") && dateLine.test(line.slice(3))
+        ? line.slice(3)
+        : line
+    )
+    : lines
+}
 
 const tableCells = (row: string): string[] =>
   row.slice(1, -1).split("|").map((cell) => cell.trim())
