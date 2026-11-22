@@ -97,7 +97,7 @@ deno task dc --repo /home/scarf/repo/cata/Cataclysm-BN v0.10.0..HEAD --mode draf
 
 ## 사이트
 
-이 저장소는 mdBook 책 두 권입니다. 한국어 책은 `book/ko/`, 영문 책은 `book/en/`에 있고, 글은 `book/<언어>/src/<기간>/index.md`입니다. `main`에 push하면 GitHub Actions가 사이트를 만들어 GitHub Pages(<https://cataclysmbn.github.io/changelog/>)에 올립니다.
+이 저장소는 mdBook 책 두 권입니다. 한국어 책은 `book/ko/`, 영문 책은 `book/en/`에 있고, 글은 `book/<언어>/src/<기간>/index.md`입니다. `main`에 push하면 GitHub Actions가 사이트를 만들어 GitHub Pages(<https://changes.cataclysmbn.org/>)에 올립니다.
 
 | 주소           | 내용                                        |
 | -------------- | ------------------------------------------- |

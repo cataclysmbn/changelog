@@ -23,7 +23,7 @@ export type PagesOptions = {
 
 export const defaults: PagesOptions = {
   remote: "https://github.com/cataclysmbn/changelog.git",
-  site: "https://cataclysmbn.github.io/changelog",
+  site: "https://changes.cataclysmbn.org",
 }
 
 export const langs = [
