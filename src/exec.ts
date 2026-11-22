@@ -1,7 +1,7 @@
 import { execFile } from "node:child_process"
 import { promisify } from "node:util"
 
-/** Run a command with only `env` and return its stdout, or throw `failure` with its stderr. */
+/** Run a command found on the parent PATH with only `env` and PATH, and return its stdout, or throw `failure` with its stderr. */
 export const execText = async (
   command: string,
   args: string[],
@@ -11,7 +11,7 @@ export const execText = async (
   try {
     return (
       await promisify(execFile)(command, args, {
-        env,
+        env: { PATH: process.env["PATH"] ?? "", ...env },
         maxBuffer: Infinity,
       })
     ).stdout
