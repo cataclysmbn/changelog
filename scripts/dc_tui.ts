@@ -7,6 +7,7 @@
  * Uses dax prompts to choose a contiguous set of weekly ranges, merges them into one period, generates its
  * prompt in a temp directory, then invokes isolated pi writer/reviewer/translator passes. Final output is
  * one folder with the Korean changelog.txt and changelog.html, and the English changelog.en.txt and changelog.en.html.
+ * Both pages are then published to GitHub Pages.
  */
 
 import { Command } from "@cliffy/command"
@@ -34,6 +35,7 @@ import {
   type VerifiedTerm,
 } from "../src/translation.ts"
 import { mirrorPostHtml } from "./mirror_images.ts"
+import { publishPages } from "./pages.ts"
 
 const scriptDir = dirname(fromFileUrl(import.meta.url))
 const appRoot = dirname(scriptDir)
@@ -696,6 +698,7 @@ const run = async (options: Options): Promise<void> => {
         }),
       )
       $.logStep("wrote", join(postDir, "changelog.en.html"))
+      $.logStep("published", await publishPages(postDir))
     }
   } catch (error) {
     failed = true

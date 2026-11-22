@@ -6,7 +6,9 @@
     "html": "deno run --allow-read --allow-write --allow-run --allow-env --allow-net scripts/mirror_images.ts",
     // Side-by-side before/after animated WebP: deno task compare -o out.webp BEFORE AFTER [BEFORE AFTER ...]
     "compare": "deno run --allow-read --allow-write --allow-run --allow-env --allow-net scripts/before_after.ts",
-    "check": "deno check scripts/dc_changelog.ts scripts/dc_tui.ts scripts/mirror_images.ts scripts/before_after.ts src/dcinside.ts src/weeks.ts",
+    // Publish one post folder to GitHub Pages: deno task pages dist/<period>
+    "pages": "deno run --allow-read --allow-write --allow-run --allow-env --allow-net scripts/pages.ts",
+    "check": "deno check scripts/dc_changelog.ts scripts/dc_tui.ts scripts/mirror_images.ts scripts/before_after.ts scripts/pages.ts src/dcinside.ts src/weeks.ts",
     "test": "deno test --allow-read --allow-write --allow-run --allow-env --allow-net",
   },
   "lint": {

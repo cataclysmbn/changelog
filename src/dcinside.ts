@@ -209,7 +209,7 @@ export const mapPostImages = (
     } |`
   }).join("\n")
 
-const escapeHtml = (text: string): string =>
+export const escapeHtml = (text: string): string =>
   text.replace(/&/gu, "&amp;").replace(/</gu, "&lt;").replace(/>/gu, "&gt;")
     .replace(/"/gu, "&quot;")
 
