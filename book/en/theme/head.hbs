@@ -5,7 +5,7 @@
   const other = new URL("../" + location.pathname.slice(root.pathname.length), root).href
   let pref
   try { pref = localStorage.getItem("changelog-lang") } catch {}
-  addEventListener("DOMContentLoaded", () => {
+  document.addEventListener("DOMContentLoaded", () => {
     const link = document.createElement("a")
     link.href = other
     link.hreflang = "ko"
@@ -15,9 +15,34 @@
     link.addEventListener("click", pick)
     link.addEventListener("auxclick", pick)
     document.querySelector(".right-buttons")?.prepend(link)
+    // Show the date sections of a post newest first when the reader picked that order; the sidebar is built after this.
+    const main = document.querySelector("main")
+    const dates = [...(main?.querySelectorAll(":scope > h2") ?? [])]
+    if (dates.length < 2) return
+    let order
+    try { order = localStorage.getItem("changelog-order") } catch {}
+    if (order === "newest") {
+      const end = [...main.querySelectorAll(":scope > hr")].at(-1) ?? null
+      const sections = dates.map((date) => {
+        const nodes = [date]
+        for (let node = date.nextSibling; node && node !== end && node.tagName !== "H2"; node = node.nextSibling) nodes.push(node)
+        return nodes
+      })
+      for (const nodes of sections.reverse()) for (const node of nodes) main.insertBefore(node, end)
+    }
+    const select = document.createElement("select")
+    select.className = "changelog-order"
+    for (const [value, label] of [["oldest", "Oldest first"], ["newest", "Newest first"]]) select.add(new Option(label, value, false, value === (order === "newest" ? "newest" : "oldest")))
+    select.addEventListener("change", () => {
+      try { localStorage.setItem("changelog-order", select.value) } catch {}
+      location.reload()
+    })
+    document.querySelector(".right-buttons")?.prepend(select)
   })
 })()
 </script>
 <style>
 .changelog-lang { margin-inline: 8px; line-height: var(--menu-bar-height); color: var(--icons); text-decoration: none; }
+.changelog-order { margin-inline: 8px; border: none; background: transparent; color: var(--icons); font: inherit; }
+.changelog-order option { background: var(--bg); color: var(--fg); }
 </style>
