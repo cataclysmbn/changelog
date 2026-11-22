@@ -341,13 +341,24 @@ export const planAgent = (
     : { agent: "pi" }
 }
 
-/** Rate limit tier of the logged-in Claude subscription, or nothing without one. */
+/**
+ * Rate limit tier of the logged-in Claude subscription, or nothing without one.
+ * `claude auth status` can print a null tier, so fall back to `oauthAccount` in `.claude.json`.
+ */
 const claudeTier = async (claude: string): Promise<string | undefined> => {
   try {
     const status = JSON.parse(
       await $`${claude} auth status --json`.stderr("null").text(),
     )
-    return status.loggedIn ? status.rateLimitTier ?? undefined : undefined
+    if (!status.loggedIn) return undefined
+    if (status.rateLimitTier) return status.rateLimitTier
+    const config = join(
+      Deno.env.get("CLAUDE_CONFIG_DIR") || Deno.env.get("HOME") || "/",
+      ".claude.json",
+    )
+    const account = JSON.parse(await Deno.readTextFile(config)).oauthAccount
+    return account?.userRateLimitTier ?? account?.organizationRateLimitTier ??
+      undefined
   } catch {
     return undefined
   }
