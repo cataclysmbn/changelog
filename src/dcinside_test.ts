@@ -91,14 +91,16 @@ Deno.test("githubImageUrls keeps only permanent GitHub addresses once each", () 
   const asset = "https://github.com/user-attachments/assets/b8f2f31a"
   const repoAsset = "https://github.com/cataclysmbn/Cataclysm-BN/assets/1/a2"
   const legacy = "https://user-images.githubusercontent.com/1/a.png"
+  const raw = "https://raw.githubusercontent.com/dev/repo/assets/a.webp"
   assertEquals(
     githubImageUrls(`<img src="${asset}">
 ![x](${repoAsset})
+| tileset | ![](${raw}) |
 ${legacy} ${asset}
 ![signed](https://private-user-images.githubusercontent.com/1/a.png?jwt=x)
 ![other](https://i.imgur.com/a.png)
 https://github.com/cataclysmbn/Cataclysm-BN/pull/1`),
-    [asset, repoAsset, legacy],
+    [asset, repoAsset, raw, legacy],
   )
   assertEquals(githubImageUrls(`see ${asset}.\n[${legacy}]`), [asset, legacy])
 })
