@@ -1,7 +1,7 @@
 ---
 name: before-after
 description: Turn a PR's before/after screenshot sets into one looping side-by-side animated WebP for a changelog post. Use when a post entry shows only the before (or only the after) image of a PR that has both, or when asked for a before/after comparison image.
-compatibility: Deno and ImageMagick.
+compatibility: Node.js 26, Vite+ and ImageMagick.
 ---
 
 # Before/after comparison
@@ -19,7 +19,7 @@ Each frame shows one before image on the left (`Before`) and one after image on 
 3. Build the WebP into the post folder. Give the sources as `BEFORE AFTER` pairs, URLs or file paths:
 
    ```sh
-   deno task compare -o dist/<period>/<number>-before-after.webp \
+   vp run compare -o dist/<period>/<number>-before-after.webp \
      <before1> <after1> <before2> <after2> ...
    ```
 
@@ -37,9 +37,9 @@ Each frame shows one before image on the left (`Before`) and one after image on 
    ![해체 작업장 변경 전후](file:///home/scarf/repo/cata/dc-changelog/dist/<period>/<number>-before-after.webp)
    ```
 
-6. Re-render both HTML files. `deno task html` pushes the WebP to the `images` branch and writes its jsDelivr URL into the HTML:
+6. Re-render both HTML files. `vp run html` pushes the WebP to the `images` branch and writes its jsDelivr URL into the HTML:
 
    ```sh
-   deno task html dist/<period>/changelog.txt
-   deno task html dist/<period>/changelog.en.txt
+   vp run html dist/<period>/changelog.txt
+   vp run html dist/<period>/changelog.en.txt
    ```

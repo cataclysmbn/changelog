@@ -4,10 +4,16 @@ DCInside 로그라이크 갤러리용 Cataclysm: Bright Nights 패치글 초안�
 
 ## 사용법
 
+Node.js 26과 [Vite+](https://viteplus.dev/guide/)의 `vp`(`curl -fsSL https://vite.plus | bash`)가 필요합니다. 처음 한 번 의존성을 설치합니다.
+
+```sh
+vp install
+```
+
 대화형 생성:
 
 ```sh
-deno task tui
+vp run tui
 ```
 
 고른 주들을 기간 하나로 합쳐 글 하나를 만듭니다. 결과는 `<시작일>_to_<종료일>` 폴더에 생성됩니다.
@@ -32,19 +38,19 @@ dist/2026-05-25_to_2026-06-21/
 `changelog.md`는 이미지를 jsDelivr 주소로 바꾼 사이트용 글이고, `changelog.html`은 그 글로 만든 DCInside용 HTML입니다. `changelog.txt`나 `changelog.en.txt`를 고친 뒤 옆의 Markdown과 HTML만 다시 만들 때:
 
 ```sh
-deno task html dist/2026-05-25_to_2026-06-21/changelog.txt gpt-5.6-terra
-deno task html dist/2026-05-25_to_2026-06-21/changelog.en.txt gpt-5.6-terra
+vp run html dist/2026-05-25_to_2026-06-21/changelog.txt gpt-5.6-terra
+vp run html dist/2026-05-25_to_2026-06-21/changelog.en.txt gpt-5.6-terra
 ```
 
-HTML 끝에는 글을 쓴 AI 모델을 밝히는 줄(`이 변경 내역은 AI(gpt-5.6-terra)로 자동 생성되었습니다.`)이 붙습니다. `deno task tui`는 실행에 쓴 모델 이름을 넣고, `deno task html`은 두 번째 인자로 받은 이름을 넣습니다.
+HTML 끝에는 글을 쓴 AI 모델을 밝히는 줄(`이 변경 내역은 AI(gpt-5.6-terra)로 자동 생성되었습니다.`)이 붙습니다. `vp run tui`는 실행에 쓴 모델 이름을 넣고, `vp run html`은 두 번째 인자로 받은 이름을 넣습니다.
 
 PR에 변경 전후 스크린샷 묶음이 있으면 짝마다 왼쪽에 변경 전, 오른쪽에 변경 후를 놓고 1초마다 다음 짝으로 넘어가는 animated WebP를 만들 수 있습니다. 인자는 `변경 전 변경 후` 순서의 짝이고 URL이나 파일 경로입니다.
 
 ```sh
-deno task compare -o dist/2026-11-09_to_2026-11-14/10834-before-after.webp <전1> <후1> <전2> <후2>
+vp run compare -o dist/2026-11-09_to_2026-11-14/10834-before-after.webp <전1> <후1> <전2> <후2>
 ```
 
-만든 파일은 `changelog.txt`와 `changelog.en.txt`의 이미지 줄에 `file:///절대/경로.webp`로 넣고 `deno task html`로 HTML을 다시 만듭니다. 짝 맞추는 방법은 `.agents/skills/before-after/SKILL.md`에 있습니다.
+만든 파일은 `changelog.txt`와 `changelog.en.txt`의 이미지 줄에 `file:///절대/경로.webp`로 넣고 `vp run html`로 HTML을 다시 만듭니다. 짝 맞추는 방법은 `.agents/skills/before-after/SKILL.md`에 있습니다.
 
 `changelog.txt` 템플릿:
 
@@ -78,19 +84,19 @@ deno task compare -o dist/2026-11-09_to_2026-11-14/10834-before-after.webp <전1
 이번 주만 pi 실행 없이 프롬프트/명령 확인:
 
 ```sh
-deno task tui --yes --dry-run --newest 0 --oldest 0
+vp run tui --yes --dry-run --newest 0 --oldest 0
 ```
 
 프롬프트 생성:
 
 ```sh
-deno task dc --repo /home/scarf/repo/cata/Cataclysm-BN --since 2026-01-01 --until 2026-01-07 -o /tmp/prompt.md
+vp run dc --repo /home/scarf/repo/cata/Cataclysm-BN --since 2026-01-01 --until 2026-01-07 -o /tmp/prompt.md
 ```
 
 바로 편집 가능한 날짜별 초안 생성:
 
 ```sh
-deno task dc --repo /home/scarf/repo/cata/Cataclysm-BN v0.10.0..HEAD --mode draft
+vp run dc --repo /home/scarf/repo/cata/Cataclysm-BN v0.10.0..HEAD --mode draft
 ```
 
 작성 규칙은 `.agents/skills/dcinside-changelog/SKILL.md`에 있습니다.
@@ -109,15 +115,24 @@ deno task dc --repo /home/scarf/repo/cata/Cataclysm-BN v0.10.0..HEAD --mode draf
 
 왼쪽 목록에는 모든 글이 최신순으로 나옵니다. 한국어 책은 브라우저 언어가 한국어가 아니면 영문 책으로 넘어갑니다. 위쪽 막대의 `English`/`한국어`로 고른 언어는 기억되고, `?ko`를 붙이면 언제나 한국어 글을 엽니다.
 
-`deno task tui`는 글을 만든 뒤 `changelog.md`와 `changelog.en.md`를 두 책에 넣고 목록(`SUMMARY.md`, `archive/index.md`)을 다시 써서 `main`에 push합니다. 로컬 저장소에는 `git pull`로 받습니다. 글을 고친 뒤 다시 올릴 때(여러 기간을 한 번에 줄 수 있음):
+`vp run tui`는 글을 만든 뒤 `changelog.md`와 `changelog.en.md`를 두 책에 넣고 목록(`SUMMARY.md`, `archive/index.md`)을 다시 써서 `main`에 push합니다. 로컬 저장소에는 `git pull`로 받습니다. 글을 고친 뒤 다시 올릴 때(여러 기간을 한 번에 줄 수 있음):
 
 ```sh
-deno task pages dist/2026-05-25_to_2026-06-21
+vp run pages dist/2026-05-25_to_2026-06-21
 ```
 
 책을 직접 고쳐도 됩니다. 미리 보기와 사이트 빌드(`mdbook` 필요):
 
 ```sh
-deno task serve
-deno task site _site
+vp run serve
+vp run site _site
+```
+
+## 개발
+
+검사와 테스트(ImageMagick 필요):
+
+```sh
+vp check
+vp test
 ```

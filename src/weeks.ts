@@ -23,8 +23,7 @@ const formatDate = (date: Date): string => {
   return `${year}-${month}-${day}`
 }
 
-const monthDay = (date: Date): string =>
-  `${date.getMonth() + 1}월 ${date.getDate()}일`
+const monthDay = (date: Date): string => `${date.getMonth() + 1}월 ${date.getDate()}일`
 
 export const startOfWeek = (date: Date): Date => {
   const local = toLocalDate(date)
@@ -37,9 +36,7 @@ export const weeklyRanges = (baseDate: Date, count: number): WeekRange[] => {
   return Array.from({ length: count }, (_, index) => {
     const start = addDays(currentWeek, -index * 7)
     const endExclusive = addDays(start, 7)
-    const endInclusive = index === 0
-      ? toLocalDate(baseDate)
-      : addDays(endExclusive, -1)
+    const endInclusive = index === 0 ? toLocalDate(baseDate) : addDays(endExclusive, -1)
     const prefix = index === 0 ? "이번 주" : `${index}주 전`
     const title = `밝밤) ${monthDay(start)} ~ ${monthDay(endInclusive)} 패치`
     return {
@@ -66,9 +63,7 @@ export const mergeRanges = (ranges: WeekRange[]): WeekRange => {
     ...newest,
     start,
     label: `${start} ~ ${newest.endInclusive}`,
-    title: `밝밤) ${isoMonthDay(start)} ~ ${
-      isoMonthDay(newest.endInclusive)
-    } 패치`,
+    title: `밝밤) ${isoMonthDay(start)} ~ ${isoMonthDay(newest.endInclusive)} 패치`,
   }
 }
 

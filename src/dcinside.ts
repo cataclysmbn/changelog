@@ -52,10 +52,7 @@ export const titleRange = (commits: Commit[]): string => {
 
 const cleanMarkdown = (body: string): string =>
   body
-    .replace(
-      /<!-- BEGIN artifact comment -->[\s\S]*?<!-- END artifact comment -->/giu,
-      "",
-    )
+    .replace(/<!-- BEGIN artifact comment -->[\s\S]*?<!-- END artifact comment -->/giu, "")
     .replace(/<!--([\s\S]*?)-->/gu, "")
     .replace(/^## Checklist[\s\S]*/imu, "")
     .replace(/^### Mandatory[\s\S]*/imu, "")
@@ -71,8 +68,7 @@ const bodySummary = (body: string, limit = 3): string[] =>
     .filter((line) => !/^(Assisted-by|Co-authored-by):/iu.test(line))
     .slice(0, limit)
 
-const prNumber = (subject: string): string | null =>
-  subject.match(/\(#(\d+)\)$/u)?.[1] ?? null
+const prNumber = (subject: string): string | null => subject.match(/\(#(\d+)\)$/u)?.[1] ?? null
 
 const stripConventionalPrefix = (subject: string): string =>
   subject
@@ -82,17 +78,13 @@ const stripConventionalPrefix = (subject: string): string =>
 
 export const groupedCommits = (commits: Commit[]): Map<string, Commit[]> => {
   const byDate = new Map<string, Commit[]>()
-  for (
-    const commit of commits.toSorted((a, b) => a.date.localeCompare(b.date))
-  ) {
+  for (const commit of commits.toSorted((a, b) => a.date.localeCompare(b.date))) {
     byDate.set(commit.date, [...(byDate.get(commit.date) ?? []), commit])
   }
   return byDate
 }
 
-export const draftPost = (
-  { commits, title, includeBody = false }: DraftOptions,
-): string => {
+export const draftPost = ({ commits, title, includeBody = false }: DraftOptions): string => {
   const sections = commits
     .map((commit) => {
       const refs = [`${commit.hash}`]
@@ -115,8 +107,9 @@ const permanentImageUrl =
 export const githubImageUrls = (markdown: string): string[] =>
   [
     ...new Set(
-      [...markdown.matchAll(/https:\/\/[^\s)\]"'<>]+/gu)]
-        .map(([url]) => url.replace(/[.,;:!*]+$/u, "")),
+      [...markdown.matchAll(/https:\/\/[^\s)\]"'<>]+/gu)].map(([url]) =>
+        url.replace(/[.,;:!*]+$/u, ""),
+      ),
     ),
   ].filter((url) => permanentImageUrl.test(url))
 
@@ -128,10 +121,16 @@ const linkedHeading = /^## \[([^\]]+)\]\((\S+)\)$/u
 const dateLine = /^(?:\d{1,2}월 \d{1,2}일|[A-Z][a-z]{2} \d{1,2})$/u
 
 const postLines = (post: string): string[] =>
-  post.split("\n").map((line) => line.trim()).filter(Boolean)
+  post
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
 
 const tableCells = (row: string): string[] =>
-  row.slice(1, -1).split("|").map((cell) => cell.trim())
+  row
+    .slice(1, -1)
+    .split("|")
+    .map((cell) => cell.trim())
 
 /** Image matches of an image line or of the image cells of a table row. */
 const lineImages = (line: string): RegExpMatchArray[] =>
@@ -140,10 +139,7 @@ const lineImages = (line: string): RegExpMatchArray[] =>
     .filter((image): image is RegExpMatchArray => image !== null)
 
 const evidenceUrls = (source: string, label: string): Set<string> =>
-  new Set(
-    [...source.matchAll(new RegExp(`^  ${label}: (\\S+)$`, "gmu"))]
-      .map((match) => match[1]),
-  )
+  new Set([...source.matchAll(new RegExp(`^  ${label}: (\\S+)$`, "gmu"))].map((match) => match[1]))
 
 /** Rejects text outside the post template and URLs that the PR evidence does not list. */
 export const assertPostFormat = (post: string, source: string): void => {
@@ -170,49 +166,50 @@ export const assertPostFormat = (post: string, source: string): void => {
     }
     if (
       table &&
-      tableCells(line).some((cell) =>
-        !imageLine.test(cell) && /!\[|https?:\/\//u.test(cell)
-      )
-    ) throw new Error(`템플릿에 없는 줄: ${line}`)
+      tableCells(line).some((cell) => !imageLine.test(cell) && /!\[|https?:\/\//u.test(cell))
+    )
+      throw new Error(`템플릿에 없는 줄: ${line}`)
     if (link && !links.has(link[2])) {
       throw new Error(`PR 근거에 없는 링크: ${link[2]}`)
     }
     if (
-      !image && !link && !table &&
+      !image &&
+      !link &&
+      !table &&
       (/^(?:ㄴ|\* |✓|```)|https?:\/\//u.test(line) ||
         (index > 0 && /^#+ /u.test(line) && !line.startsWith("## ")))
-    ) throw new Error(`템플릿에 없는 줄: ${line}`)
+    )
+      throw new Error(`템플릿에 없는 줄: ${line}`)
   }
 }
 
 /** Distinct image sources of a post, in order of first use; a comparison source is its URLs joined by spaces. */
 export const postImageUrls = (post: string): string[] => [
-  ...new Set(
-    postLines(post).flatMap((line) =>
-      lineImages(line).map((image) => image[2])
-    ),
-  ),
+  ...new Set(postLines(post).flatMap((line) => lineImages(line).map((image) => image[2]))),
 ]
 
 /** Replaces the source of each image line and image table cell; other lines keep their URLs. */
-export const mapPostImages = (
-  post: string,
-  replace: (url: string) => string,
-): string =>
-  post.split("\n").map((line) => {
-    const image = line.trim().match(imageLine)
-    if (image) return `![${image[1]}](${replace(image[2])})`
-    if (!tableRow.test(line.trim())) return line
-    return `| ${
-      tableCells(line.trim()).map((cell) => {
-        const cellImage = cell.match(imageLine)
-        return cellImage ? `![${cellImage[1]}](${replace(cellImage[2])})` : cell
-      }).join(" | ")
-    } |`
-  }).join("\n")
+export const mapPostImages = (post: string, replace: (url: string) => string): string =>
+  post
+    .split("\n")
+    .map((line) => {
+      const image = line.trim().match(imageLine)
+      if (image) return `![${image[1]}](${replace(image[2])})`
+      if (!tableRow.test(line.trim())) return line
+      return `| ${tableCells(line.trim())
+        .map((cell) => {
+          const cellImage = cell.match(imageLine)
+          return cellImage ? `![${cellImage[1]}](${replace(cellImage[2])})` : cell
+        })
+        .join(" | ")} |`
+    })
+    .join("\n")
 
 export const escapeHtml = (text: string): string =>
-  text.replace(/&/gu, "&amp;").replace(/</gu, "&lt;").replace(/>/gu, "&gt;")
+  text
+    .replace(/&/gu, "&amp;")
+    .replace(/</gu, "&lt;")
+    .replace(/>/gu, "&gt;")
     .replace(/"/gu, "&quot;")
 
 /** Post lines with each run of table rows joined into one block. */
@@ -220,9 +217,7 @@ const postBlocks = (lines: string[]): (string | string[])[] =>
   lines.reduce<(string | string[])[]>((blocks, line) => {
     const last = blocks.at(-1)
     if (!tableRow.test(line)) return [...blocks, line]
-    return Array.isArray(last)
-      ? [...blocks.slice(0, -1), [...last, line]]
-      : [...blocks, [line]]
+    return Array.isArray(last) ? [...blocks.slice(0, -1), [...last, line]] : [...blocks, [line]]
   }, [])
 
 /** Last line of each post: names the AI model that wrote it. */
@@ -235,59 +230,45 @@ export const aiFooter = (model: string, english = false): string =>
 export const postMarkdown = (post: string, footer?: string): string =>
   postBlocks(
     postLines(post).map((line) =>
-      dateLine.test(line)
-        ? `## ${line}`
-        : line.startsWith("## ")
-        ? `#${line}`
-        : line
+      dateLine.test(line) ? `## ${line}` : line.startsWith("## ") ? `#${line}` : line,
     ),
   )
-    .map((block) => Array.isArray(block) ? block.join("\n") : block)
+    .map((block) => (Array.isArray(block) ? block.join("\n") : block))
     .concat(footer ? ["---", footer] : [])
     .map((block, index, blocks) =>
       index === 0
         ? block
-        : `${
-          block.startsWith("- ") && blocks[index - 1].startsWith("- ")
-            ? "\n"
-            : "\n\n"
-        }${block}`
+        : `${block.startsWith("- ") && blocks[index - 1].startsWith("- ") ? "\n" : "\n\n"}${block}`,
     )
     .join("") + "\n"
 
 const htmlImage = (url: string, alt: string, width: string): string =>
-  `<img src="${escapeHtml(url)}" alt="${
-    escapeHtml(alt)
-  }" style="max-width:${width};height:auto;">`
+  `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" style="max-width:${width};height:auto;">`
 
 const renderCell = (tag: string, cell: Tokens.TableCell): string => {
-  const image = cell.tokens.length === 1 && cell.tokens[0].type === "image"
-    ? cell.tokens[0] as Tokens.Image
-    : undefined
+  const image =
+    cell.tokens.length === 1 && cell.tokens[0].type === "image"
+      ? (cell.tokens[0] as Tokens.Image)
+      : undefined
   return `<${tag}>${
     image ? htmlImage(image.href, image.text, "100%") : escapeHtml(cell.text)
   }</${tag}>`
 }
 
 const renderTable = (table: Tokens.Table): string =>
-  `<table border="1" style="border-collapse:collapse;width:100%;max-width:850px;">\n${
-    [
-      `<tr>${table.header.map((cell) => renderCell("th", cell)).join("")}</tr>`,
-      ...table.rows.map((row) =>
-        `<tr>${row.map((cell) => renderCell("td", cell)).join("")}</tr>`
-      ),
-    ].join("\n")
-  }\n</table>`
+  `<table border="1" style="border-collapse:collapse;width:100%;max-width:850px;">\n${[
+    `<tr>${table.header.map((cell) => renderCell("th", cell)).join("")}</tr>`,
+    ...table.rows.map((row) => `<tr>${row.map((cell) => renderCell("td", cell)).join("")}</tr>`),
+  ].join("\n")}\n</table>`
 
 /** Renders a post's site Markdown (from `postMarkdown`) to the HTML fragment for the DCInside HTML editor; the title goes in its own form field. Images in `wide` may grow to two normal widths, and a `---` rule becomes a blank line. */
 export const renderPostHtml = (
   markdown: string,
   { wide = new Set() }: { wide?: ReadonlySet<string> } = {},
 ): string =>
-  new Lexer().lex(markdown)
-    .filter((token) =>
-      token.type !== "space" && !(token.type === "heading" && token.depth === 1)
-    )
+  new Lexer()
+    .lex(markdown)
+    .filter((token) => token.type !== "space" && !(token.type === "heading" && token.depth === 1))
     .map((token, index, tokens) => {
       const previous = tokens[index - 1]
       // A blank line and an empty bold line separate entries and dates, except an entry right below its date.
@@ -298,12 +279,10 @@ export const renderPostHtml = (
       if (token.type === "heading") {
         const link =
           token.tokens?.length === 1 && token.tokens[0].type === "link"
-            ? token.tokens[0] as Tokens.Link
+            ? (token.tokens[0] as Tokens.Link)
             : undefined
         const name = link
-          ? `<a href="${escapeHtml(link.href)}" target="_blank">${
-            escapeHtml(link.text)
-          }</a>`
+          ? `<a href="${escapeHtml(link.href)}" target="_blank">${escapeHtml(link.text)}</a>`
           : escapeHtml(token.text)
         return `${gap}<p><b>${name}</b></p>`
       }
@@ -311,29 +290,32 @@ export const renderPostHtml = (
       if (token.type === "table") return renderTable(token as Tokens.Table)
       if (token.type === "list") {
         const list = token as Tokens.List
-        return list.items.map((item, i) =>
-          `<p>${list.ordered ? `${Number(list.start || 1) + i}.` : "•"} ${
-            escapeHtml(item.text)
-          }</p>`
-        ).join("\n")
-      }
-      const image = token.type === "paragraph" && token.tokens?.length === 1 &&
-          token.tokens[0].type === "image"
-        ? token.tokens[0] as Tokens.Image
-        : undefined
-      if (image) {
-        const tag = `<p>${
-          htmlImage(
-            image.href,
-            image.text,
-            `${wide.has(image.href) ? 850 : 425}px`,
+        return list.items
+          .map(
+            (item, i) =>
+              `<p>${list.ordered ? `${Number(list.start || 1) + i}.` : "•"} ${escapeHtml(
+                item.text,
+              )}</p>`,
           )
-        }</p>`
+          .join("\n")
+      }
+      const image =
+        token.type === "paragraph" && token.tokens?.length === 1 && token.tokens[0].type === "image"
+          ? (token.tokens[0] as Tokens.Image)
+          : undefined
+      if (image) {
+        const tag = `<p>${htmlImage(
+          image.href,
+          image.text,
+          `${wide.has(image.href) ? 850 : 425}px`,
+        )}</p>`
         return image.text ? `${tag}\n<p>▲ ${escapeHtml(image.text)}</p>` : tag
       }
-      return ("text" in token ? String(token.text) : token.raw).trim().split(
-        "\n",
-      ).map((line: string) => `<p>${escapeHtml(line)}</p>`).join("\n")
+      return ("text" in token ? String(token.text) : token.raw)
+        .trim()
+        .split("\n")
+        .map((line: string) => `<p>${escapeHtml(line)}</p>`)
+        .join("\n")
     })
     .join("\n") + "\n"
 
@@ -385,7 +367,10 @@ ${translationGuide}
 `
 
 const indent = (text: string, prefix: string): string =>
-  text.split("\n").map((line) => `${prefix}${line}`).join("\n")
+  text
+    .split("\n")
+    .map((line) => `${prefix}${line}`)
+    .join("\n")
 
 const prEvidence = (pullRequest: PullRequestDetails): string => {
   if (pullRequest.lookupError) {
@@ -393,23 +378,27 @@ const prEvidence = (pullRequest: PullRequestDetails): string => {
   }
 
   const body = bodySummary(pullRequest.body, 18).join("\n")
-  const files = pullRequest.files.slice(0, 20).map((file) => `  - ${file}`)
+  const files = pullRequest.files
+    .slice(0, 20)
+    .map((file) => `  - ${file}`)
     .join("\n")
 
   return [
     `  PR: #${pullRequest.number} ${pullRequest.title}`,
     `  URL: ${pullRequest.url}`,
-    body
-      ? `  Body evidence:\n${indent(body, "    ")}`
-      : "  Body evidence: none",
+    body ? `  Body evidence:\n${indent(body, "    ")}` : "  Body evidence: none",
     files ? `  Changed files:\n${files}` : "  Changed files: none",
     ...pullRequest.images.map((image) => `  Image: ${image}`),
   ].join("\n")
 }
 
-export const rewritePrompt = (
-  { commits, title, includeBody = true, glossary, glossaryPo }: DraftOptions,
-): string => {
+export const rewritePrompt = ({
+  commits,
+  title,
+  includeBody = true,
+  glossary,
+  glossaryPo,
+}: DraftOptions): string => {
   const rawEntries = [...groupedCommits(commits)]
     .map(([date, items]) => {
       const entries = items
@@ -421,30 +410,29 @@ export const rewritePrompt = (
             `- ${commit.hash} ${commit.subject}`,
             `  author: ${commit.author}`,
             includeBody ? details : "",
-            commit.pullRequest
-              ? prEvidence(commit.pullRequest)
-              : "  PR evidence: none",
-          ].filter((line) => line.length > 0).join("\n")
+            commit.pullRequest ? prEvidence(commit.pullRequest) : "  PR evidence: none",
+          ]
+            .filter((line) => line.length > 0)
+            .join("\n")
         })
         .join("\n")
       return `${date}\n${entries}`
     })
     .join("\n\n")
 
-  const glossarySection = glossary?.trim()
-    ? `\n\n# 한국어 PO 용어 근거\n${glossary.trim()}\n`
-    : ""
+  const glossarySection = glossary?.trim() ? `\n\n# 한국어 PO 용어 근거\n${glossary.trim()}\n` : ""
 
-  return `${styleGuide}\n\n목표 제목: ${
-    title ?? titleRange(commits)
-  }\nPO 파일: ${
+  return `${styleGuide}\n\n목표 제목: ${title ?? titleRange(commits)}\nPO 파일: ${
     glossaryPo ?? "/home/scarf/repo/cata/translations/lang/po/ko.po"
   }\n출력은 게시글 본문만 반환합니다.${glossarySection}\n\n아래 커밋/PR 근거를 읽고 위 형식의 한국어 패치글로 재작성해 주세요. 커밋 제목만 보고 쓰면 실패입니다. 플레이어가 읽고 "뭐가 어떻게 바뀌었는지" 알 수 없는 항목은 고치거나 삭제하세요.\n\n${rawEntries}\n`
 }
 
-export const reviewPrompt = (
-  { draft, sourcePrompt, title, glossaryPo }: ReviewPromptOptions,
-): string =>
+export const reviewPrompt = ({
+  draft,
+  sourcePrompt,
+  title,
+  glossaryPo,
+}: ReviewPromptOptions): string =>
   `${styleGuide}
 
 당신은 표독한 senior 한국어 편집자 reviewer subagent입니다. 아래 초안을 0점짜리 개발자 번역이라고 의심하고, PR 근거와 대조해서 게시 가능한 밝밤 DCInside 패치글로 다시 고치세요.
@@ -481,14 +469,12 @@ export type TranslatePromptOptions = {
 const lineShape = (line: string): string => {
   if (tableSeparator.test(line)) return "table separator"
   if (tableRow.test(line)) {
-    return `table ${
-      tableCells(line).map((cell) => {
+    return `table ${tableCells(line)
+      .map((cell) => {
         const image = cell.match(imageLine)
-        return image
-          ? `image ${image[1] ? "caption" : "bare"} ${image[2]}`
-          : "text"
-      }).join(" | ")
-    }`
+        return image ? `image ${image[1] ? "caption" : "bare"} ${image[2]}` : "text"
+      })
+      .join(" | ")}`
   }
   const image = line.match(imageLine)
   const link = line.match(linkedHeading)
@@ -508,17 +494,11 @@ export const assertSameLayout = (original: string, translation: string) => {
   const index = expected.findIndex((shape, i) => shape !== actual[i])
   if (index !== -1 || expected.length !== actual.length) {
     const at = index === -1 ? expected.length : index
-    throw new Error(
-      `번역 줄 구조 불일치 (${at + 1}번째 줄): ${expected[at]} -> ${
-        actual[at]
-      }`,
-    )
+    throw new Error(`번역 줄 구조 불일치 (${at + 1}번째 줄): ${expected[at]} -> ${actual[at]}`)
   }
 }
 
-export const translatePrompt = (
-  { post, title, terms }: TranslatePromptOptions,
-): string =>
+export const translatePrompt = ({ post, title, terms }: TranslatePromptOptions): string =>
   `Translate this Korean Cataclysm: Bright Nights changelog into English for English-speaking players.
 
 Rules:
@@ -531,10 +511,7 @@ Rules:
 - Do not leave any Korean text.
 
 Game names (Korean -> English):
-${
-    terms.map(({ used, msgid }) => `- ${used} -> ${msgid}`).join("\n") ||
-    "- none"
-  }
+${terms.map(({ used, msgid }) => `- ${used} -> ${msgid}`).join("\n") || "- none"}
 
 # Korean post
 ${post}

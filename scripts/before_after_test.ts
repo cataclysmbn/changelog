@@ -1,24 +1,21 @@
-import $ from "@david/dax"
-import { assertEquals, assertRejects } from "@std/assert"
-import { join } from "@std/path"
+import { mkdtemp, readFile, rm } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import $ from "dax"
+import { expect, test } from "vite-plus/test"
+import { join } from "node:path"
 
 import { beforeAfter } from "./before_after.ts"
 
 const withDir = async (run: (dir: string) => Promise<void>) => {
-  const dir = await Deno.makeTempDir()
+  const dir = await mkdtemp(join(tmpdir(), "changelog-"))
   try {
     await run(dir)
   } finally {
-    await Deno.remove(dir, { recursive: true })
+    await rm(dir, { recursive: true })
   }
 }
 
-const solid = async (
-  dir: string,
-  name: string,
-  size: string,
-  color: string,
-) => {
+const solid = async (dir: string, name: string, size: string, color: string) => {
   const file = join(dir, `${name}.png`)
   await $`magick -size ${size} xc:${color} ${file}`
   return file
@@ -27,7 +24,7 @@ const solid = async (
 const pixel = (file: string, x: number, y: number) =>
   $`magick ${file} -format ${`%[pixel:p{${x},${y}}]`} info:`.text()
 
-Deno.test("beforeAfter puts each before left and after right, one frame per pair, 1 s each, looped", () =>
+test("beforeAfter puts each before left and after right, one frame per pair, 1 s each, looped", () =>
   withDir(async (dir) => {
     // 200x100 red | 160x120 blue, then 200x100 green | 200x100 yellow: panels pad to 200x120, gap 8, label 44 on top.
     const sources = [
@@ -41,32 +38,28 @@ Deno.test("beforeAfter puts each before left and after right, one frame per pair
 
     const frames = join(dir, "frame-%d.png")
     await $`magick ${output} -coalesce ${frames}`
-    const sizes = await $`magick identify -format ${"%w %h %T\n"} ${output}`
-      .lines()
-    assertEquals(sizes.length, 2)
+    const sizes = await $`magick identify -format ${"%w %h %T\n"} ${output}`.lines()
+    expect(sizes.length).toEqual(2)
     const first = join(dir, "frame-0.png")
     const second = join(dir, "frame-1.png")
-    assertEquals(
-      await $`magick identify -format ${"%w %h"} ${first}`.text(),
+    expect(await $`magick identify -format ${"%w %h"} ${first}`.text()).toEqual(
       `${200 + 8 + 200} ${44 + 120}`,
     )
-    assertEquals(await pixel(first, 100, 104), "srgb(255,0,0)")
-    assertEquals(await pixel(first, 308, 104), "srgb(0,0,255)")
-    assertEquals(await pixel(second, 100, 104), "srgb(0,255,0)")
-    assertEquals(await pixel(second, 308, 104), "srgb(255,255,0)")
-    assertEquals(sizes.map((line) => line.split(" ")[2]), ["100", "100"])
+    expect(await pixel(first, 100, 104)).toEqual("srgb(255,0,0)")
+    expect(await pixel(first, 308, 104)).toEqual("srgb(0,0,255)")
+    expect(await pixel(second, 100, 104)).toEqual("srgb(0,255,0)")
+    expect(await pixel(second, 308, 104)).toEqual("srgb(255,255,0)")
+    expect(sizes.map((line) => line.split(" ")[2])).toEqual(["100", "100"])
     // ANIM chunk: tag, size, background color, then the loop count (0 = forever).
-    const bytes = await Deno.readFile(output)
+    const bytes = await readFile(output)
     const anim = new TextDecoder().decode(bytes).indexOf("ANIM")
-    assertEquals(new DataView(bytes.buffer).getUint16(anim + 12, true), 0)
+    expect(new DataView(bytes.buffer).getUint16(anim + 12, true)).toEqual(0)
   }))
 
-Deno.test("beforeAfter rejects a before image without its after image", () =>
+test("beforeAfter rejects a before image without its after image", () =>
   withDir(async (dir) => {
     const before = await solid(dir, "b", "8x8", "red")
-    await assertRejects(
-      () => beforeAfter({ sources: [before], output: join(dir, "out.webp") }),
-      Error,
-      "짝",
-    )
+    await expect(() =>
+      beforeAfter({ sources: [before], output: join(dir, "out.webp") }),
+    ).rejects.toThrow("짝")
   }))

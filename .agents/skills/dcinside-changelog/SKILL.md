@@ -1,7 +1,7 @@
 ---
 name: dcinside-changelog
 description: Korean DCInside BN changelog posts.
-compatibility: Local Cataclysm-BN checkout and Deno.
+compatibility: Local Cataclysm-BN checkout, Node.js 26 and Vite+.
 ---
 
 # DCInside Changelog
@@ -13,7 +13,7 @@ Use this for `밝밤)` DCInside posts.
 1. For interactive generation, use the dax TUI:
 
    ```sh
-   deno task tui
+   vp run tui
    ```
 
    It lists this week first, lets the user choose an older contiguous week range, crawls PR evidence and image URLs, writes prompts only in a temp directory, and merges the chosen weeks into one period, and invokes isolated pi writer, reviewer, and English translator passes for that one post. Pi runs with `--no-context-files` plus role-specific AGENTS content injected through the system prompt, while keeping the user's normal pi auth/model settings. Output is one folder like `dist/2026-05-25_to_2026-06-21/` with `changelog.txt` and the `changelog.html` to paste into the DCInside HTML editor, plus the English `changelog.en.txt` and `changelog.en.html`. The English post must keep every line kind, link, and image of the Korean post (`assertSameLayout` in `src/dcinside.ts`) and uses the verified PO `msgid` names.
@@ -21,8 +21,8 @@ Use this for `밝밤)` DCInside posts.
 2. Generate a prompt or skeleton manually from the Cataclysm-BN checkout:
 
    ```sh
-   deno task dc --repo /home/scarf/repo/cata/Cataclysm-BN --since 2026-01-01 --until 2026-01-07 -o /tmp/prompt.md
-   deno task dc --repo /home/scarf/repo/cata/Cataclysm-BN v0.10.0..HEAD --mode draft
+   vp run dc --repo /home/scarf/repo/cata/Cataclysm-BN --since 2026-01-01 --until 2026-01-07 -o /tmp/prompt.md
+   vp run dc --repo /home/scarf/repo/cata/Cataclysm-BN v0.10.0..HEAD --mode draft
    ```
 
 3. Always inspect PR body/files/images or the diff before writing a Korean bullet. Commit titles and curated commit lists are not enough. Do not invent gameplay details.

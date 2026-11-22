@@ -1,4 +1,4 @@
-import * as v from "@valibot/valibot"
+import * as v from "valibot"
 
 export type PoEntry = {
   msgid: string
@@ -12,8 +12,7 @@ export type PoEntry = {
 const poField = (lines: string[], field: RegExp): string | undefined => {
   const start = lines.findIndex((line) => field.test(line))
   if (start < 0) return undefined
-  const value = (line: string): string =>
-    JSON.parse(line.slice(line.indexOf('"')))
+  const value = (line: string): string => JSON.parse(line.slice(line.indexOf('"')))
   let result = value(lines[start])
   for (const line of lines.slice(start + 1)) {
     if (!line.startsWith('"')) break
@@ -51,42 +50,37 @@ const termIndex = (term: string, source: string): number => {
   if (!term.trim() || term.includes("\n")) return -1
   const needle = normalized(term)
   const word = /[\p{L}\p{N}]/u
-  for (
-    let index = source.indexOf(needle);
-    index >= 0;
-    index = source.indexOf(needle, index + 1)
-  ) {
-    if (
-      !word.test(source[index - 1] ?? "") &&
-      !word.test(source[index + needle.length] ?? "")
-    ) return index
+  for (let index = source.indexOf(needle); index >= 0; index = source.indexOf(needle, index + 1)) {
+    if (!word.test(source[index - 1] ?? "") && !word.test(source[index + needle.length] ?? ""))
+      return index
   }
   return -1
 }
 
-export const poGlossary = (
-  entries: readonly PoEntry[],
-  source: string,
-): string => {
+export const poGlossary = (entries: readonly PoEntry[], source: string): string => {
   const text = normalized(source)
-  return entries.map((entry) => {
-    const matches = [entry.msgid, entry.msgidPlural]
-      .filter((term): term is string => term !== undefined)
-      .map((term) => termIndex(term, text)).filter((index) => index >= 0)
-    return { entry, index: matches.length ? Math.min(...matches) : -1 }
-  }).filter(({ index }) => index >= 0)
+  return entries
+    .map((entry) => {
+      const matches = [entry.msgid, entry.msgidPlural]
+        .filter((term): term is string => term !== undefined)
+        .map((term) => termIndex(term, text))
+        .filter((index) => index >= 0)
+      return { entry, index: matches.length ? Math.min(...matches) : -1 }
+    })
+    .filter(({ index }) => index >= 0)
     .toSorted((a, b) => a.index - b.index)
     .map(({ entry }) =>
       [
         `- msgid ${JSON.stringify(entry.msgid)}`,
         `  msgctxt ${JSON.stringify(entry.msgctxt)}`,
-        entry.msgidPlural
-          ? `  msgid_plural ${JSON.stringify(entry.msgidPlural)}`
-          : "",
+        entry.msgidPlural ? `  msgid_plural ${JSON.stringify(entry.msgidPlural)}` : "",
         `  msgstr ${JSON.stringify(entry.msgstr)}`,
         `  po_line ${entry.line}${entry.fuzzy ? " (fuzzy: 번역 미확정)" : ""}`,
-      ].filter(Boolean).join("\n")
-    ).join("\n")
+      ]
+        .filter(Boolean)
+        .join("\n"),
+    )
+    .join("\n")
 }
 
 const TermSchema = v.strictObject({
@@ -104,18 +98,17 @@ export type VerifiedTerm = v.InferOutput<typeof TermSchema> & {
   status: "translated" | "untranslated" | "fuzzy" | "missing"
 }
 
-const escapeRegExp = (text: string): string =>
-  text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
 /** True when `used` is in `body`, or its leading words sit in a ·-joined list that shares the last words (`A·B 탄약대`). */
 const appearsIn = (body: string, used: string): boolean =>
   body.includes(used) ||
   Array.from(used.matchAll(/ /g)).some(({ index }) =>
     new RegExp(
-      `(?:[^\\s·]+·)*${escapeRegExp(used.slice(0, index))}(?:·[^\\s·]+)*${
-        escapeRegExp(used.slice(index))
-      }`,
-    ).test(body)
+      `(?:[^\\s·]+·)*${escapeRegExp(used.slice(0, index))}(?:·[^\\s·]+)*${escapeRegExp(
+        used.slice(index),
+      )}`,
+    ).test(body),
   )
 
 export const validateTranslationReview = (
@@ -125,8 +118,8 @@ export const validateTranslationReview = (
   const review = v.parse(ReviewSchema, JSON.parse(response))
   if (!review.changelog.trim()) throw new Error("검수 본문이 비어 있습니다")
   const terms = review.terms.map((term): VerifiedTerm => {
-    const candidates = entries.filter((entry) =>
-      entry.msgid === term.msgid || entry.msgidPlural === term.msgid
+    const candidates = entries.filter(
+      (entry) => entry.msgid === term.msgid || entry.msgidPlural === term.msgid,
     )
     const matches = candidates.filter((entry) => entry.msgctxt === term.msgctxt)
     if (matches.length > 1 || (candidates.length && !matches.length)) {
@@ -136,16 +129,14 @@ export const validateTranslationReview = (
     const status = !entry
       ? "missing"
       : entry.fuzzy
-      ? "fuzzy"
-      : entry.msgstr
-      ? "translated"
-      : "untranslated"
+        ? "fuzzy"
+        : entry.msgstr
+          ? "translated"
+          : "untranslated"
     const expected = status === "translated" ? entry.msgstr : term.msgid
     if (term.used !== expected) {
       throw new Error(
-        `PO 번역 불일치: ${term.msgid}: ${JSON.stringify(term.used)} → ${
-          JSON.stringify(expected)
-        }`,
+        `PO 번역 불일치: ${term.msgid}: ${JSON.stringify(term.used)} → ${JSON.stringify(expected)}`,
       )
     }
     if (!appearsIn(review.changelog, term.used)) {

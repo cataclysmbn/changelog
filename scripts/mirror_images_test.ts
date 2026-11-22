@@ -1,37 +1,46 @@
-import $ from "@david/dax"
-import { assertEquals, assertRejects, assertStringIncludes } from "@std/assert"
-import { encodeHex } from "@std/encoding/hex"
-import { join } from "@std/path"
+import { mkdtemp, rm } from "node:fs/promises"
+import { createServer } from "node:http"
+import type { AddressInfo } from "node:net"
+import { tmpdir } from "node:os"
+import $ from "dax"
+import { expect, test } from "vite-plus/test"
+import { join } from "node:path"
 
 import { mirrorPost, mirrorPostImages } from "./mirror_images.ts"
 
-const magick = async (...args: string[]) =>
-  new Uint8Array(await $`magick ${args}`.bytes())
+const magick = async (...args: string[]) => new Uint8Array(await $`magick ${args}`.bytes())
 const png = await magick("-size", "8x8", "xc:red", "png:-")
-const webp = await magick(
-  "-size",
-  "8x8",
-  "xc:red",
-  "-define",
-  "webp:lossless=true",
-  "webp:-",
-)
+const webp = await magick("-size", "8x8", "xc:red", "-define", "webp:lossless=true", "webp:-")
 const photo = await magick("-size", "300x300", "plasma:fractal", "png:-")
 const wide = await magick("-size", "20x10", "xc:blue", "png:-")
 const sha256 = async (bytes: Uint8Array<ArrayBuffer>) =>
-  encodeHex(await crypto.subtle.digest("SHA-256", bytes))
+  Buffer.from(await crypto.subtle.digest("SHA-256", bytes)).toString("hex")
 const pngName = `${await sha256(png)}.png`
 const webpName = `${await sha256(webp)}.webp`
 
-const isolateGit = () => {
-  for (const name of Object.keys(Deno.env.toObject())) {
-    if (name.startsWith("GIT_")) Deno.env.delete(name)
+/** Serve `handler` on a free localhost port. */
+const serve = async (handler: (url: URL) => Response) => {
+  const server = createServer(async (request, response) => {
+    const reply = handler(new URL(request.url!, "http://localhost"))
+    response.writeHead(reply.status, Object.fromEntries(reply.headers))
+    response.end(Buffer.from(await reply.arrayBuffer()))
+  })
+  await new Promise<void>((done) => server.listen(0, "localhost", done))
+  return {
+    port: (server.address() as AddressInfo).port,
+    shutdown: () => new Promise((done) => server.close(done)),
   }
-  Deno.env.set("GIT_CONFIG_GLOBAL", "/dev/null")
-  Deno.env.set("GIT_CONFIG_NOSYSTEM", "1")
+}
+
+const isolateGit = () => {
+  for (const name of Object.keys({ ...process.env })) {
+    if (name.startsWith("GIT_")) delete process.env[name]
+  }
+  process.env["GIT_CONFIG_GLOBAL"] = "/dev/null"
+  process.env["GIT_CONFIG_NOSYSTEM"] = "1"
   for (const role of ["AUTHOR", "COMMITTER"]) {
-    Deno.env.set(`GIT_${role}_NAME`, "test")
-    Deno.env.set(`GIT_${role}_EMAIL`, "test@example.test")
+    process.env[`GIT_${role}_NAME`] = "test"
+    process.env[`GIT_${role}_EMAIL`] = "test@example.test"
   }
 }
 
@@ -43,17 +52,16 @@ const withMirror = async (
     tip: () => Promise<string>
   }) => Promise<void>,
 ) => {
-  const saved = Deno.env.toObject()
+  const saved = { ...process.env }
   isolateGit()
-  const root = await Deno.makeTempDir()
+  const root = await mkdtemp(join(tmpdir(), "changelog-"))
   const remote = join(root, "remote.git")
   await $`git init --quiet --bare --initial-branch=main ${remote}`
   const tree = await $`git -C ${remote} mktree`.stdinText("").text()
   const seed = await $`git -C ${remote} commit-tree ${tree} -m seed`.text()
   await $`git -C ${remote} update-ref refs/heads/images ${seed}`
 
-  const server = Deno.serve({ port: 0, onListen: () => {} }, (request) => {
-    const { pathname } = new URL(request.url)
+  const server = await serve(({ pathname }) => {
     if (pathname === "/a.png") {
       return new Response(webp, { headers: { "content-type": "image/webp" } })
     }
@@ -78,7 +86,7 @@ const withMirror = async (
       status: pathname.startsWith("/missing") ? 403 : 200,
     })
   })
-  const base = `http://localhost:${server.addr.port}`
+  const base = `http://localhost:${server.port}`
   try {
     await run({
       remote,
@@ -88,39 +96,32 @@ const withMirror = async (
     })
   } finally {
     await server.shutdown()
-    await Deno.remove(root, { recursive: true })
-    for (const name of Object.keys(Deno.env.toObject())) Deno.env.delete(name)
+    await rm(root, { recursive: true })
+    for (const name of Object.keys({ ...process.env })) delete process.env[name]
     for (const [name, value] of Object.entries(saved)) {
-      Deno.env.set(name, value)
+      process.env[name] = value
     }
   }
 }
 
-Deno.test("mirrorPostImages pushes each image once and rewrites the post to pinned CDN URLs", async () => {
+test("mirrorPostImages pushes each image once and rewrites the post to pinned CDN URLs", async () => {
   await withMirror(async ({ remote, cdn, source, tip }) => {
     const before = await tip()
-    const post =
-      `# 제목\n## 항목\n![](${source}/a.png)\n![설명](${source}/a.png)\n`
+    const post = `# 제목\n## 항목\n![](${source}/a.png)\n![설명](${source}/a.png)\n`
 
     const mirrored = await mirrorPostImages(post, { remote, cdn })
 
     const commit = await tip()
     const url = `${cdn}@${commit}/${webpName}`
-    assertEquals(mirrored, `# 제목\n## 항목\n![](${url})\n![설명](${url})\n`)
-    assertEquals(
-      await $`git -C ${remote} rev-parse ${commit}~1`.text(),
-      before,
-    )
-    assertEquals(
-      await $`git -C ${remote} ls-tree --name-only ${commit}`.text(),
-      webpName,
-    )
-    assertEquals(await mirrorPostImages(post, { remote, cdn }), mirrored)
-    assertEquals(await tip(), commit)
+    expect(mirrored).toEqual(`# 제목\n## 항목\n![](${url})\n![설명](${url})\n`)
+    expect(await $`git -C ${remote} rev-parse ${commit}~1`.text()).toEqual(before)
+    expect(await $`git -C ${remote} ls-tree --name-only ${commit}`.text()).toEqual(webpName)
+    expect(await mirrorPostImages(post, { remote, cdn })).toEqual(mirrored)
+    expect(await tip()).toEqual(commit)
   })
 })
 
-Deno.test("mirrorPostImages keeps the smaller of the original and its WebP copy", async () => {
+test("mirrorPostImages keeps the smaller of the original and its WebP copy", async () => {
   await withMirror(async ({ remote, cdn, source, tip }) => {
     const mirrored = await mirrorPostImages(
       `# 제목\n## 항목\n![](${source}/small.png)\n![](${source}/photo.png)\n`,
@@ -128,40 +129,38 @@ Deno.test("mirrorPostImages keeps the smaller of the original and its WebP copy"
     )
 
     const commit = await tip()
-    const names = (await $`git -C ${remote} ls-tree --name-only ${commit}`
-      .text()).split("\n")
+    const names = (await $`git -C ${remote} ls-tree --name-only ${commit}`.text()).split("\n")
     const webps = names.filter((name) => name.endsWith(".webp"))
-    assertEquals(webps.length >= 1, true)
+    expect(webps.length >= 1).toEqual(true)
     for (const name of names) {
-      assertStringIncludes(mirrored, `@${commit}/${name}`)
+      expect(mirrored).toContain(`@${commit}/${name}`)
       const stored = new Uint8Array(
         await $`git -C ${remote} cat-file blob ${commit}:${name}`.bytes(),
       )
-      assertEquals(name.split(".")[0], await sha256(stored))
-      assertEquals(
-        new TextDecoder().decode(stored.slice(8, 12)) === "WEBP",
+      expect(name.split(".")[0]).toEqual(await sha256(stored))
+      expect(new TextDecoder().decode(stored.slice(8, 12)) === "WEBP").toEqual(
         name.endsWith(".webp"),
       )
     }
-    assertEquals(names.includes(pngName), png.length <= webp.length)
+    expect(names.includes(pngName)).toEqual(png.length <= webp.length)
   })
 })
 
-Deno.test("mirrorPost doubles the width of images at least twice as wide as tall", async () => {
+test("mirrorPost doubles the width of images at least twice as wide as tall", async () => {
   await withMirror(async ({ remote, cdn, source }) => {
     // 20x10 (ratio 2) gets 850px, 8x8 keeps 425px.
     const { html } = await mirrorPost(
       `# 제목\n## 항목\n![](${source}/wide.png)\n![](${source}/small.png)\n`,
       { remote, cdn },
     )
-    assertEquals(
-      [...html.matchAll(/max-width:(\d+)px/gu)].map((match) => match[1]),
-      ["850", "425"],
-    )
+    expect([...html.matchAll(/max-width:(\d+)px/gu)].map((match) => match[1])).toEqual([
+      "850",
+      "425",
+    ])
   })
 })
 
-Deno.test("mirrorPostImages turns a before/after line into one animated WebP and mirrors table images", async () => {
+test("mirrorPostImages turns a before/after line into one animated WebP and mirrors table images", async () => {
   await withMirror(async ({ remote, cdn, source, tip }) => {
     // Two pairs make two frames; the table cell image is mirrored on its own.
     const mirrored = await mirrorPostImages(
@@ -170,34 +169,29 @@ Deno.test("mirrorPostImages turns a before/after line into one animated WebP and
     )
 
     const commit = await tip()
-    const names = (await $`git -C ${remote} ls-tree --name-only ${commit}`
-      .text()).split("\n")
+    const names = (await $`git -C ${remote} ls-tree --name-only ${commit}`.text()).split("\n")
     const compare = names.find((name) => name !== webpName)!
-    assertEquals(
-      mirrored,
+    expect(mirrored).toEqual(
       `# 제목\n## 항목\n![](${cdn}@${commit}/${compare})\n| 전 | ![](${cdn}@${commit}/${webpName}) |\n`,
     )
     const frames = await $`git -C ${remote} cat-file blob ${commit}:${compare}`
-      .pipe($`magick identify -format ${"%n\n"} -`).text()
-    assertEquals(frames.split("\n")[0], "2")
+      .pipe($`magick identify -format ${"%n\n"} -`)
+      .text()
+    expect(frames.split("\n")[0]).toEqual("2")
   })
 })
 
-Deno.test("mirrorPostImages keeps images ImageMagick cannot encode as WebP", async () => {
+test("mirrorPostImages keeps images ImageMagick cannot encode as WebP", async () => {
   const tall = await magick("-size", "300x17000", "gradient:red-blue", "png:-")
-  const server = Deno.serve(
-    { port: 0, onListen: () => {} },
-    () => new Response(tall, { headers: { "content-type": "image/png" } }),
-  )
+  const server = await serve(() => new Response(tall, { headers: { "content-type": "image/png" } }))
   try {
     await withMirror(async ({ remote, cdn, tip }) => {
       const mirrored = await mirrorPostImages(
-        `# 제목\n![](http://localhost:${server.addr.port}/tall.png)`,
+        `# 제목\n![](http://localhost:${server.port}/tall.png)`,
         { remote, cdn },
       )
-      assertStringIncludes(mirrored, `/${await sha256(tall)}.png`)
-      assertEquals(
-        await $`git -C ${remote} ls-tree --name-only ${await tip()}`.text(),
+      expect(mirrored).toContain(`/${await sha256(tall)}.png`)
+      expect(await $`git -C ${remote} ls-tree --name-only ${await tip()}`.text()).toEqual(
         `${await sha256(tall)}.png`,
       )
     })
@@ -206,50 +200,41 @@ Deno.test("mirrorPostImages keeps images ImageMagick cannot encode as WebP", asy
   }
 })
 
-Deno.test("mirrorPostImages keeps images ImageMagick cannot read", async () => {
+test("mirrorPostImages keeps images ImageMagick cannot read", async () => {
   await withMirror(async ({ remote, cdn, source, tip }) => {
-    const mirrored = await mirrorPostImages(
-      `# 제목\n![](${source}/broken.png)`,
-      { remote, cdn },
-    )
+    const mirrored = await mirrorPostImages(`# 제목\n![](${source}/broken.png)`, { remote, cdn })
     const name = `${await sha256(new Uint8Array(100).fill(7))}.png`
-    assertEquals(mirrored, `# 제목\n![](${cdn}@${await tip()}/${name})`)
+    expect(mirrored).toEqual(`# 제목\n![](${cdn}@${await tip()}/${name})`)
   })
 })
 
-Deno.test("mirrorPostImages rejects non-images and images the CDN does not serve", async () => {
+test("mirrorPostImages rejects non-images and images the CDN does not serve", async () => {
   await withMirror(async ({ remote, cdn, source, tip }) => {
     const before = await tip()
-    await assertRejects(
-      () => mirrorPostImages(`# 제목\n![](${source}/page)`, { remote, cdn }),
-      Error,
-      "이미지 다운로드 실패",
-    )
-    assertEquals(await tip(), before)
+    await expect(() =>
+      mirrorPostImages(`# 제목\n![](${source}/page)`, { remote, cdn }),
+    ).rejects.toThrow("이미지 다운로드 실패")
+    expect(await tip()).toEqual(before)
 
-    const error = await assertRejects(
-      () =>
-        mirrorPostImages(`# 제목\n![](${source}/a.png)`, {
-          remote,
-          cdn: `${source}/missing`,
-        }),
-      Error,
-    )
-    assertStringIncludes(error.message, "CDN 응답 실패")
+    await expect(
+      mirrorPostImages(`# 제목\n![](${source}/a.png)`, {
+        remote,
+        cdn: `${source}/missing`,
+      }),
+    ).rejects.toThrow("CDN 응답 실패")
   })
 })
 
-Deno.test("mirrorPostImages leaves a post without images untouched", async () => {
-  assertEquals(
+test("mirrorPostImages leaves a post without images untouched", async () => {
+  expect(
     await mirrorPostImages("# 제목\n## 항목\n", {
       remote: "/nonexistent",
       cdn: "http://localhost:1",
     }),
-    "# 제목\n## 항목\n",
-  )
+  ).toEqual("# 제목\n## 항목\n")
 })
 
-Deno.test("mirrorPostImages rewrites whole image URLs and leaves heading links alone", async () => {
+test("mirrorPostImages rewrites whole image URLs and leaves heading links alone", async () => {
   await withMirror(async ({ remote, cdn, source, tip }) => {
     const mirrored = await mirrorPostImages(
       `# 제목\n## [항목](${source}/a.png)\n![](${source}/a.png)\n![](${source}/a.png?raw=1)\n`,
@@ -257,9 +242,6 @@ Deno.test("mirrorPostImages rewrites whole image URLs and leaves heading links a
     )
 
     const url = `${cdn}@${await tip()}/${webpName}`
-    assertEquals(
-      mirrored,
-      `# 제목\n## [항목](${source}/a.png)\n![](${url})\n![](${url})\n`,
-    )
+    expect(mirrored).toEqual(`# 제목\n## [항목](${source}/a.png)\n![](${url})\n![](${url})\n`)
   })
 })

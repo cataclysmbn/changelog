@@ -1,4 +1,3 @@
-#!/usr/bin/env -S deno run --allow-read --allow-write --allow-run --allow-env --allow-net
 /**
  * @module
  *
@@ -9,14 +8,15 @@
  * An image line with several URLs (before, after, ...) becomes one side-by-side animated WebP.
  * Images at least twice as wide as tall (side-by-side comparisons) get twice the normal width in the HTML.
  *
- * Usage: deno task html dist/<period>/changelog.txt (or changelog.en.txt) [AI model]; writes the .md and .html beside it.
+ * Usage: vp run html dist/<period>/changelog.txt (or changelog.en.txt) [AI model]; writes the .md and .html beside it.
  * The .md is the post for the mdBook site with CDN image URLs; the .html is the same post for the DCInside HTML editor.
  * With an AI model name, both end with a footer that names it.
  */
 
-import $ from "@david/dax"
-import { encodeHex } from "@std/encoding/hex"
-import { join } from "@std/path"
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises"
+import { tmpdir } from "node:os"
+import $ from "dax"
+import { join } from "node:path"
 import { imageSize } from "image-size"
 
 import {
@@ -57,16 +57,17 @@ const fetchWithTimeout = (url: string): Promise<Response> =>
 /** A source of several URLs becomes one before/after comparison image. */
 const download = async (url: string) => {
   if (url.includes(" ")) {
-    const output = await Deno.makeTempFile({ suffix: ".webp" })
+    const dir = await mkdtemp(join(tmpdir(), "dc-changelog-pair-"))
+    const output = join(dir, "pair.webp")
     try {
       await beforeAfter({ sources: url.split(" "), output })
-      return compress(await Deno.readFile(output), "webp")
+      return compress(await readFile(output), "webp")
     } finally {
-      await Deno.remove(output)
+      await rm(dir, { recursive: true })
     }
   }
   if (url.startsWith("file:")) {
-    return compress(await Deno.readFile(new URL(url)), url.split(".").at(-1)!)
+    return compress(await readFile(new URL(url)), url.split(".").at(-1)!)
   }
   const response = await fetchWithTimeout(url)
   const type = response.headers.get("content-type")?.split(";")[0] ?? ""
@@ -79,26 +80,27 @@ const download = async (url: string) => {
 }
 
 /** Pixel art is small or palette-sized, and lossy compression would blur it. Returns nothing when ImageMagick cannot read the image. */
-export const isPixelArt = async (
-  bytes: Uint8Array<ArrayBuffer>,
-): Promise<boolean | undefined> => {
+export const isPixelArt = async (bytes: Uint8Array<ArrayBuffer>): Promise<boolean | undefined> => {
   const result = await $`magick identify -format ${"%w %h %k"} -[0]`
-    .stdin(bytes).stdout("piped").stderr("null").noThrow()
+    .stdin(bytes)
+    .stdout("piped")
+    .stderr("null")
+    .noThrow()
   if (result.code !== 0) return undefined
   const [width, height, colors] = result.stdout.split(" ").map(Number)
-  return Math.max(width, height) <= pixelArtMaxSide ||
-    colors <= pixelArtMaxColors
+  return Math.max(width, height) <= pixelArtMaxSide || colors <= pixelArtMaxColors
 }
 
 /** Returns WebP bytes, or nothing when ImageMagick cannot encode the image (for example beyond the WebP size limit). */
 const toWebp = async (bytes: Uint8Array<ArrayBuffer>) => {
   const pixelArt = await isPixelArt(bytes)
   if (pixelArt === undefined) return undefined
-  const mode = pixelArt
-    ? ["-define", "webp:lossless=true"]
-    : ["-quality", `${webpQuality}`]
-  const result = await $`magick - ${mode} webp:-`.stdin(bytes).stdout("piped")
-    .stderr("null").noThrow()
+  const mode = pixelArt ? ["-define", "webp:lossless=true"] : ["-quality", `${webpQuality}`]
+  const result = await $`magick - ${mode} webp:-`
+    .stdin(bytes)
+    .stdout("piped")
+    .stderr("null")
+    .noThrow()
   return result.code === 0 ? new Uint8Array(result.stdoutBytes) : undefined
 }
 
@@ -109,7 +111,7 @@ const compress = async (bytes: Uint8Array<ArrayBuffer>, extension: string) => {
   const output = smaller ? webp : bytes
   const digest = await crypto.subtle.digest("SHA-256", output)
   return {
-    name: `${encodeHex(digest)}.${smaller ? "webp" : extension}`,
+    name: `${Buffer.from(digest).toString("hex")}.${smaller ? "webp" : extension}`,
     bytes: output,
   }
 }
@@ -135,16 +137,21 @@ const isWide = (bytes: Uint8Array): boolean => {
 /** Images of a post that may grow to two normal widths in its HTML. */
 export const wideImages = async (post: string): Promise<Set<string>> =>
   new Set(
-    (await Promise.all(
-      postImageUrls(post).map(async (url) => {
-        const response = await fetchWithTimeout(url)
-        if (!response.ok) {
-          await response.body?.cancel()
-          throw new Error(`이미지 다운로드 실패: ${url} (${response.status})`)
-        }
-        return isWide(new Uint8Array(await response.arrayBuffer())) ? [url] : []
-      }),
-    )).flat(),
+    (
+      await Promise.all(
+        postImageUrls(post).map(async (url) => {
+          if (url.startsWith("file:")) {
+            return isWide(await readFile(new URL(url))) ? [url] : []
+          }
+          const response = await fetchWithTimeout(url)
+          if (!response.ok) {
+            await response.body?.cancel()
+            throw new Error(`이미지 다운로드 실패: ${url} (${response.status})`)
+          }
+          return isWide(new Uint8Array(await response.arrayBuffer())) ? [url] : []
+        }),
+      )
+    ).flat(),
   )
 
 const mirror = async (
@@ -154,14 +161,16 @@ const mirror = async (
   const urls = postImageUrls(post)
   if (urls.length === 0) return { post, wide: new Set() }
 
-  const dir = await Deno.makeTempDir({ prefix: "dc-changelog-images-" })
+  const dir = await mkdtemp(join(tmpdir(), "dc-changelog-images-"))
   try {
     await $`git clone --quiet --depth 1 --branch ${branch} ${remote} ${dir}`
-    const files = await Promise.all(urls.map(async (url) => {
-      const { name, bytes } = await download(url)
-      await Deno.writeFile(join(dir, name), bytes)
-      return { name, wide: isWide(bytes) }
-    }))
+    const files = await Promise.all(
+      urls.map(async (url) => {
+        const { name, bytes } = await download(url)
+        await writeFile(join(dir, name), bytes)
+        return { name, wide: isWide(bytes) }
+      }),
+    )
     await $`git -C ${dir} add --all`
     const unchanged = await $`git -C ${dir} diff --cached --quiet`.noThrow()
     if (unchanged.code !== 0) {
@@ -176,7 +185,7 @@ const mirror = async (
       wide: new Set(mirrored.filter((_, index) => files[index].wide)),
     }
   } finally {
-    await Deno.remove(dir, { recursive: true })
+    await rm(dir, { recursive: true })
   }
 }
 
@@ -200,16 +209,13 @@ export const mirrorPost = async (
 }
 
 if (import.meta.main) {
-  const [changelog, model] = Deno.args
+  const [changelog, model] = process.argv.slice(2)
   if (!changelog?.endsWith(".txt")) {
-    throw new Error(
-      "Usage: deno task html <changelog.txt|changelog.en.txt> [AI model]",
-    )
+    throw new Error("Usage: vp run html <changelog.txt|changelog.en.txt> [AI model]")
   }
-  const { markdown, html } = await mirrorPost(
-    await Deno.readTextFile(changelog),
-    { footer: model && aiFooter(model, changelog.endsWith(".en.txt")) },
-  )
-  await Deno.writeTextFile(changelog.replace(/\.txt$/u, ".md"), markdown)
-  await Deno.writeTextFile(changelog.replace(/\.txt$/u, ".html"), html)
+  const { markdown, html } = await mirrorPost(await readFile(changelog, "utf8"), {
+    footer: model && aiFooter(model, changelog.endsWith(".en.txt")),
+  })
+  await writeFile(changelog.replace(/\.txt$/u, ".md"), markdown)
+  await writeFile(changelog.replace(/\.txt$/u, ".html"), html)
 }

@@ -1,41 +1,34 @@
-import { assertEquals } from "@std/assert"
-import { fromFileUrl, join } from "@std/path"
+import { mkdir, mkdtemp, rm, writeFile } from "node:fs/promises"
+import { fileURLToPath } from "node:url"
+import { expect, test } from "vite-plus/test"
+import { join } from "node:path"
+
+import $ from "dax"
+import { execText } from "../src/exec.ts"
 
 import { missingCommits, planAgent } from "./dc_tui.ts"
 
-Deno.test("missingCommits lists commits the previous post skipped before the new range", async () => {
-  const appRoot = fromFileUrl(new URL("../", import.meta.url))
-  await Deno.mkdir(join(appRoot, "dist"), { recursive: true })
-  const root = await Deno.makeTempDir({ dir: join(appRoot, "dist") })
+test("missingCommits lists commits the previous post skipped before the new range", async () => {
+  const appRoot = fileURLToPath(new URL("../", import.meta.url))
+  await mkdir(join(appRoot, "dist"), { recursive: true })
+  const root = await mkdtemp(join(join(appRoot, "dist"), "changelog-"))
   const repo = join(root, "repo")
   const outputDir = join(root, "out")
   const env: Record<string, string> = {
     GIT_CONFIG_NOSYSTEM: "1",
     GIT_CONFIG_GLOBAL: "/dev/null",
   }
-  const path = Deno.env.get("PATH")
+  const path = process.env["PATH"]
   if (path) env.PATH = path
-  const git = async (args: string[], date?: string): Promise<string> => {
-    const result = await new Deno.Command("git", {
-      args: [
-        "-C",
-        repo,
-        "-c",
-        "user.name=Fixture",
-        "-c",
-        "user.email=fixture@example.test",
-        ...args,
-      ],
-      clearEnv: true,
-      env: date
-        ? { ...env, GIT_AUTHOR_DATE: date, GIT_COMMITTER_DATE: date }
-        : env,
-      stdout: "piped",
-      stderr: "piped",
-    }).output()
-    assertEquals(result.success, true, new TextDecoder().decode(result.stderr))
-    return new TextDecoder().decode(result.stdout).trim()
-  }
+  const git = async (args: string[], date?: string): Promise<string> =>
+    (
+      await execText(
+        "git",
+        ["-C", repo, "-c", "user.name=Fixture", "-c", "user.email=fixture@example.test", ...args],
+        date ? { ...env, GIT_AUTHOR_DATE: date, GIT_COMMITTER_DATE: date } : env,
+        "git failed",
+      )
+    ).trim()
   const commit = async (subject: string, day: number, hour = 12) => {
     const date = new Date(2026, 0, day, hour).toISOString()
     await git(["commit", "--allow-empty", "-m", subject], date)
@@ -47,17 +40,17 @@ Deno.test("missingCommits lists commits the previous post skipped before the new
       outputDir,
       start: "2026-01-12",
     })
-    return result && {
-      since: result.since,
-      subjects: result.commits.map((line) =>
-        line.split(" ").slice(2).join(" ")
-      ),
-      covered: result.covered.map((hash) => hash.slice(0, 7)),
-    }
+    return (
+      result && {
+        since: result.since,
+        subjects: result.commits.map((line) => line.split(" ").slice(2).join(" ")),
+        covered: result.covered.map((hash) => hash.slice(0, 7)),
+      }
+    )
   }
 
   try {
-    await Deno.mkdir(repo)
+    await mkdir(repo)
     await git(["-c", "init.templateDir=", "init"])
     await commit("before previous post", 4)
     const earlier = await commit("earlier day", 6)
@@ -66,14 +59,11 @@ Deno.test("missingCommits lists commits the previous post skipped before the new
     await commit("between posts", 10)
     await commit("in new post", 12)
     const previous = join(outputDir, "2026-01-05_to_2026-01-08")
-    await Deno.mkdir(previous, { recursive: true })
-    await Deno.mkdir(join(outputDir, "2026-01-12_to_2026-01-13"))
+    await mkdir(previous, { recursive: true })
+    await mkdir(join(outputDir, "2026-01-12_to_2026-01-13"))
     // A dry run leaves an empty post folder; it is not a post.
-    await Deno.mkdir(join(outputDir, "2026-01-09_to_2026-01-11"))
-    await Deno.writeTextFile(
-      join(previous, "changelog.txt"),
-      "## [a](https://github.com/o/r/pull/1)\n",
-    )
+    await mkdir(join(outputDir, "2026-01-09_to_2026-01-11"))
+    await writeFile(join(previous, "changelog.txt"), "## [a](https://github.com/o/r/pull/1)\n")
     const expected = {
       since: "2026-01-08",
       subjects: ["between posts", "after previous post ran (#2)"],
@@ -81,36 +71,28 @@ Deno.test("missingCommits lists commits the previous post skipped before the new
     }
 
     // commits.txt skips the 20:00 commit on 2026-01-08, so it is missing.
-    await Deno.writeTextFile(
-      join(previous, "commits.txt"),
-      `${earlier}\n${linked}\n`,
-    )
-    assertEquals(await missing(), expected)
+    await writeFile(join(previous, "commits.txt"), `${earlier}\n${linked}\n`)
+    expect(await missing()).toEqual(expected)
 
     // Without commits.txt, earlier days count as covered, and on 2026-01-08 only the commit of linked PR #1.
-    await Deno.remove(join(previous, "commits.txt"))
-    assertEquals(await missing(), expected)
+    await rm(join(previous, "commits.txt"))
+    expect(await missing()).toEqual(expected)
   } finally {
-    const result = await new Deno.Command("gio", {
-      args: ["trash", root],
-      stdout: "null",
-      stderr: "piped",
-    }).output()
-    assertEquals(result.success, true, new TextDecoder().decode(result.stderr))
+    await $`gio trash ${root}`
   }
 })
 
-Deno.test("planAgent picks Opus for Claude Max 10x and up, Sonnet for Max 5x, Codex otherwise", () => {
-  assertEquals(planAgent("default_claude_max_20x"), {
+test("planAgent picks Opus for Claude Max 10x and up, Sonnet for Max 5x, Codex otherwise", () => {
+  expect(planAgent("default_claude_max_20x")).toEqual({
     agent: "claude",
     model: "claude-opus-5-5",
   })
-  assertEquals(planAgent("default_claude_max_10x").model, "claude-opus-5-5")
-  assertEquals(planAgent("default_claude_max_5x"), {
+  expect(planAgent("default_claude_max_10x").model).toEqual("claude-opus-5-5")
+  expect(planAgent("default_claude_max_5x")).toEqual({
     agent: "claude",
     model: "claude-sonnet-5-5",
   })
   for (const tier of ["default_claude_pro", "default_claude_ai", undefined]) {
-    assertEquals(planAgent(tier), { agent: "pi" })
+    expect(planAgent(tier)).toEqual({ agent: "pi" })
   }
 })

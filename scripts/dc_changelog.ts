@@ -1,4 +1,3 @@
-#!/usr/bin/env -S deno run --allow-read --allow-write --allow-run=git,gh --allow-net --allow-env=GH_TOKEN,GITHUB_TOKEN,PATH,HOME,XDG_CONFIG_HOME
 /**
  * @module
  *
@@ -11,9 +10,10 @@
  */
 
 import { Command } from "@cliffy/command"
-import { ensureDir } from "@std/fs"
-import { dirname, fromFileUrl, resolve } from "@std/path"
-import * as v from "@valibot/valibot"
+import { mkdir, readFile, writeFile } from "node:fs/promises"
+import { dirname, resolve } from "node:path"
+import { fileURLToPath } from "node:url"
+import * as v from "valibot"
 
 import {
   type Commit,
@@ -23,9 +23,10 @@ import {
   rewritePrompt,
 } from "../src/dcinside.ts"
 
+import { execText } from "../src/exec.ts"
 import { parsePo, poGlossary } from "../src/translation.ts"
 
-const scriptDir = dirname(fromFileUrl(import.meta.url))
+const scriptDir = dirname(fileURLToPath(import.meta.url))
 const appRoot = dirname(scriptDir)
 const defaultGlossaryPo = resolve(appRoot, "../translations/lang/po/ko.po")
 
@@ -79,62 +80,42 @@ const parsePositiveInt = (value: string | number): number => {
 const gitDate = (value: string): string =>
   /^\d{4}-\d{2}-\d{2}$/u.test(value) ? `${value}T00:00:00` : value
 
-const gitRangeArgs = (
-  { range, since, until }: Options & { range?: string },
-): string[] =>
+const gitRangeArgs = ({ range, since, until }: Options & { range?: string }): string[] =>
   range ? [range] : [`--since=${gitDate(since)}`, `--until=${gitDate(until)}`]
-
-const decode = (bytes: Uint8Array): string => new TextDecoder().decode(bytes)
 
 const inheritedGhEnv = (): Record<string, string> => {
   const env: Record<string, string> = {}
-  for (
-    const key of ["GH_TOKEN", "GITHUB_TOKEN", "PATH", "HOME", "XDG_CONFIG_HOME"]
-  ) {
-    const value = Deno.env.get(key)
+  for (const key of ["GH_TOKEN", "GITHUB_TOKEN", "PATH", "HOME", "XDG_CONFIG_HOME"]) {
+    const value = process.env[key]
     if (value) env[key] = value
   }
   return env
 }
 
-const commandText = async (
+const commandText = (
   command: string,
   args: string[],
   options: { clearEnv?: boolean } = {},
-): Promise<string> => {
-  const result = await new Deno.Command(command, {
+): Promise<string> =>
+  execText(
+    command,
     args,
-    clearEnv: true,
-    env: options.clearEnv ? {} : inheritedGhEnv(),
-    stdout: "piped",
-    stderr: "piped",
-  }).output()
-  if (!result.success) {
-    throw new Error(
-      `${command} ${args.join(" ")} failed: ${decode(result.stderr).trim()}`,
-    )
-  }
-  return decode(result.stdout)
-}
+    options.clearEnv ? {} : inheritedGhEnv(),
+    `${command} ${args.join(" ")} failed`,
+  )
 
-const inRequestedDateWindow = (
-  commit: Commit,
-  options: Options & { range?: string },
-): boolean => {
+const inRequestedDateWindow = (commit: Commit, options: Options & { range?: string }): boolean => {
   if (options.range) return true
-  const hasIsoWindow = /^\d{4}-\d{2}-\d{2}$/u.test(options.since) &&
-    /^\d{4}-\d{2}-\d{2}$/u.test(options.until)
-  return !hasIsoWindow ||
-    (commit.date >= options.since && commit.date < options.until)
+  const hasIsoWindow =
+    /^\d{4}-\d{2}-\d{2}$/u.test(options.since) && /^\d{4}-\d{2}-\d{2}$/u.test(options.until)
+  return !hasIsoWindow || (commit.date >= options.since && commit.date < options.until)
 }
 
-const readCommits = async (
-  options: Options & { range?: string },
-): Promise<Commit[]> => {
+const readCommits = async (options: Options & { range?: string }): Promise<Commit[]> => {
   const repo = resolve(options.repo)
-  const command = new Deno.Command("git", {
-    clearEnv: true,
-    args: [
+  const stdout = await execText(
+    "git",
+    [
       "-C",
       repo,
       "log",
@@ -143,25 +124,18 @@ const readCommits = async (
       ...gitRangeArgs(options),
       "--pretty=format:%x1f%h%x1f%cd%x1f%s%x1f%an%x1f%b%x1e",
     ],
-    stdout: "piped",
-    stderr: "piped",
-  })
-
-  const { success, stdout, stderr } = await command.output()
-  if (!success) {
-    throw new Error(`git log failed in ${repo}: ${decode(stderr).trim()}`)
-  }
+    {},
+    `git log failed in ${repo}`,
+  )
   const excluded = options.excludeCommits
-    ? (await Deno.readTextFile(options.excludeCommits)).split("\n")
-      .filter(Boolean)
+    ? (await readFile(options.excludeCommits, "utf8")).split("\n").filter(Boolean)
     : []
 
-  return decode(stdout)
+  return stdout
     .split("\x1e")
     .filter((record) => record.trim().length > 0)
     .map((record) => {
-      const [, hash = "", date = "", subject = "", author = "", ...body] =
-        record.split("\x1f")
+      const [, hash = "", date = "", subject = "", author = "", ...body] = record.split("\x1f")
       return v.parse(CommitSchema, {
         hash,
         date,
@@ -170,9 +144,10 @@ const readCommits = async (
         body: body.join("\x1f").trim(),
       })
     })
-    .filter((commit) =>
-      inRequestedDateWindow(commit, options) &&
-      !excluded.some((hash) => hash.startsWith(commit.hash))
+    .filter(
+      (commit) =>
+        inRequestedDateWindow(commit, options) &&
+        !excluded.some((hash) => hash.startsWith(commit.hash)),
     )
     .slice(0, options.maxCommits)
 }
@@ -188,20 +163,11 @@ const githubSlugFromRemote = (remote: string): string | null => {
   return https?.[1] ?? null
 }
 
-const resolveRepoSlug = async (
-  repo: string,
-  override?: string,
-): Promise<string> => {
+const resolveRepoSlug = async (repo: string, override?: string): Promise<string> => {
   if (override) return override
   for (const remote of ["upstream", "origin"]) {
     try {
-      const url = await commandText("git", [
-        "-C",
-        repo,
-        "remote",
-        "get-url",
-        remote,
-      ], {
+      const url = await commandText("git", ["-C", repo, "remote", "get-url", remote], {
         clearEnv: true,
       })
       const slug = githubSlugFromRemote(url)
@@ -210,9 +176,7 @@ const resolveRepoSlug = async (
       // Try the next conventional remote.
     }
   }
-  throw new Error(
-    "Could not infer GitHub owner/repo; pass --repo-slug owner/repo",
-  )
+  throw new Error("Could not infer GitHub owner/repo; pass --repo-slug owner/repo")
 }
 
 // GET because the signed S3 redirect target answers HEAD with 403.
@@ -222,10 +186,10 @@ const isAnonymousImage = async (url: string): Promise<boolean> => {
       headers: { "User-Agent": "dc-changelog" },
     })
     await response.body?.cancel()
-    return response.ok &&
-      /^image\/(?:png|jpeg|gif|webp)\b/iu.test(
-        response.headers.get("content-type") ?? "",
-      )
+    return (
+      response.ok &&
+      /^image\/(?:png|jpeg|gif|webp)\b/iu.test(response.headers.get("content-type") ?? "")
+    )
   } catch {
     return false
   }
@@ -262,41 +226,39 @@ const fetchPullRequest = async (
   }
 }
 
-const withPullRequestDetails = async (
-  commits: Commit[],
-  options: Options,
-): Promise<Commit[]> => {
+const withPullRequestDetails = async (commits: Commit[], options: Options): Promise<Commit[]> => {
   if (options.noPrDetails) return commits
   const repo = resolve(options.repo)
   const repoSlug = await resolveRepoSlug(repo, options.repoSlug)
   const cache = new Map<number, Promise<PullRequestDetails>>()
 
-  return await Promise.all(commits.map(async (commit) => {
-    const number = prNumber(commit.subject)
-    if (!number) return commit
+  return await Promise.all(
+    commits.map(async (commit) => {
+      const number = prNumber(commit.subject)
+      if (!number) return commit
 
-    const cached = cache.get(number) ??
-      fetchPullRequest(number, { repoSlug })
-    cache.set(number, cached)
+      const cached = cache.get(number) ?? fetchPullRequest(number, { repoSlug })
+      cache.set(number, cached)
 
-    try {
-      return { ...commit, pullRequest: await cached }
-    } catch (error) {
-      if (!options.allowMissingPrDetails) throw error
-      return {
-        ...commit,
-        pullRequest: {
-          number,
-          title: commit.subject,
-          url: `https://github.com/${repoSlug}/pull/${number}`,
-          body: "",
-          files: [],
-          images: [],
-          lookupError: error instanceof Error ? error.message : String(error),
-        },
+      try {
+        return { ...commit, pullRequest: await cached }
+      } catch (error) {
+        if (!options.allowMissingPrDetails) throw error
+        return {
+          ...commit,
+          pullRequest: {
+            number,
+            title: commit.subject,
+            url: `https://github.com/${repoSlug}/pull/${number}`,
+            body: "",
+            files: [],
+            images: [],
+            lookupError: error instanceof Error ? error.message : String(error),
+          },
+        }
       }
-    }
-  }))
+    }),
+  )
 }
 
 const glossarySource = (commits: Commit[]): string =>
@@ -308,7 +270,9 @@ const glossarySource = (commits: Commit[]): string =>
         commit.pullRequest?.title,
         commit.pullRequest?.body,
         commit.pullRequest?.files.join("\n"),
-      ].filter((text): text is string => typeof text === "string").join("\n")
+      ]
+        .filter((text): text is string => typeof text === "string")
+        .join("\n"),
     )
     .join("\n")
 
@@ -317,10 +281,12 @@ const buildPoGlossary = async (
   options: Options,
 ): Promise<string | undefined> => {
   if (options.skipGlossary) return undefined
-  return poGlossary(
-    parsePo(await Deno.readTextFile(resolve(options.glossaryPo))),
-    glossarySource(commits),
-  ) || undefined
+  return (
+    poGlossary(
+      parsePo(await readFile(resolve(options.glossaryPo), "utf8")),
+      glossarySource(commits),
+    ) || undefined
+  )
 }
 
 const main = new Command()
@@ -352,10 +318,7 @@ const main = new Command()
     "Include first commit body lines in draft output; prompt mode always includes them",
     { default: false },
   )
-  .option(
-    "--repo-slug <owner/repo:string>",
-    "GitHub repository slug for PR lookups",
-  )
+  .option("--repo-slug <owner/repo:string>", "GitHub repository slug for PR lookups")
   .option("--no-pr-details", "Do not query GitHub PR bodies/files/images", {
     default: false,
   })
@@ -364,21 +327,14 @@ const main = new Command()
     "Keep going and mark missing PR evidence instead of failing",
     { default: false },
   )
-  .option(
-    "--glossary-po <file:string>",
-    "Korean gettext PO file for term snippets",
-    {
-      default: defaultGlossaryPo,
-    },
-  )
+  .option("--glossary-po <file:string>", "Korean gettext PO file for term snippets", {
+    default: defaultGlossaryPo,
+  })
   .option("--skip-glossary", "Do not include Korean PO term snippets", {
     default: false,
   })
   .option("-t, --title <title:string>", "Override post title")
-  .option(
-    "-o, --output <file:string>",
-    "Write output to a file instead of stdout",
-  )
+  .option("-o, --output <file:string>", "Write output to a file instead of stdout")
   .option(
     "--commits-output <file:string>",
     "Write the included and excluded commit hashes to a file, one per line",
@@ -389,9 +345,9 @@ const main = new Command()
   )
   .example(
     "weekly prompt",
-    "deno task dc --repo ../Cataclysm-BN --since 2026-01-01 --until 2026-01-07 -o /tmp/prompt.md",
+    "vp run dc --repo ../Cataclysm-BN --since 2026-01-01 --until 2026-01-07 -o /tmp/prompt.md",
   )
-  .example("tag range draft", "deno task dc v0.10.0..HEAD --mode draft")
+  .example("tag range draft", "vp run dc v0.10.0..HEAD --mode draft")
   .action(async (rawOptions, range?: string) => {
     const options = {
       noPrDetails: false,
@@ -399,44 +355,40 @@ const main = new Command()
       skipGlossary: false,
       ...v.parse(OptionsSchema, rawOptions),
     }
-    const commits = await withPullRequestDetails(
-      await readCommits({ ...options, range }),
-      options,
-    )
+    const commits = await withPullRequestDetails(await readCommits({ ...options, range }), options)
     if (commits.length === 0) {
       throw new Error("No commits found for the requested range")
     }
 
-    const output = options.mode === "draft"
-      ? draftPost({
-        commits,
-        title: options.title,
-        includeBody: options.includeBody,
-      })
-      : rewritePrompt({
-        commits,
-        title: options.title,
-        includeBody: true,
-        glossary: await buildPoGlossary(commits, options),
-        glossaryPo: resolve(options.glossaryPo),
-      })
+    const output =
+      options.mode === "draft"
+        ? draftPost({
+            commits,
+            title: options.title,
+            includeBody: options.includeBody,
+          })
+        : rewritePrompt({
+            commits,
+            title: options.title,
+            includeBody: true,
+            glossary: await buildPoGlossary(commits, options),
+            glossaryPo: resolve(options.glossaryPo),
+          })
 
     // Record excluded commits too, so the next post does not add them again.
     if (options.commitsOutput) {
-      await Deno.writeTextFile(
+      await writeFile(
         options.commitsOutput,
         commits.map((commit) => `${commit.hash}\n`).join("") +
-          (options.excludeCommits
-            ? await Deno.readTextFile(options.excludeCommits)
-            : ""),
+          (options.excludeCommits ? await readFile(options.excludeCommits, "utf8") : ""),
       )
     }
     if (options.output) {
       const outputDir = dirname(options.output)
       if (outputDir !== ".") {
-        await ensureDir(outputDir)
+        await mkdir(outputDir, { recursive: true })
       }
-      await Deno.writeTextFile(options.output, output)
+      await writeFile(options.output, output)
       return
     }
     console.log(output)
@@ -444,10 +396,10 @@ const main = new Command()
 
 if (import.meta.main) {
   try {
-    await main.parse(Deno.args)
+    await main.parse(process.argv.slice(2))
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     console.error(`Error: ${message}`)
-    Deno.exit(1)
+    process.exit(1)
   }
 }

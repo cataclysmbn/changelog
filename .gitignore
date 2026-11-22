@@ -3,3 +3,4 @@ dist/
 .playwright-cli/
 _site/
 book/*/book/
+node_modules/

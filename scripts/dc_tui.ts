@@ -1,4 +1,3 @@
-#!/usr/bin/env -S deno run --allow-read --allow-write --allow-run --allow-env --allow-net
 /**
  * @module
  *
@@ -11,9 +10,20 @@
  */
 
 import { Command } from "@cliffy/command"
-import $ from "@david/dax"
-import { ensureDir, exists } from "@std/fs"
-import { dirname, fromFileUrl, join, resolve } from "@std/path"
+import $ from "dax"
+import {
+  access,
+  copyFile,
+  mkdir,
+  mkdtemp,
+  readdir,
+  readFile,
+  rm,
+  writeFile,
+} from "node:fs/promises"
+import { tmpdir } from "node:os"
+import { dirname, join, resolve } from "node:path"
+import { fileURLToPath } from "node:url"
 
 import {
   aiFooter,
@@ -23,32 +33,18 @@ import {
   translatePrompt,
   translationGuide,
 } from "../src/dcinside.ts"
-import {
-  mergeRanges,
-  rangesBetween,
-  weeklyRanges,
-  type WeekRange,
-} from "../src/weeks.ts"
-import {
-  parsePo,
-  validateTranslationReview,
-  type VerifiedTerm,
-} from "../src/translation.ts"
+import { execText } from "../src/exec.ts"
+import { mergeRanges, rangesBetween, weeklyRanges, type WeekRange } from "../src/weeks.ts"
+import { parsePo, validateTranslationReview, type VerifiedTerm } from "../src/translation.ts"
 import { mirrorPost } from "./mirror_images.ts"
 import { publishPages } from "./pages.ts"
 
-const scriptDir = dirname(fromFileUrl(import.meta.url))
+const scriptDir = dirname(fileURLToPath(import.meta.url))
 const appRoot = dirname(scriptDir)
 const defaultRepo = resolve(appRoot, "../Cataclysm-BN")
 const defaultOutputDir = join(appRoot, "dist")
 const defaultGlossaryPo = resolve(appRoot, "../translations/lang/po/ko.po")
-const skillPath = join(
-  appRoot,
-  ".agents",
-  "skills",
-  "dcinside-changelog",
-  "SKILL.md",
-)
+const skillPath = join(appRoot, ".agents", "skills", "dcinside-changelog", "SKILL.md")
 
 const parsePositiveInt = (value: string | number): number => {
   const parsed = Number(value)
@@ -93,30 +89,31 @@ type PiWorkspace = {
   instructions: string
 }
 
-const chooseRange = async (
-  ranges: WeekRange[],
-  options: Options,
-): Promise<WeekRange[]> => {
+const chooseRange = async (ranges: WeekRange[], options: Options): Promise<WeekRange[]> => {
   if (options.yes) {
-    return rangesBetween(
-      ranges,
-      options.newest ?? 0,
-      options.oldest ?? options.newest ?? 0,
-    )
+    return rangesBetween(ranges, options.newest ?? 0, options.oldest ?? options.newest ?? 0)
   }
 
-  const newest = options.newest ?? (await $.select({
-    message: "가장 최근 주를 고르세요",
-    options: ranges.map((range) => range.label),
-  })).index
+  const newest =
+    options.newest ??
+    (
+      await $.select({
+        message: "가장 최근 주를 고르세요",
+        options: ranges.map((range) => range.label),
+      })
+    ).index
 
   const oldestOptions = ranges.filter((range) => range.index >= newest)
-  const oldest = options.oldest ?? oldestOptions[
-    (await $.select({
-      message: "어느 과거 주까지 생성할까요",
-      options: oldestOptions.map((range) => range.label),
-    })).index
-  ].index
+  const oldest =
+    options.oldest ??
+    oldestOptions[
+      (
+        await $.select({
+          message: "어느 과거 주까지 생성할까요",
+          options: oldestOptions.map((range) => range.label),
+        })
+      ).index
+    ].index
 
   return rangesBetween(ranges, newest, oldest)
 }
@@ -135,52 +132,52 @@ const promptForRunOptions = async (options: Options): Promise<Options> => {
   return { ...options, repo, outputDir }
 }
 
-const rangeSlug = (range: WeekRange): string =>
-  `${range.start}_to_${range.endInclusive}`
+const rangeSlug = (range: WeekRange): string => `${range.start}_to_${range.endInclusive}`
 
 /**
  * Commits dated from the newest earlier post (a folder with changelog.txt) up to `start` that it skipped.
  * Read the post's commits.txt. For posts without it, take every day before its last day as covered,
  * and on the last day only the commits whose PR the post links.
  */
-export const missingCommits = async (
-  { repo, outputDir, start }: {
-    repo: string
-    outputDir: string
-    start: string
-  },
-): Promise<
-  | { post: string; since: string; commits: string[]; covered: string[] }
-  | undefined
-> => {
+export const missingCommits = async ({
+  repo,
+  outputDir,
+  start,
+}: {
+  repo: string
+  outputDir: string
+  start: string
+}): Promise<{ post: string; since: string; commits: string[]; covered: string[] } | undefined> => {
   const posts: { name: string; start: string; end: string }[] = []
-  for await (const entry of Deno.readDir(outputDir)) {
-    const match = entry.name.match(
-      /^(\d{4}-\d{2}-\d{2})_to_(\d{4}-\d{2}-\d{2})$/u,
-    )
+  for (const entry of await readdir(outputDir, { withFileTypes: true })) {
+    const match = entry.name.match(/^(\d{4}-\d{2}-\d{2})_to_(\d{4}-\d{2}-\d{2})$/u)
     if (
-      entry.isDirectory && match && match[1] < start &&
-      await exists(join(outputDir, entry.name, "changelog.txt"))
+      entry.isDirectory() &&
+      match &&
+      match[1] < start &&
+      (await access(join(outputDir, entry.name, "changelog.txt")).then(
+        () => true,
+        () => false,
+      ))
     ) {
       posts.push({ name: entry.name, start: match[1], end: match[2] })
     }
   }
-  const previous = posts.sort((a, b) =>
-    `${a.end}${a.start}`.localeCompare(`${b.end}${b.start}`)
-  ).at(-1)
+  const previous = posts
+    .sort((a, b) => `${a.end}${a.start}`.localeCompare(`${b.end}${b.start}`))
+    .at(-1)
   if (!previous) return undefined
   const readPost = (file: string) =>
-    Deno.readTextFile(join(outputDir, previous.name, file)).catch(() =>
-      undefined
-    )
+    readFile(join(outputDir, previous.name, file), "utf8").catch(() => undefined)
   const recorded = (await readPost("commits.txt"))?.split("\n").filter(Boolean)
   const linked = new Set(
-    [...((await readPost("changelog.txt")) ?? "").matchAll(/\/pull\/(\d+)\)/gu)]
-      .map((match) => match[1]),
+    [...((await readPost("changelog.txt")) ?? "").matchAll(/\/pull\/(\d+)\)/gu)].map(
+      (match) => match[1],
+    ),
   )
-  const result = await new Deno.Command("git", {
-    clearEnv: true,
-    args: [
+  const stdout = await execText(
+    "git",
+    [
       "-C",
       repo,
       "log",
@@ -188,15 +185,12 @@ export const missingCommits = async (
       `--since=${previous.start}T00:00:00`,
       "--format=%H%x09%cd%x09%s",
     ],
-    stdout: "piped",
-    stderr: "piped",
-  }).output()
-  if (!result.success) {
-    throw new Error(
-      `git log failed in ${repo}: ${decode(result.stderr).trim()}`,
-    )
-  }
-  const window = decode(result.stdout).split("\n").filter(Boolean)
+    {},
+    `git log failed in ${repo}`,
+  )
+  const window = stdout
+    .split("\n")
+    .filter(Boolean)
     .map((line) => line.split("\t"))
     .filter(([, date]) => date >= previous.start && date < start)
     .map(([hash, date, subject]) => ({
@@ -205,8 +199,8 @@ export const missingCommits = async (
       subject,
       covered: recorded
         ? recorded.some((short) => hash.startsWith(short))
-        : date < previous.end || (date === previous.end &&
-          linked.has(subject.match(/\(#(\d+)\)$/u)?.[1] ?? "")),
+        : date < previous.end ||
+          (date === previous.end && linked.has(subject.match(/\(#(\d+)\)$/u)?.[1] ?? "")),
     }))
   const missing = window.filter((commit) => !commit.covered)
   if (missing.length === 0) return undefined
@@ -214,9 +208,7 @@ export const missingCommits = async (
   return {
     post: previous.name,
     since,
-    commits: missing.map(({ hash, date, subject }) =>
-      `${hash.slice(0, 10)} ${date} ${subject}`
-    ),
+    commits: missing.map(({ hash, date, subject }) => `${hash.slice(0, 10)} ${date} ${subject}`),
     covered: window
       .filter((commit) => commit.covered && commit.date >= since)
       .map((commit) => commit.hash),
@@ -230,13 +222,7 @@ const buildPrompt = async (
   excludeFile: string,
 ): Promise<void> => {
   const args = [
-    "deno",
-    "run",
-    "--allow-read",
-    "--allow-write",
-    "--allow-run=git,gh",
-    "--allow-net",
-    "--allow-env=GH_TOKEN,GITHUB_TOKEN,PATH,HOME,XDG_CONFIG_HOME",
+    process.execPath,
     "scripts/dc_changelog.ts",
     "--repo",
     options.repo,
@@ -316,29 +302,25 @@ const roleAgents = {
   translator: translatorAgents,
 }
 
-const makePiWorkspace = async (
-  role: keyof typeof roleAgents,
-): Promise<PiWorkspace> => {
-  const root = await Deno.makeTempDir({ prefix: `dc-changelog-pi-${role}-` })
+const makePiWorkspace = async (role: keyof typeof roleAgents): Promise<PiWorkspace> => {
+  const root = await mkdtemp(join(tmpdir(), `dc-changelog-pi-${role}-`))
   const cwd = join(root, "work")
   const instructions = roleAgents[role]
-  await ensureDir(cwd)
-  await Deno.writeTextFile(join(cwd, "AGENTS.md"), instructions)
+  await mkdir(cwd, { recursive: true })
+  await writeFile(join(cwd, "AGENTS.md"), instructions)
   return { root, cwd, instructions }
 }
 
 const defaultPiModel = "openai-codex/gpt-6-luna:medium"
 
 /** Claude Max 10x or more writes with Opus, Max 5x with Sonnet, any other plan with Codex through pi. */
-export const planAgent = (
-  tier: string | undefined,
-): Pick<Options, "agent" | "model"> => {
+export const planAgent = (tier: string | undefined): Pick<Options, "agent" | "model"> => {
   const times = Number(tier?.match(/max_(\d+)x/u)?.[1] ?? 0)
   return times >= 10
     ? { agent: "claude", model: "claude-opus-5-5" }
     : times >= 5
-    ? { agent: "claude", model: "claude-sonnet-5-5" }
-    : { agent: "pi" }
+      ? { agent: "claude", model: "claude-sonnet-5-5" }
+      : { agent: "pi" }
 }
 
 /**
@@ -347,18 +329,15 @@ export const planAgent = (
  */
 const claudeTier = async (claude: string): Promise<string | undefined> => {
   try {
-    const status = JSON.parse(
-      await $`${claude} auth status --json`.stderr("null").text(),
-    )
+    const status = JSON.parse(await $`${claude} auth status --json`.stderr("null").text())
     if (!status.loggedIn) return undefined
     if (status.rateLimitTier) return status.rateLimitTier
     const config = join(
-      Deno.env.get("CLAUDE_CONFIG_DIR") || Deno.env.get("HOME") || "/",
+      process.env["CLAUDE_CONFIG_DIR"] || process.env["HOME"] || "/",
       ".claude.json",
     )
-    const account = JSON.parse(await Deno.readTextFile(config)).oauthAccount
-    return account?.userRateLimitTier ?? account?.organizationRateLimitTier ??
-      undefined
+    const account = JSON.parse(await readFile(config, "utf8")).oauthAccount
+    return account?.userRateLimitTier ?? account?.organizationRateLimitTier ?? undefined
   } catch {
     return undefined
   }
@@ -367,14 +346,10 @@ const claudeTier = async (claude: string): Promise<string | undefined> => {
 /** Model name for the post footer, without provider and thinking level. */
 const aiModel = ({ agent, model }: Options): string =>
   agent === "claude"
-    ? model ?? "Claude"
+    ? (model ?? "Claude")
     : (model ?? defaultPiModel).split("/").at(-1)!.split(":")[0]
 
-const claudeArgs = (
-  options: Options,
-  workspace: PiWorkspace,
-  skill: string,
-): string[] => {
+const claudeArgs = (options: Options, workspace: PiWorkspace, skill: string): string[] => {
   const args = [
     options.claude,
     "-p",
@@ -394,9 +369,10 @@ const claudeArgs = (
   if (options.piTools === "none") {
     args.push("--tools", "")
   } else if (options.piTools !== "all") {
-    const tools = options.piTools.split(",").map((tool) =>
-      tool === "grep" ? "Grep" : tool === "read" ? "Read" : tool
-    ).join(",")
+    const tools = options.piTools
+      .split(",")
+      .map((tool) => (tool === "grep" ? "Grep" : tool === "read" ? "Read" : tool))
+      .join(",")
     args.push("--tools", tools, "--allowedTools", tools)
   }
   return args
@@ -434,36 +410,21 @@ const piArgs = (
   return args
 }
 
-const decode = (bytes: Uint8Array): string => new TextDecoder().decode(bytes)
-
 const runPiText = async (
   options: Options,
   promptFile: string,
   workspace: PiWorkspace,
 ): Promise<string> => {
-  const skill = options.agent === "claude"
-    ? await Deno.readTextFile(skillPath)
-    : ""
+  const skill = options.agent === "claude" ? await readFile(skillPath, "utf8") : ""
   const args = piArgs(options, promptFile, workspace, skill)
-  const child = new Deno.Command(args[0], {
-    args: args.slice(1),
-    cwd: workspace.cwd,
-    stdin: options.agent === "claude" ? "piped" : "null",
-    stdout: "piped",
-    stderr: "piped",
-  }).spawn()
-  if (options.agent === "claude") {
-    const writer = child.stdin.getWriter()
-    await writer.write(
-      new TextEncoder().encode(await Deno.readTextFile(promptFile)),
-    )
-    await writer.close()
+  const command = $`${args}`.cwd(workspace.cwd).stdout("piped").stderr("piped").noThrow()
+  const result = await (options.agent === "claude"
+    ? command.stdinText(await readFile(promptFile, "utf8"))
+    : command.stdin("null"))
+  if (result.code !== 0) {
+    throw new Error(`${args.join(" ")} failed: ${result.stderr.trim()}`)
   }
-  const result = await child.output()
-  if (!result.success) {
-    throw new Error(`${args.join(" ")} failed: ${decode(result.stderr).trim()}`)
-  }
-  return decode(result.stdout)
+  return result.stdout
 }
 
 const generateWithPi = async (
@@ -484,7 +445,7 @@ const generateWithPi = async (
     return await runPiText(options, promptFile, workspace)
   } finally {
     if (!options.keepTemp && !options.dryRun) {
-      await Deno.remove(workspace.root, { recursive: true })
+      await rm(workspace.root, { recursive: true })
     }
   }
 }
@@ -495,15 +456,13 @@ export const reviewWithPi = async (
   sourcePrompt: string,
   draft: string,
   reviewPromptFile: string,
-): Promise<
-  {
-    changelog: string
-    audit?: { poFile: string; poSha256: string; terms: VerifiedTerm[] }
-  }
-> => {
+): Promise<{
+  changelog: string
+  audit?: { poFile: string; poSha256: string; terms: VerifiedTerm[] }
+}> => {
   if (options.noReview) return { changelog: draft }
 
-  await Deno.writeTextFile(
+  await writeFile(
     reviewPromptFile,
     reviewPrompt({
       draft,
@@ -516,30 +475,21 @@ export const reviewWithPi = async (
   const workspace = await makePiWorkspace("reviewer")
   try {
     if (options.dryRun) {
-      $.logStep(
-        "dry-run",
-        `${range.label} reviewer prompt: ${reviewPromptFile}`,
-      )
+      $.logStep("dry-run", `${range.label} reviewer prompt: ${reviewPromptFile}`)
       $.logStep("dry-run", `reviewer cwd: ${workspace.cwd}`)
-      $.logStep(
-        "dry-run",
-        piArgs(options, reviewPromptFile, workspace).join(" "),
-      )
+      $.logStep("dry-run", piArgs(options, reviewPromptFile, workspace).join(" "))
       return { changelog: draft }
     }
 
     $.logStep("pi reviewer", range.label)
     const poFile = resolve(options.glossaryPo)
-    const poText = await Deno.readTextFile(poFile)
+    const poText = await readFile(poFile, "utf8")
     const entries = parsePo(poText)
     for (let attempt = 0; attempt < 2; attempt++) {
       const response = await runPiText(options, reviewPromptFile, workspace)
-      await Deno.writeTextFile(`${reviewPromptFile}.response.json`, response)
+      await writeFile(`${reviewPromptFile}.response.json`, response)
       try {
-        const { changelog, terms } = validateTranslationReview(
-          response,
-          entries,
-        )
+        const { changelog, terms } = validateTranslationReview(response, entries)
         assertPostFormat(changelog, sourcePrompt)
         return {
           changelog,
@@ -549,18 +499,16 @@ export const reviewWithPi = async (
         if (attempt === 1) throw error
         const reason = error instanceof Error ? error.message : String(error)
         $.logStep("review correction", reason)
-        await Deno.writeTextFile(
+        await writeFile(
           reviewPromptFile,
-          `${await Deno.readTextFile(
-            reviewPromptFile,
-          )}\n\n# 프로그램 대조 실패\n${reason}\n이전 응답을 실제 PO와 다시 대조해 본문과 terms를 고치고, 완전한 JSON 객체를 반환하세요.\n\n# 이전 응답\n${response}\n`,
+          `${await readFile(reviewPromptFile, "utf8")}\n\n# 프로그램 대조 실패\n${reason}\n이전 응답을 실제 PO와 다시 대조해 본문과 terms를 고치고, 완전한 JSON 객체를 반환하세요.\n\n# 이전 응답\n${response}\n`,
         )
       }
     }
     throw new Error("PO 검수를 완료하지 못했습니다")
   } finally {
     if (!options.keepTemp && !options.dryRun) {
-      await Deno.remove(workspace.root, { recursive: true })
+      await rm(workspace.root, { recursive: true })
     }
   }
 }
@@ -572,7 +520,7 @@ const translateWithPi = async (
   { changelog, terms }: { changelog: string; terms: VerifiedTerm[] },
   promptFile: string,
 ): Promise<string> => {
-  await Deno.writeTextFile(
+  await writeFile(
     promptFile,
     translatePrompt({
       post: changelog,
@@ -584,9 +532,7 @@ const translateWithPi = async (
   try {
     $.logStep("pi translator", range.label)
     for (let attempt = 0; attempt < 2; attempt++) {
-      const english = `${
-        (await runPiText(options, promptFile, workspace)).trim()
-      }\n`
+      const english = `${(await runPiText(options, promptFile, workspace)).trim()}\n`
       try {
         assertSameLayout(changelog, english)
         return english
@@ -594,29 +540,24 @@ const translateWithPi = async (
         if (attempt === 1) throw error
         const reason = error instanceof Error ? error.message : String(error)
         $.logStep("translation correction", reason)
-        await Deno.writeTextFile(
+        await writeFile(
           promptFile,
-          `${await Deno.readTextFile(
-            promptFile,
-          )}\n\n# Program check failed\n${reason}\nFix the previous translation and return the whole post.\n\n# Previous translation\n${english}`,
+          `${await readFile(promptFile, "utf8")}\n\n# Program check failed\n${reason}\nFix the previous translation and return the whole post.\n\n# Previous translation\n${english}`,
         )
       }
     }
     throw new Error("영문 번역을 완료하지 못했습니다")
   } finally {
     if (!options.keepTemp) {
-      await Deno.remove(workspace.root, { recursive: true })
+      await rm(workspace.root, { recursive: true })
     }
   }
 }
 
 const sha256 = async (text: string): Promise<string> =>
-  Array.from(
-    new Uint8Array(
-      await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text)),
-    ),
-  )
-    .map((byte) => byte.toString(16).padStart(2, "0")).join("")
+  Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(text))))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("")
 
 const run = async (options: Options): Promise<void> => {
   const ranges = weeklyRanges(new Date(), options.weeks)
@@ -632,17 +573,13 @@ const run = async (options: Options): Promise<void> => {
     outputDir: resolve(runOptions.outputDir),
     start: weeks.start,
   }).catch((error) =>
-    error instanceof Deno.errors.NotFound ? undefined : Promise.reject(error)
+    (error as NodeJS.ErrnoException).code === "ENOENT" ? undefined : Promise.reject(error),
   )
-  const range = missing
-    ? mergeRanges([weeks, { ...weeks, start: missing.since }])
-    : weeks
+  const range = missing ? mergeRanges([weeks, { ...weeks, start: missing.since }]) : weeks
   if (missing) {
     $.logStep(
       "지난 글에서 빠진 커밋 포함",
-      `${missing.post}: ${missing.commits.length}개\n${
-        missing.commits.join("\n")
-      }`,
+      `${missing.post}: ${missing.commits.length}개\n${missing.commits.join("\n")}`,
     )
   }
   if (!runOptions.yes) {
@@ -654,42 +591,32 @@ const run = async (options: Options): Promise<void> => {
   }
 
   const outputDir = resolve(runOptions.outputDir)
-  await ensureDir(outputDir)
-  const tempDir = await Deno.makeTempDir({ prefix: "dc-changelog-prompts-" })
+  await mkdir(outputDir, { recursive: true })
+  const tempDir = await mkdtemp(join(tmpdir(), "dc-changelog-prompts-"))
   let failed = false
 
   try {
     const slug = rangeSlug(range)
     const postDir = join(outputDir, slug)
-    await ensureDir(postDir)
+    await mkdir(postDir, { recursive: true })
 
     const promptFile = join(tempDir, `${slug}.prompt.md`)
     const reviewerPromptFile = join(tempDir, `${slug}.review.prompt.md`)
     const outputFile = join(postDir, "changelog.txt")
     const excludeFile = `${promptFile}.exclude.txt`
-    await Deno.writeTextFile(
-      excludeFile,
-      (missing?.covered ?? []).map((hash) => `${hash}\n`).join(""),
-    )
+    await writeFile(excludeFile, (missing?.covered ?? []).map((hash) => `${hash}\n`).join(""))
     await buildPrompt(
       range,
       {
         ...runOptions,
-        maxCommits: runOptions.maxCommits * selected.length +
-          (missing?.commits.length ?? 0),
+        maxCommits: runOptions.maxCommits * selected.length + (missing?.commits.length ?? 0),
       },
       promptFile,
       excludeFile,
     )
-    const sourcePrompt = await Deno.readTextFile(promptFile)
+    const sourcePrompt = await readFile(promptFile, "utf8")
     const draft = await generateWithPi(range, runOptions, promptFile)
-    const review = await reviewWithPi(
-      range,
-      runOptions,
-      sourcePrompt,
-      draft,
-      reviewerPromptFile,
-    )
+    const review = await reviewWithPi(range, runOptions, sourcePrompt, draft, reviewerPromptFile)
     const changelog = `${review.changelog.trimEnd()}\n`
     if (!runOptions.dryRun) {
       assertPostFormat(changelog, sourcePrompt)
@@ -698,8 +625,8 @@ const run = async (options: Options): Promise<void> => {
       })
       if (review.audit) {
         const reviewDir = join(outputDir, ".reviews")
-        await ensureDir(reviewDir)
-        await Deno.writeTextFile(
+        await mkdir(reviewDir, { recursive: true })
+        await writeFile(
           join(reviewDir, `${slug}.json`),
           JSON.stringify(
             {
@@ -711,13 +638,10 @@ const run = async (options: Options): Promise<void> => {
           ) + "\n",
         )
       }
-      await Deno.writeTextFile(outputFile, changelog)
-      await Deno.copyFile(
-        `${promptFile}.commits.txt`,
-        join(postDir, "commits.txt"),
-      )
-      await Deno.writeTextFile(join(postDir, "changelog.md"), korean.markdown)
-      await Deno.writeTextFile(join(postDir, "changelog.html"), korean.html)
+      await writeFile(outputFile, changelog)
+      await copyFile(`${promptFile}.commits.txt`, join(postDir, "commits.txt"))
+      await writeFile(join(postDir, "changelog.md"), korean.markdown)
+      await writeFile(join(postDir, "changelog.html"), korean.html)
       $.logStep("wrote", join(postDir, "changelog.html"))
       // The Korean post is saved first so a failed translation keeps it.
       const english = await translateWithPi(
@@ -726,18 +650,12 @@ const run = async (options: Options): Promise<void> => {
         { changelog, terms: review.audit?.terms ?? [] },
         join(tempDir, `${slug}.translate.prompt.md`),
       )
-      await Deno.writeTextFile(join(postDir, "changelog.en.txt"), english)
+      await writeFile(join(postDir, "changelog.en.txt"), english)
       const translated = await mirrorPost(english, {
         footer: aiFooter(aiModel(runOptions), true),
       })
-      await Deno.writeTextFile(
-        join(postDir, "changelog.en.md"),
-        translated.markdown,
-      )
-      await Deno.writeTextFile(
-        join(postDir, "changelog.en.html"),
-        translated.html,
-      )
+      await writeFile(join(postDir, "changelog.en.md"), translated.markdown)
+      await writeFile(join(postDir, "changelog.en.html"), translated.html)
       $.logStep("wrote", join(postDir, "changelog.en.html"))
       $.logStep("published", (await publishPages([postDir]))[0])
     }
@@ -747,7 +665,7 @@ const run = async (options: Options): Promise<void> => {
     throw error
   } finally {
     if (!failed && !runOptions.keepTemp && !runOptions.dryRun) {
-      await Deno.remove(tempDir, { recursive: true })
+      await rm(tempDir, { recursive: true })
     }
   }
 }
@@ -765,11 +683,9 @@ const main = new Command()
   .option("-r, --repo <path:string>", "Cataclysm-BN repository path", {
     default: defaultRepo,
   })
-  .option(
-    "-o, --output-dir <path:string>",
-    "Directory for generated post folders",
-    { default: defaultOutputDir },
-  )
+  .option("-o, --output-dir <path:string>", "Directory for generated post folders", {
+    default: defaultOutputDir,
+  })
   .option("--max-commits <count:string>", "Maximum commits per selected week", {
     default: 180,
     value: parsePositiveInt,
@@ -796,20 +712,13 @@ const main = new Command()
     "Agent tools (read,grep), 'all' to leave enabled, or 'none' to disable",
     { default: "read,grep" },
   )
-  .option(
-    "--newest <index:string>",
-    "Newest week index, where 0 is this week",
-    { value: parseWeekIndex },
-  )
-  .option(
-    "--oldest <index:string>",
-    "Oldest week index, where 0 is this week",
-    { value: parseWeekIndex },
-  )
-  .option(
-    "--dry-run",
-    "Generate prompts and print isolated pi commands without running pi",
-  )
+  .option("--newest <index:string>", "Newest week index, where 0 is this week", {
+    value: parseWeekIndex,
+  })
+  .option("--oldest <index:string>", "Oldest week index, where 0 is this week", {
+    value: parseWeekIndex,
+  })
+  .option("--dry-run", "Generate prompts and print isolated pi commands without running pi")
   .option("--no-review", "Skip the separate senior-editor reviewer pi pass", {
     default: false,
   })
@@ -818,44 +727,35 @@ const main = new Command()
     "Keep going when gh PR lookup fails and mark missing evidence in the prompt",
     { default: false },
   )
-  .option(
-    "--keep-temp",
-    "Keep temp prompt and isolated pi workspaces for debugging",
-    {
-      default: false,
-    },
-  )
-  .option(
-    "--glossary-po <file:string>",
-    "Korean gettext PO file for term snippets",
-    {
-      default: defaultGlossaryPo,
-    },
-  )
+  .option("--keep-temp", "Keep temp prompt and isolated pi workspaces for debugging", {
+    default: false,
+  })
+  .option("--glossary-po <file:string>", "Korean gettext PO file for term snippets", {
+    default: defaultGlossaryPo,
+  })
   .option("--skip-glossary", "Do not include Korean PO term snippets", {
     default: false,
   })
   .option("-y, --yes", "Use provided/default options without prompts")
-  .example("interactive", "deno task tui")
-  .example("generate current week", "deno task tui --newest 0 --oldest 0")
-  .example(
-    "dry-run current week",
-    "deno task tui --yes --dry-run --newest 0 --oldest 0",
-  )
+  .example("interactive", "vp run tui")
+  .example("generate current week", "vp run tui --newest 0 --oldest 0")
+  .example("dry-run current week", "vp run tui --yes --dry-run --newest 0 --oldest 0")
   .action(async (rawOptions) => {
-    const plan = rawOptions.agent || rawOptions.model
-      ? { agent: rawOptions.agent ?? "pi" }
-      : planAgent(await claudeTier(rawOptions.claude))
+    const plan =
+      rawOptions.agent || rawOptions.model
+        ? { agent: rawOptions.agent ?? "pi" }
+        : planAgent(await claudeTier(rawOptions.claude))
     await run({ ...rawOptions, ...plan } as Options)
   })
 
 if (import.meta.main) {
   try {
-    const args = Deno.args[0] === "--" ? Deno.args.slice(1) : Deno.args
+    const args = process.argv.slice(2)
+    if (args[0] === "--") args.shift()
     await main.parse(args)
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     console.error(`Error: ${message}`)
-    Deno.exit(1)
+    process.exit(1)
   }
 }
