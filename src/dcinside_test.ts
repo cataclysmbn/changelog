@@ -183,6 +183,43 @@ Deno.test("assertPostFormat accepts the template and rejects everything outside 
   }
 })
 
+const after = "https://github.com/user-attachments/assets/b"
+const tableSource = `${source}  Image: ${after}\n`
+const tablePost = `# 제목
+## [항목](${pr})
+| 타일셋 | 전 | 후 |
+|---|---|---|
+| Ultica_iso | ![](${image}) | ![](${after}) |
+![](${image} ${after})
+`
+
+Deno.test("renderPostHtml renders table rows as one table with a header row", () => {
+  assertEquals(
+    renderPostHtml(tablePost).split("\n").slice(1, 6),
+    [
+      `<table border="1" style="border-collapse:collapse;width:100%;max-width:850px;">`,
+      "<tr><th>타일셋</th><th>전</th><th>후</th></tr>",
+      `<tr><td>Ultica_iso</td><td><img src="${image}" alt="" style="max-width:100%;height:auto;"></td><td><img src="${after}" alt="" style="max-width:100%;height:auto;"></td></tr>`,
+      "</table>",
+      `<p><img src="${image} ${after}" alt="" style="max-width:425px;height:auto;"></p>`,
+    ],
+  )
+})
+
+Deno.test("assertPostFormat accepts image tables and before/after pairs from PR evidence", () => {
+  assertPostFormat(tablePost, tableSource)
+  for (
+    const [text, message] of [
+      [`# 제목\n## 항목\n| a | ![](${pr}) |`, "없는 이미지"],
+      [`# 제목\n## 항목\n| a | ${image} |`, "템플릿에 없는 줄"],
+      [`# 제목\n## 항목\n![](${image} ${after} ${image})`, "짝"],
+      [`# 제목\n## 항목\n![](${image} ${pr})`, "없는 이미지"],
+    ]
+  ) {
+    assertThrows(() => assertPostFormat(text, tableSource), Error, message)
+  }
+})
+
 Deno.test("reviewPrompt injects hostile senior editor pass", () => {
   const prompt = reviewPrompt({
     draft: "* 번들 배포에 레지스트리 모드 포함",
@@ -227,6 +264,18 @@ Deno.test("assertSameLayout accepts a line-by-line translation and rejects drift
   ) {
     assertThrows(() => assertSameLayout(post, text), Error, message)
   }
+  const englishTable = tablePost.replace("제목", "Title").replace(
+    "타일셋 | 전 | 후",
+    "Tileset | Before | After",
+  ).replace("[항목]", "[Entry]")
+  assertSameLayout(tablePost, englishTable)
+  for (
+    const text of [
+      englishTable.replace(" After |", ""),
+      englishTable.replace(`| ![](${after}) |`, "| After |"),
+      englishTable.replace("|---|---|---|\n", ""),
+    ]
+  ) assertThrows(() => assertSameLayout(tablePost, text), Error, "줄 구조")
 })
 
 Deno.test("translatePrompt keeps verified English names and the layout rules", () => {

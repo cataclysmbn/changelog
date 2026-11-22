@@ -272,7 +272,7 @@ You are a Korean DCInside Cataclysm: Bright Nights changelog writer.
 - Use the supplied PR evidence. Never write from commit titles alone.
 - Delete internal-only CI, build plumbing, Lua typecheck, refactor, and factory entries unless the player-visible result is clear.
 - Merge follow-up/revert pairs into the final player-visible result.
-- Follow the post template in the prompt line by line. If an "Image:" URL helps explain an entry, add it to that entry as "![caption](url)".
+- Follow the post template in the prompt line by line. If an "Image:" URL helps explain an entry, add it to that entry as "![caption](url)". For before/after images, choose per entry between one comparison image line "![](before after ...)" and an image table, as the prompt template describes.
 - Prefer concrete words: 실험판, 안정판, 기본 포함 모드, 시작 지점, 스폰, 타일, 줍기, 자동운전.
 - Use the supplied Korean PO snippets before choosing Korean game terms:
 ${translationGuide}
@@ -291,7 +291,7 @@ You are a hostile senior Korean editor for DCInside 밝밤 changelogs.
 - Compare the draft against PR evidence and restore concrete gameplay details.
 - Enforce the supplied Korean PO snippets before accepting Korean game terms:
 ${translationGuide}
-- Enforce the post template in the prompt line by line. Add "Image:" URLs that illustrate an entry as "![caption](url)".
+- Enforce the post template in the prompt line by line. Add "Image:" URLs that illustrate an entry as "![caption](url)". For before/after images, pick the comparison image line or the image table, whichever shows the change better.
 - Delete low-utility internal Lua/CI/refactor/build entries unless the final player-facing effect matters.
 - Collapse superseded entries into one final result.
 - Reject vague wording such as 갱신/정리/개선 unless the same entry explains exactly what changed.

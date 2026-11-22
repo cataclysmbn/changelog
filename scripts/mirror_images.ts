@@ -6,6 +6,7 @@
  * repository and served through jsDelivr. Files are named by content hash and URLs pin the commit, so they never change.
  * Each image is also converted to WebP (lossless for pixel art) and the smaller file is kept. Requires ImageMagick.
  *
+ * An image line with several URLs (before, after, ...) becomes one side-by-side animated WebP.
  * Images at least twice as wide as tall (side-by-side comparisons) get twice the normal width in the HTML.
  *
  * Usage: deno task html dist/<period>/changelog.txt (or changelog.en.txt); writes the .html beside it.
@@ -20,6 +21,7 @@ import {
   postImageUrls,
   renderPostHtml,
 } from "../src/dcinside.ts"
+import { beforeAfter } from "./before_after.ts"
 
 const branch = "images"
 const extensions: Record<string, string> = {
@@ -47,7 +49,17 @@ const pixelArtMaxColors = 256
 const fetchWithTimeout = (url: string): Promise<Response> =>
   fetch(url, { signal: AbortSignal.timeout(60_000) })
 
+/** A source of several URLs becomes one before/after comparison image. */
 const download = async (url: string) => {
+  if (url.includes(" ")) {
+    const output = await Deno.makeTempFile({ suffix: ".webp" })
+    try {
+      await beforeAfter({ sources: url.split(" "), output })
+      return compress(await Deno.readFile(output), "webp")
+    } finally {
+      await Deno.remove(output)
+    }
+  }
   if (url.startsWith("file:")) {
     return compress(await Deno.readFile(new URL(url)), url.split(".").at(-1)!)
   }

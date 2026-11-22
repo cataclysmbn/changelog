@@ -161,6 +161,28 @@ Deno.test("mirrorPostHtml doubles the width of images at least twice as wide as 
   })
 })
 
+Deno.test("mirrorPostImages turns a before/after line into one animated WebP and mirrors table images", async () => {
+  await withMirror(async ({ remote, cdn, source, tip }) => {
+    // Two pairs make two frames; the table cell image is mirrored on its own.
+    const mirrored = await mirrorPostImages(
+      `# 제목\n## 항목\n![](${source}/a.png ${source}/photo.png ${source}/photo.png ${source}/a.png)\n| 전 | ![](${source}/a.png) |\n`,
+      { remote, cdn },
+    )
+
+    const commit = await tip()
+    const names = (await $`git -C ${remote} ls-tree --name-only ${commit}`
+      .text()).split("\n")
+    const compare = names.find((name) => name !== webpName)!
+    assertEquals(
+      mirrored,
+      `# 제목\n## 항목\n![](${cdn}@${commit}/${compare})\n| 전 | ![](${cdn}@${commit}/${webpName}) |\n`,
+    )
+    const frames = await $`git -C ${remote} cat-file blob ${commit}:${compare}`
+      .pipe($`magick identify -format ${"%n\n"} -`).text()
+    assertEquals(frames.split("\n")[0], "2")
+  })
+})
+
 Deno.test("mirrorPostImages keeps images ImageMagick cannot encode as WebP", async () => {
   const tall = await magick("-size", "300x17000", "gradient:red-blue", "png:-")
   const server = Deno.serve(

@@ -118,12 +118,24 @@ export const githubImageUrls = (markdown: string): string[] =>
     ),
   ].filter((url) => permanentImageUrl.test(url))
 
-const imageLine = /^!\[([^\]]*)\]\((\S+)\)$/u
+// One URL is a plain image; an even count of URLs alternates before, after and becomes one comparison image.
+const imageLine = /^!\[([^\]]*)\]\((\S+(?: \S+)*)\)$/u
+const tableRow = /^\|.*\|$/u
+const tableSeparator = /^\|(?:\s*:?-+:?\s*\|)+$/u
 const linkedHeading = /^## \[([^\]]+)\]\((\S+)\)$/u
 const dateLine = /^(?:\d{1,2}월 \d{1,2}일|[A-Z][a-z]{2} \d{1,2})$/u
 
 const postLines = (post: string): string[] =>
   post.split("\n").map((line) => line.trim()).filter(Boolean)
+
+const tableCells = (row: string): string[] =>
+  row.slice(1, -1).split("|").map((cell) => cell.trim())
+
+/** Image matches of an image line or of the image cells of a table row. */
+const lineImages = (line: string): RegExpMatchArray[] =>
+  (tableRow.test(line) ? tableCells(line) : [line])
+    .map((text) => text.match(imageLine))
+    .filter((image): image is RegExpMatchArray => image !== null)
 
 const evidenceUrls = (source: string, label: string): Set<string> =>
   new Set(
@@ -145,52 +157,109 @@ export const assertPostFormat = (post: string, source: string): void => {
   for (const [index, line] of lines.entries()) {
     const image = line.match(imageLine)
     const link = line.match(linkedHeading)
-    if (image && !images.has(image[2])) {
-      throw new Error(`PR 근거에 없는 이미지: ${image[2]}`)
+    const table = tableRow.test(line)
+    for (const [, , source] of lineImages(line)) {
+      const urls = source.split(" ")
+      const missing = urls.find((url) => !images.has(url))
+      if (missing) throw new Error(`PR 근거에 없는 이미지: ${missing}`)
+      if (urls.length % 2 !== 0 && urls.length > 1) {
+        throw new Error(`비교 이미지는 전, 후 짝이어야 합니다: ${source}`)
+      }
     }
+    if (
+      table &&
+      tableCells(line).some((cell) =>
+        !imageLine.test(cell) && /!\[|https?:\/\//u.test(cell)
+      )
+    ) throw new Error(`템플릿에 없는 줄: ${line}`)
     if (link && !links.has(link[2])) {
       throw new Error(`PR 근거에 없는 링크: ${link[2]}`)
     }
     if (
-      !image && !link &&
+      !image && !link && !table &&
       (/^(?:ㄴ|\* |✓|```)|https?:\/\//u.test(line) ||
         (index > 0 && /^#+ /u.test(line) && !line.startsWith("## ")))
     ) throw new Error(`템플릿에 없는 줄: ${line}`)
   }
 }
 
-/** Distinct image URLs of a post, in order of first use. */
+/** Distinct image sources of a post, in order of first use; a comparison source is its URLs joined by spaces. */
 export const postImageUrls = (post: string): string[] => [
   ...new Set(
-    postLines(post).flatMap((line) => line.match(imageLine)?.[2] ?? []),
+    postLines(post).flatMap((line) =>
+      lineImages(line).map((image) => image[2])
+    ),
   ),
 ]
 
-/** Replaces the URL of each image line; other lines keep their URLs. */
+/** Replaces the source of each image line and image table cell; other lines keep their URLs. */
 export const mapPostImages = (
   post: string,
   replace: (url: string) => string,
 ): string =>
   post.split("\n").map((line) => {
     const image = line.trim().match(imageLine)
-    return image ? `![${image[1]}](${replace(image[2])})` : line
+    if (image) return `![${image[1]}](${replace(image[2])})`
+    if (!tableRow.test(line.trim())) return line
+    return `| ${
+      tableCells(line.trim()).map((cell) => {
+        const cellImage = cell.match(imageLine)
+        return cellImage ? `![${cellImage[1]}](${replace(cellImage[2])})` : cell
+      }).join(" | ")
+    } |`
   }).join("\n")
 
 const escapeHtml = (text: string): string =>
   text.replace(/&/gu, "&amp;").replace(/</gu, "&lt;").replace(/>/gu, "&gt;")
     .replace(/"/gu, "&quot;")
 
+const renderTable = (rows: string[]): string => {
+  const header = tableSeparator.test(rows[1] ?? "")
+  const cells = rows.filter((row) => !tableSeparator.test(row)).map((
+    row,
+    index,
+  ) =>
+    `<tr>${
+      tableCells(row).map((cell) => {
+        const tag = header && index === 0 ? "th" : "td"
+        const image = cell.match(imageLine)
+        const content = image
+          ? `<img src="${escapeHtml(image[2])}" alt="${
+            escapeHtml(image[1])
+          }" style="max-width:100%;height:auto;">`
+          : escapeHtml(cell)
+        return `<${tag}>${content}</${tag}>`
+      }).join("")
+    }</tr>`
+  )
+  return `<table border="1" style="border-collapse:collapse;width:100%;max-width:850px;">\n${
+    cells.join("\n")
+  }\n</table>`
+}
+
+/** Post lines with each run of table rows joined into one block. */
+const postBlocks = (lines: string[]): (string | string[])[] =>
+  lines.reduce<(string | string[])[]>((blocks, line) => {
+    const last = blocks.at(-1)
+    if (!tableRow.test(line)) return [...blocks, line]
+    return Array.isArray(last)
+      ? [...blocks.slice(0, -1), [...last, line]]
+      : [...blocks, [line]]
+  }, [])
+
 /** Renders a post to the HTML fragment for the DCInside HTML editor; the title goes in its own form field. Images in `wide` may grow to two normal widths. */
 export const renderPostHtml = (
   post: string,
   wide: ReadonlySet<string> = new Set(),
 ): string =>
-  postLines(post)
-    .filter((line) => !line.startsWith("# "))
+  postBlocks(postLines(post).filter((line) => !line.startsWith("# ")))
     .map((line, index, lines) => {
+      if (Array.isArray(line)) return renderTable(line)
       const image = line.match(imageLine)
       const link = line.match(linkedHeading)
-      const gap = index > 0 && !dateLine.test(lines[index - 1])
+      const previous = lines[index - 1]
+      const gap = index > 0 &&
+          !(typeof previous === "string" && dateLine.test(previous))
         ? "<p><br></p>\n<p><b><br></b></p>\n"
         : ""
       if (dateLine.test(line)) return `${gap}<p><b>${escapeHtml(line)}</b></p>`
@@ -242,6 +311,9 @@ M월 D일
 - 대표 이미지, 설명 문장, "- " 불릿 줄, 추가 이미지는 근거가 있을 때만 넣습니다. 작은 수정은 "##" 줄과 한 문장만 씁니다.
 - 항목 이름에 PR 링크를 겁니다. 한 항목에 PR이 여럿이면 첫 번째 PR만 겁니다. 따로 된 링크 줄은 쓰지 않습니다.
 - 이미지 URL은 근거의 "Image:" 값을, 링크 URL은 근거의 "URL:" 값을 그대로 복사합니다. 추가 이미지에는 설명을 붙입니다.
+- 근거 본문에 전/후 비교 이미지가 있으면 아래 두 방식 중 항목을 더 잘 보여 주는 쪽을 고릅니다.
+  - 비교 이미지: "![](전 URL 후 URL)"처럼 한 줄에 전, 후 URL을 공백으로 나란히 씁니다. 짝이 여럿이면 "![](전1 후1 전2 후2)"로 이어 씁니다. 프로그램이 왼쪽 Before, 오른쪽 After로 붙이고 짝마다 한 장씩 넘어가는 움직이는 이미지로 만듭니다. 화면 한 곳의 단순 전/후에 씁니다.
+  - 표: 행이나 열 이름(타일셋, 설정값 등)이 비교의 핵심이면 근거의 표를 같은 행과 열로 옮깁니다. "| 타일셋 | 전 | 후 |", "|---|---|---|", "| HitButton_iso | ![](URL) | ![](URL) |"처럼 씁니다. 칸에는 짧은 글이나 이미지 하나만 넣고, 머리 행 글은 한국어로 씁니다.
 - 문장은 "~함", "~추가"처럼 짧게 끝냅니다.
 - 한국어 위주로 쓰고 필요한 경우 첫 언급에만 영어 원문을 괄호로 병기합니다.
 - 플레이어가 체감하는 기능, 콘텐츠, 밸런스, UI, 버그 수정을 우선합니다.
@@ -352,6 +424,17 @@ export type TranslatePromptOptions = {
 }
 
 const lineShape = (line: string): string => {
+  if (tableSeparator.test(line)) return "table separator"
+  if (tableRow.test(line)) {
+    return `table ${
+      tableCells(line).map((cell) => {
+        const image = cell.match(imageLine)
+        return image
+          ? `image ${image[1] ? "caption" : "bare"} ${image[2]}`
+          : "text"
+      }).join(" | ")
+    }`
+  }
   const image = line.match(imageLine)
   const link = line.match(linkedHeading)
   if (image) return `image ${image[1] ? "caption" : "bare"} ${image[2]}`
@@ -385,7 +468,7 @@ export const translatePrompt = (
 
 Rules:
 - Return only the translated post. No code fence, preface, or notes.
-- Keep every line in the same order and of the same kind: "# " title, "M월 D일" date line (write "Oct 19"), "## " heading, "![caption](url)" image, "- " bullet, plain text line. Do not add, drop, merge, or split lines.
+- Keep every line in the same order and of the same kind: "# " title, "M월 D일" date line (write "Oct 19"), "## " heading, "![caption](url)" image (it may hold several URLs), "| ... |" table row, "- " bullet, plain text line. Do not add, drop, merge, or split lines. Keep the cells of each table row; translate text cells and keep image cells.
 - Copy every URL exactly. Translate image captions; keep an empty caption empty.
 - Replace the first line with: # ${title}
 - Use the original English game names below for the Korean names in the post. Drop the English names that the Korean post adds in parentheses, since the English name is already in the text.
