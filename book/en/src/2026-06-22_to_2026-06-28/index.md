@@ -7,13 +7,11 @@ Jun 22
 ## Add enhanced variants of the deranged heavy-armored bionic special forces at the military outpost
 
 - After 2 weeks, melee and shotgun types spawn. After 6 weeks, grenadier and fusion blaster types spawn.
-
 - Their looks differ, so you can tell which weapon they carry.
 
 ## Fix errors in construction speed and skill bonus effects
 
 - The construction speed bonus now also applies to vehicle work.
-
 - Also fix missing calculations for the cutting skill and the see-through bonus.
 
 ## Gun-type items no longer always cover the torso
@@ -33,7 +31,6 @@ Jun 23
 ## Craftable guns with a duplicate for each caliber now use a base gun plus a conversion kit
 
 - Applies to the pipe rifle, handmade carbine, Lutie SMG, and more.
-
 - Add craftable gun mods and caliber conversion kits for them.
 
 ## Add tiles for the 40mm grenade casing and the 40x53mm conversion kit
@@ -45,7 +42,6 @@ Jun 23
 ## More flour spawns
 
 - A box is no longer fixed at 10 items. It is a random 5 to 40.
-
 - New flour boxes in grocery stores and cargo crates are always full.
 
 ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@7a87dd98733a433d2822b7b8fcb2730a2073462a/c703af444bcb5cf15c10bb08b9a8e253ec6a594bcc35069c700ba62553919380.webp)
@@ -91,9 +87,7 @@ Jun 24
 ## Adjust rare ammo and gun spawns
 
 - 7.62x39mm ammo appears very rarely in police evidence lockers.
-
 - Survivor zombies carry a rare gun with about 9% chance, and veteran survivor zombies with about 25% chance.
-
 - .50 BMG is removed from the rare ammo list, and the Draco joins the rare rifles.
 
 ## Fix wrong stairs appearing in the refugee center
@@ -119,7 +113,6 @@ Jun 25
 ## Labs appear more often
 
 - Ice lab chance rises from 1/3 to 1/2.
-
 - Normal labs can also appear 0 to 3 times per overmap.
 
 ## Reduce the loaded volume of many guns
@@ -153,7 +146,6 @@ Jun 25
 ## Magic sounds are reduced overall
 
 - Fix a bug where even small spells made sound 190.
-
 - The spell sound cap is lowered to 150, and the value that damage adds to sound is reduced to 1/3.
 
 Jun 26
@@ -161,7 +153,6 @@ Jun 26
 ## Weight and volume reduction from gun mods now takes effect
 
 - Parts that make a gun smaller, such as a folding stock, now work correctly.
-
 - Even with too many mods, gun weight and volume never go below 1% of the original.
 
 ## Remove the base joining question that could not progress from Pablo Nunez's dialogue in the refugee center
@@ -173,15 +164,12 @@ Jun 26
 ## Fix a pipe rifle recipe error in old saves
 
 - Previously learned .22/.308 pipe rifle recipes no longer cause a load error.
-
 - The new Lutie SMG recipe also works correctly.
 
 ## Rice and pasta now come in larger amounts
 
 - Spaghetti, macaroni, and lasagna come in a default stack of 8, about 500 g.
-
 - Rice comes in a default stack of 12.
-
 - In restaurants and houses, the count is a random 1 to 8.
 
 ## Opaque furniture such as air conditioners now blocks vision correctly
@@ -203,7 +191,6 @@ Jun 27
 ## Enemies now appear at the soldier corpse scene
 
 - Up to 2 zombie soldiers, up to 2 deranged soldiers, and 1 zombie corporal can appear.
-
 - In other cases, a TALON UGV may remain.
 
 ## Remove the 10000 L limit on vehicle cargo and container capacity
@@ -213,7 +200,6 @@ Jun 27
 ## Add the M249-equipped TALON UGV
 
 - It is inaccurate at long range but fires fast, and it is very dangerous up close.
-
 - Police robots now leave a police robot chassis with no superalloy.
 
 ## Fix some vehicle part tiles disappearing
@@ -223,7 +209,6 @@ Jun 27
 ## Slightly raise heating and cooling performance
 
 - The default stabilization value rises to 1250.
-
 - The power armor helmet no longer has heating and cooling, and the body heating and cooling rises to 2000.
 
 ## You can throw an item of the same kind as one you wear
@@ -237,7 +222,6 @@ Jun 28
 ## Add a dedicated tile for the survivor armored exoskeleton
 
 - It no longer uses the same picture as the light power armor, and looks like a STALKER-style exoskeleton.
-
 - The helmet and gas mask are separate.
 
 ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@7a87dd98733a433d2822b7b8fcb2730a2073462a/e757655e64518fecb5459a724be9c169e63eecf2583ed82115d06f59ed171673.webp)
@@ -245,7 +229,5 @@ Jun 28
 ## Add Kevlar-padded wooden shield and large wooden shield
 
 - They give 20 ballistic protection.
-
 - They are more cumbersome than the leather-reinforced shield, but less awkward than the iron strap shield.
-
 - Add recipes and tiles.

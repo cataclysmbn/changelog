@@ -253,12 +253,21 @@ export const aiFooter = (model: string, english = false): string =>
     ? `This changelog was generated automatically by AI (${model}).`
     : `이 변경 내역은 AI(${model})로 자동 생성되었습니다.`
 
-/** Writes a post as Markdown with a blank line between blocks, so mdBook keeps each post line apart; `footer` follows a rule at the end. */
+/** Writes a post as Markdown with a blank line between blocks, so mdBook keeps each post line apart; bullets stay one list, and `footer` follows a rule at the end. */
 export const postMarkdown = (post: string, footer?: string): string =>
   postBlocks(postLines(post))
     .map((block) => Array.isArray(block) ? block.join("\n") : block)
     .concat(footer ? ["---", footer] : [])
-    .join("\n\n") + "\n"
+    .map((block, index, blocks) =>
+      index === 0
+        ? block
+        : `${
+          block.startsWith("- ") && blocks[index - 1].startsWith("- ")
+            ? "\n"
+            : "\n\n"
+        }${block}`
+    )
+    .join("") + "\n"
 
 /** Renders a post to the HTML fragment for the DCInside HTML editor; the title goes in its own form field. Images in `wide` may grow to two normal widths, and a `---` line becomes a blank line. */
 export const renderPostHtml = (

@@ -39,7 +39,6 @@ Sep 15
 ## Adjust the damage of throwing spears
 
 - Iron javelin throwing bash/stab damage 5/17 -> 6/25. Throwing sticks now also have throwing damage 5.
-
 - Remove the extra damage modifier that atlatl darts got when thrown by hand.
 
 ## Maximum morale from playing games 60 -> 20, maximum duration 2 hours -> 3 hours
@@ -131,7 +130,6 @@ Sep 20
 ## Add the Contaminant Particle Ionizer CBM
 
 - It removes dangerous gases such as smoke and toxic gas within 5 tiles. It uses 5 kJ when turned on and 5 kJ each turn while running.
-
 - Bionic Firefighters start with it installed.
 
 ## Fix smoke bombs, tear gas grenades, and sterilizing and insecticide gas grenades being reused again and again
@@ -227,7 +225,6 @@ Sep 24
 ## Resting activities such as reading, fishing, playing games, and waiting now also give some natural recovery
 
 - Base recovery is 10% of the sleep recovery base, and up to 25% in a comfortable place.
-
 - Base sleep recovery goes down to 85%, but it is 100% when you sleep in a very comfortable place. Also fix comfort messages stacking up without end.
 
 ## You can now set the appearance chance, disappearance over time, and corpse pulping of the Civilians mod in the game
@@ -295,13 +292,11 @@ Sep 29
 ## Add the camouflage zombie, which cannot be seen from far away, and its evolved form, the camouflaged hunter zombie
 
 - The distance at which you spot it with normal sight is half of perception + survival (rounded down). Special vision such as infrared can see through the camouflage.
-
 - They join the evolution line of the soldier zombie, and you also have a chance to get camouflage clothing.
 
 ## Mutations that change stats now apply to base stats
 
 - The Alpha line of Prime Strength, Prime Dexterity, Prime Intelligence, and Prime Perception makes the matching base stat 1.5 times. A base of 8 becomes 12.
-
 - They no longer amplify temporary stat bonuses, and the double intelligence effect of Distributed Neurology stays.
 
 ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@7e5b4eb0f6835581dd1e9d7333aa8b1711c01eea/6709141dec2ed18d54d301e6cd36fb3ac61945a258e46df87ba80d6a38b228f7.webp)
@@ -309,7 +304,6 @@ Sep 29
 ## Press the reload key repeatedly to reload the weapon in your hand
 
 - With the default r, rr if there is one ammo type, and rrr if there are several types, selects the last ammo you used.
-
 - If another item already has the same key, that item has priority and the conflicting key shows in red.
 
 ---

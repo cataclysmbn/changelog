@@ -13,7 +13,6 @@ Oct 12
 ## Add carbon fiber armor plate and ram
 
 - 33% more durability than the steel equivalent.
-
 - Add projectile protection to military composite metal armor plate and ram.
 
 ## C-4, C-4 breaching charge, and EMP bomb can set the explosion timer up to 10 turns, and small nuke up to 20 turns
@@ -45,7 +44,6 @@ Oct 14
 ## Connect a microwave to power to use it as a cooking tool
 
 - It can be used for food crafting that needs a multi cooker. A vehicle part version is also added.
-
 - A powered microwave is placed in the camper van
 
 ## Saddle bag capacity 30 L -> 50 L
@@ -115,7 +113,6 @@ Oct 17
 ## Strengthen the hulk and juggernaut lines
 
 - Kevlar hulk, zombie hulk, and relentless hulk gain grab, bite, strong swing, and other attacks, and some attacks deal armor-piercing damage
-
 - skeletal juggernaut and fungal juggernaut also get stronger health, speed, melee, and special attacks
 
 Oct 18

@@ -45,7 +45,6 @@ Jun 16
 ## Rework the kraken boss
 
 - The kraken body now summons tentacles, instead of single-tile monsters.
-
 - Tentacle attacks such as wrap are now used by the tentacles themselves, and the kraken and tentacle tiles and descriptions change to match.
 
 Jun 17
@@ -61,7 +60,6 @@ Jun 17
 ## Adjust ice labs appearing too often
 
 - Make it a unique special terrain and lower its spawn chance.
-
 - Also fix the missing State Police Station tile.
 
 ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@7a87dd98733a433d2822b7b8fcb2730a2073462a/e21484fcc2015d799014343b7d4966fcb2c47974d1c1f03732923b6e7e454fbb.webp)
@@ -95,13 +93,11 @@ Jun 18
 ## Rename first aid kits
 
 - `large first aid kit` -> `first aid kit`
-
 - `small first aid kit` -> `compact first aid kit`
 
 ## Change the decoy vehicle at the military blacksite
 
 - Replace the old decoy vehicle with an M60 tank that has no weapons, engine, or controls.
-
 - Add one more near the elevator to reduce the deathmobile exploit.
 
 ## Less lag when crafting, reading, or passing turns near a large mobile base

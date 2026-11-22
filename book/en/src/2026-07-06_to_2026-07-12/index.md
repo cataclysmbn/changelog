@@ -17,7 +17,6 @@ Jul 06
 ## Sewing 5+ recipes that use only rags and thread can no longer be learned automatically by raising the skill alone.
 
 - This applies to the robe, maid dress, vest, suit, tuxedo, and wedding dress.
-
 - You can learn the maid hat recipe from a sewing book.
 
 ## The hover repulsor is no longer damaged by traps and lava.
@@ -43,7 +42,6 @@ Jul 07
 ## It is easier to compare the tool qualities of items.
 
 - In the normal description window, the quality level number shows in yellow.
-
 - In the comparison window, the quality and level difference of the two items show in a better/worse color.
 
 ## Fix the player teleporting back down the stairs when climbing stairs while riding.
@@ -55,7 +53,6 @@ Jul 07
 ## The crafting window can show the auto-learn conditions of recipes you do not know yet.
 
 - The required skill and level show under the description.
-
 - Recipes that cannot be learned from books do not show book-related notes.
 
 ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@7a87dd98733a433d2822b7b8fcb2730a2073462a/4a4517e0beb3b1ae3dd963e859d96157de4c724fc008d3a14e90880d211f5911.webp)
@@ -63,9 +60,7 @@ Jul 07
 ## Blindness is added as a starting trait.
 
 - You cannot pick it together with night vision, and you cannot gain night vision while blind.
-
 - The telescopic lens CBM cures blindness, but the diamond cornea does not.
-
 - Some traits that limit play style a lot, including blindness, do not appear in random character generation.
 
 Jul 08
@@ -75,7 +70,6 @@ Jul 08
 ## Add a road event with drone swarms to Aftershock.
 
 - Add new drones and related grenades, inactive drones, wrecks, and disassembly recipes.
-
 - Drones back off and keep some distance when the target is too close, and fight from there.
 
 Jul 09
@@ -89,7 +83,6 @@ Jul 09
 ## You can attack and destroy a reactor.
 
 - When you smash or disassemble it, it gives nuclear fuel and nuclear waste, not a plutonium cell.
-
 - When smashed, it causes an explosion 4 times as big as a plutonium generator.
 
 ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@7a87dd98733a433d2822b7b8fcb2730a2073462a/5dde458d60c83c73c209acd80e4c11d015ae3f05d354ce578503650b63bcb166.webp)
@@ -97,11 +90,8 @@ Jul 09
 ## You are guaranteed to get superalloy in the steel mill reward room.
 
 - Reward shelves change from 8 spots at 50% chance to 3 spots at 100% chance.
-
 - Each shelf spawns 1 superalloy armor plate or 5 to 10 alloy sheets.
-
 - Total reward in armor plate equivalents is at least 1.25, at most 3, and about 2.44 on average.
-
 - Extra hard steel rewards and gear such as a cooling suit and an industrial exo-suit each appear with 50% chance.
 
 ## Fix the game crashing on activity completion when an NPC that helped butcher died or disappeared.
@@ -121,7 +111,6 @@ Jul 11
 ## The automated gas station fuel tank now stores gasoline correctly.
 
 - No gasoline puddles form around the tank, and the gas station console also works correctly.
-
 - Adding or removing fuel directly from the tank is still blocked.
 
 ## The advanced UPS charges itself.
@@ -133,7 +122,5 @@ Jul 11
 ## The power armor soldier starting gear centers on the advanced UPS and the A7 laser rifle.
 
 - Continuous power armor run time goes from about 50 minutes to more than 2 hours 45 minutes.
-
 - The M27 rifle and magazine pouch are replaced by the A7 laser rifle.
-
 - A grenade pouch for power armor and 2 grenades are added.

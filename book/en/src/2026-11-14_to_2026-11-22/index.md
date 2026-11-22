@@ -9,7 +9,6 @@ More survivor's camp and survivor's bunker layouts are added
 The plains camp with one tent and little loot is removed, and bunker variants with more loot are added
 
 - Separate camps appear in forests
-
 - Raided camps appear to have been attacked by mi-go
 
 ## [delete electronic media and e-book devices](https://github.com/cataclysmbn/Cataclysm-BN/pull/10882)
@@ -86,9 +85,7 @@ Nov 18
 You can craft and place new traps, including attribute transfer tripwires, spear traps, land mines, and EMP traps
 
 - Sprinkler traps spray liquid connected to plumbing
-
 - Manhack hatches release manhacks
-
 - Tesla wires attack while using base power
 
 ![New traps](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@e170c4608da907998b88f13523bae7a6428bf3a3/9e3d598868a0e8f7fb90739d1e8c07e37f566144d00cd4a53443576b349b8490.webp)

@@ -29,7 +29,6 @@ Oct 19
 ## Breaking doors at close range with shot is easy again
 
 - Shot terrain damage is counted 5 times, so wooden doors break reliably.
-
 - Shot does not get hit penalties for small targets, or for crouching or prone.
 
 Oct 20
@@ -83,7 +82,6 @@ Oct 21
 ## Military special locations are more varied
 
 - 2 kinds of outpost each appear with 25% chance. Camps, bunkers, helipads, and others appear one per overmap with 35% chance.
-
 - Prison spawn rate is halved.
 
 ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@7a87dd98733a433d2822b7b8fcb2730a2073462a/1356a5c1883af05e9e1d100d1a4c634fc6a02546703d64032211db41b2b4a305.webp)
@@ -115,9 +113,7 @@ Oct 22
 ## Overhaul the body armor system
 
 - Light, normal, and heavy ballistic vests and ballistic plates are worn separately.
-
 - Plates block with 85% chance. ESAPI plates are light and also stop rifle rounds, but break easily after a few hits.
-
 - Add scrap metal ballistic plates that you can craft early.
 
 Oct 23

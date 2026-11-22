@@ -7,9 +7,7 @@ A melee boss, feral FPF commander, spawns in the cooling tunnel under the nuclea
 It has very high dodge, so it is hard to kill with guns, but high-capacity weapons such as machine guns work. It uses a leap, a dropkick that sends the player flying, and an execution attack that deals big damage only to a grabbed target. It also fires an energy wave that periodically stuns and deals a small amount of damage.
 
 - Mid to late game gear drop
-
 - Microreactor + upgrade drop
-
 - Dangerous when it grabs you
 
 ![Feral FPF commander](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@7e5b4eb0f6835581dd1e9d7333aa8b1711c01eea/ea99f2ee9bb5d1a57d5db5955b63e2b6d2f9487543f623007da6062767ffa48a.webp)
@@ -21,9 +19,7 @@ In The Old Guard mission 4, a boss with much better gear appears instead of a no
 He wears a full set of recycled power armor with a military bionic. He uses rifle skill first and carries machine guns such as M1919 Stinger and PKM, or grenade and rocket launchers. He also carries grenades and medical supplies better than a normal bandit.
 
 - Wears recycled power armor
-
 - Uses machine guns and launchers
-
 - Extra chance of advanced weapons when the Arcana, CRT Expansion, or Magiclysm mods are used
 
 ![Bandit boss](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@7e5b4eb0f6835581dd1e9d7333aa8b1711c01eea/3f75a6b425498e963c7ec0637ae3e1109e859404ae5d20e145dedcf5527f3814.webp)
@@ -35,11 +31,8 @@ Protection values, spawns, and recipes of ballistic vests and plates change a lo
 Thickness goes from 4 layers to 6 so that a vest with a steel or alloy plate stops 5.56mm as described. Scrap plates count as iron, so with a vest they stop .223 Remington. The light ballistic vest is renamed plate carrier, its ballistic resistance goes from 2 to 6, and it gets a recipe. Metal plate thickness is then reduced to lower bash and cut resistance (steel and superalloy plate 24/24 -> 18/18, hardened steel plate 16/28 -> 12/21).
 
 - Dragon skin vest changes to lamellar ballistic vest and becomes standalone armor
-
 - Ballistic vest spawns are split into civilian and military
-
 - Add aluminum and carbon fiber based stab protection plates
-
 - ESAPI plate volume 5380 ml -> 4 L
 
 ## [Tactical helmet is one tier above military helmet](https://github.com/cataclysmbn/Cataclysm-BN/pull/10738)
@@ -49,7 +42,6 @@ Tactical helmet and tactical full helmet are clearly sturdier than the army helm
 The material changes from plastic to hardened steel, so ballistic resistance becomes 50 (army helmet is 40). The army helmet stops up to .40 S&W, and the tactical helmet stops up to .357 Magnum. The survivor helmet is made from an army helmet or steel combat helmet plus Kevlar, and the heavy survivor helmet is made only from the tactical helmet line.
 
 - Tactical helmet weight and encumbrance increase
-
 - Heavy survivor helmet resistance 60
 
 ![Helmet comparison](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@7e5b4eb0f6835581dd1e9d7333aa8b1711c01eea/a65374ba37f48cde73364de0dc3362907bde97fe63d4227c574e2bb0e49b6578.webp)
@@ -71,9 +63,7 @@ The ROT_RATE option is added to settings, so you can change how fast food and co
 At 0x, food stays fresh forever. At 0.05x, food rots 20 times slower. At 100x, food rots in 1 hour.
 
 - 0x = no spoilage
-
 - 0.05x = 20 times slower
-
 - 100x = rots in 1 hour
 
 ![Spoilage rate setting](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@7e5b4eb0f6835581dd1e9d7333aa8b1711c01eea/ed6095031060ae614148330a03bbef5c847f190e708813c922c83c16e368a3fd.png)
@@ -87,7 +77,6 @@ The hazmat zombie evolves into a glowing zombie, and then into a radioactive hus
 Both regenerate and give light, and their attacks irradiate you. The radioactive husk is immune to fire, emits toxic gas, and has higher stats and regeneration. If an attack deals damage, it ignores armor and irradiates you. If the damage is 0, armor blocks it. Attacks of the elite zombie scientist, irradiated wanderer, charred nightmare, and evolved mutant experiment also cause radiation.
 
 - Radioactive item and clothing remains drops
-
 - Small nuke drop weight is lowered in a follow-up fix
 
 ![Radioactive zombie](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@7e5b4eb0f6835581dd1e9d7333aa8b1711c01eea/d823a5ce78725734c3d71d7cbc93a9ef6129829d966e7bc01ab4f4a4b1beaa07.webp)
@@ -99,7 +88,6 @@ Normal and military feral humans get an evolution path, and ones that hold a pip
 When the normal type evolves, it becomes a normal zombie with 40%, a survivor-line zombie with 10%, or a survivor-type monster with 50%. The military type can wield a rifle, machine gun, shotgun, or DMR if it survives, and its accuracy is lower than the original. A type with a chainsaw is also added, but it appears late.
 
 - Remove militia burst fire
-
 - Starting ammo increases: security guard 5 -> 15, survivalist 3 -> 15, militiaman 10 -> 30
 
 ## [Add military barracks](https://github.com/cataclysmbn/Cataclysm-BN/pull/10735)
@@ -131,7 +119,6 @@ Military professions start with FMJ and police professions start with JHP rounds
 Tank crew, saboteur, and Marine CSO start with an M9 and 9mm FMJ. Police professions use .223 and .308, and military professions keep AP. The automatic rifleman starts with tracer rounds instead of normal 5.56mm.
 
 - Bionic sniper .45 FMJ
-
 - Police professions .45 JHP
 
 ## [Adjust armor of soldier, SWAT, and skeletal zombies](https://github.com/cataclysmbn/Cataclysm-BN/pull/10780)
@@ -141,7 +128,6 @@ Armor of military-line zombies is matched to current armor values, and the skele
 skeletal juggernaut 20/45/36 -> 36/45/27, skeletal brute 12/30/24 -> 24/30/18, skeletal master 0/15/24 -> 20/30/20. Kevlar zombie 14/34/53 -> 18/23/53, Kevlar brute 18/45/70 -> 24/30/70, Kevlar hulk 30/56/90 -> 26/49/90. feral FPF commander is 38/53/62 -> 32/46/70
 
 - Juggernaut: strong against melee and bows, weak against bullets
-
 - Skeletal line stab resistance becomes equal to cut resistance
 
 ## [Add hallucination-only monster hat man](https://github.com/cataclysmbn/Cataclysm-BN/pull/10792)

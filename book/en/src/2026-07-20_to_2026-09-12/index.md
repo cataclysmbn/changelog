@@ -107,7 +107,6 @@ Jul 27
 ## Cutting, stabbing, and bullet damage that goes through armor and is above 15 now causes bleeding
 
 - Enemies immune to bleeding are excluded. Monsters also lose health from bleeding.
-
 - Wait one turn to press on the wound and stop the bleeding. The higher your first aid skill, the shorter the bleeding lasts.
 
 ## Adjust the layout of downtown shop areas and apartments that spawned awkwardly at the edge of the city
@@ -143,7 +142,6 @@ Jul 29
 ## Add the feral SWAT team, rarely met at SWAT vehicles
 
 - It has riflemen, shield bearers, a grenadier that uses tear gas and flashbang robots, and charging melee members.
-
 - They become hostile if you attack first or come too close.
 
 ## Chicken walkers become hostile when attacked, when an ally is hurt, or when the player comes near
@@ -163,7 +161,6 @@ Jul 30
 ## Drop chance of special forces guns from Bionic Operator zombies 10% -> 40%
 
 - The special forces pistol is also a guaranteed drop. A feral heavily armored Bionic Operator always drops a special forces gun.
-
 - The Black Ops zombie line can also drop guns of the same line.
 
 ## Add the small C-4 charge that breaches walls and doors
@@ -195,7 +192,6 @@ Aug 01
 ## Adjust starting skills, gear, and points of professions in general
 
 - Add missing gear, such as the police body armor and taser. Adjust gear and skill differences among the military pilot lines.
-
 - Add the F-15 and AV-8 to the aircraft choices of the fighter pilot.
 
 ## The Resurrection skill mod now learns the resurrection anchor recipe automatically when you meet the skill requirements
@@ -235,9 +231,7 @@ Aug 06
 ## Split the Rockbreaker into an exo-suit and armor plates
 
 - You must wear the exo-suit first to wear armor plates, a helmet, and accessories.
-
 - The exo-suit has 3 tiers. The higher the tier you find, the better the strength, carrying capacity, and environmental protection.
-
 - Armor plates keep the protection of the old light, standard, and heavy types.
 
 ## You can now craft spray paint and choose its color. The finished item is full
@@ -269,7 +263,6 @@ Aug 08
 ## Tamed animals grow even when they are in front of you
 
 - In the Dinosaur mod, you can ride a triceratops and train a velociraptor.
-
 - The animal examine window shows the weight it carries.
 
 ## Fix consecutive gunshots being skipped because of the playback of earlier gunshots
@@ -371,7 +364,6 @@ Aug 17
 ## Change the final battle of the jabberwock mission chain to a large zombie horde fight
 
 - After you recruit the tracker, you hunt the horde leader of the forest, and zombies that fit the world progress appear with it.
-
 - Companion NPCs are no longer forced out of your party each time you take the mission.
 
 ## In small offices, zombies that fit an office now spawn instead of construction workers
@@ -387,9 +379,7 @@ Aug 18
 ## Add a jump action that clears one tile
 
 - It costs 200 moves. It has no default hotkey and you can choose it from the action menu.
-
 - You can break a window and jump in, but you can get hurt. You cannot jump over creatures of your size or larger, or over furniture you cannot pass.
-
 - You can jump over traps and jump down from a building.
 
 ## Arcana restored anomaly mechs can now be deactivated and recovered
@@ -413,7 +403,6 @@ Aug 20
 ## Restore the mininuke recipe
 
 - Electronics 10, fabrication 6, mechanics 8, craft time 1 hour 30 minutes
-
 - It needs 10 plutonium cells and more. Learn it from a book or by disassembling.
 
 ## Increase the chance of M7, M250, and 7.62mm and .45 ACP guns dropping from military loot
@@ -477,9 +466,7 @@ Aug 27
 ## Adjust the combat ability of Arcana maddened enemies to fit their gear
 
 - Maddened wanderer summon interval 15 turns -> 5 turns
-
 - The maddened hunter attacks with bash 4d6 and stab 23. The ranged attack interval of the maddened keeper is 5 turns -> 10 turns.
-
 - Monster fire attack damage 13 -> 20, range 7 -> 10, penetration 3 -> 2
 
 Aug 28
@@ -527,13 +514,11 @@ Aug 31
 ## Rework the central lab into one large final area that exists once in the world
 
 - Expand the surface security facility and the underground core research area. The supercomputer and giant portal area on the lowest floor are also bigger.
-
 - You can enter by breaking through the surface front gate, through an outer entry passage, or through the subway of another lab.
 
 ## Fix the spawn direction of main mission locations
 
 - Measured from the Refugee Center, Hub 01 and the Necropolis spawn to the south, and the Tacoma Commune and the bandit camp spawn to the west.
-
 - The Arcana country church exists before you take the mission, and the main shrines also spawn in set directions.
 
 ## Add door frames and window frames to the construction stages of the Tacoma Commune tool shed, and use wooden walls after it is complete
@@ -591,9 +576,7 @@ Sep 07
 ## Make the real bonuses of some martial arts match their descriptions
 
 - Barbaran Represa armor penetration bonus: 75% -> 100% of strength
-
 - Vulgar Preparation cut penetration bonus: 225% -> 125% of strength
-
 - Kick stance block bonus: 50% -> 25% of strength
 
 ## Trash and vehicle wheels no longer spawn in streams in the Innawoods mod
@@ -617,7 +600,6 @@ Sep 08
 ## You can now choose the noise display from decibels, decibels relative to ambient noise, and audible tile distance
 
 - Enemies with normal hearing no longer hear sounds that ambient noise drowns out.
-
 - The tile distance display changes with weather, wind, and indoor and outdoor ambient noise.
 
 Sep 09
@@ -655,7 +637,6 @@ Sep 12
 ## Add a new mission to Hub 01 that investigates the physics lab
 
 - It is a mission to recover the PROCEDURE 025-EPSILON document from the lab.
-
 - Make the objective description of the existing mission more specific, and apply time skipping to the memory extraction task as well.
 
 ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@7e5b4eb0f6835581dd1e9d7333aa8b1711c01eea/884b9b4e3c347bed40ba8513b35eaff5f1f3fe796fee45d0f966932f83c5851a.webp)

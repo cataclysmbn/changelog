@@ -7,7 +7,6 @@ Feb
 ## Water plumbing system added
 
 - Connect water tanks, sinks, and pipes at your base to store and draw water.
-
 - Added a `plumbing kit` for plumbing work. You can craft it and it can spawn.
 
 ## Fruit and nut bushes can be dug up and replanted
@@ -69,9 +68,7 @@ Mar
 ## Map and reality bubble structure reworked
 
 - Added the base for a dynamic reality bubble size.
-
 - Added multiple dimensions, pocket dimensions, and per-dimension map storage.
-
 - Asynchronous map generation and lazy loading reduce stutter while you move.
 
 ## More fixes for stutter while moving on the map
@@ -95,7 +92,6 @@ Mar
 ## Construction menu reworked
 
 - Added tabs, categories, remaining craft count, speed modifier, and source display.
-
 - You can mark fill, outline, circle, and ignore areas in a construction blueprint.
 
 ## Combat mount training added
@@ -155,7 +151,6 @@ Apr
 ## Military blacksite added
 
 - A secret military garage with 3 underground floors.
-
 - The reward is 2 experimental vehicles.
 
 ## Blacksite boss fight added
@@ -183,13 +178,11 @@ Apr
 ## Lab rewards and room layouts improved
 
 - Added a chemical storage room and replaced some weak finale rewards.
-
 - Added the experimental weapons range, dissection room, and superalloy nanoforge finales.
 
 ## Many lab bosses added
 
 - Shaded figure, radiant triffid, alpha mutant, medical mutant, and more.
-
 - Some bosses are linked to samples, dedicated weapons, and finale rewards.
 
 ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@7a87dd98733a433d2822b7b8fcb2730a2073462a/31518bb4c8e78c04038653676e12b58ef48bfb87a5230285cb2815ceda06f889.webp)
@@ -301,7 +294,6 @@ May
 ## UI and control convenience improved
 
 - Vehicle autodrive speed setting, vehicle follow distance setting, scrolling in the camera photo menu, and a larger examine menu.
-
 - Fixed many input problems with drop, number selection, and filters.
 
 ## Many crafting, combat, and flight bugs fixed

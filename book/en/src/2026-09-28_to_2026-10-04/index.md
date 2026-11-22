@@ -5,7 +5,6 @@ Sep 28
 ## Add disguised zombie
 
 - It is invisible beyond half the distance of perception + survival. Special vision such as thermal sight can find it.
-
 - It joins soldier zombie evolution. Kill it to get camouflage clothing.
 
 ## Change how alpha mutations scale stats
@@ -25,9 +24,7 @@ Sep 29
 ## Spilled liquid spreads as a puddle on the floor
 
 - Drinks, oils, and chemicals cover the floor and spread over time.
-
 - Lubricant makes you fall. Glue holds your feet. Non-slip shoes and overshoes are also added.
-
 - You can choose how much to pour from a container, so you can make a gasoline trail.
 
 ## Close the exploit of burning disposable batteries to fill rechargeable batteries
@@ -49,7 +46,6 @@ Sep 30
 ## Add a beginner penalty: with firearm skill 0, spread doubles
 
 - The penalty is gone from firearm skill 1 for that gun, or marksmanship 4.
-
 - Close-range aiming is much faster from firearm skill 6 for that gun, or marksmanship 8.
 
 ## Make glue a liquid: pour it from containers and spray it on the floor
@@ -67,7 +63,6 @@ Sep 30
 ## You go prone automatically when knocked down
 
 - If you try to change posture while knocked down, you try to stand up. You stand up automatically when the status ends.
-
 - The prone @ is shown in gray in ASCII mode too.
 
 Oct 01

@@ -5,9 +5,7 @@ Jul 13
 ## Add loopholes for plastered wooden walls
 
 - Make a hole in a wall to see through it and shoot. Paint it to match the wall color or strip the paint.
-
 - Ranged damage reduction of house walls and loopholes goes down from 20~40 to 8~16. Even .22 LR can now go through plaster walls.
-
 - Fix building a wooden wall loophole giving two wood pieces only.
 
 Jul 14
@@ -19,7 +17,6 @@ Jul 14
 ## Adjust weight and material amounts of Arcana weapons and crafts
 
 - The weight of shrike's misericorde goes down from 2 kg to 1.25 kg.
-
 - Reduce the gold and silver materials that symbol of judgment and similar items needed in excess of the finished item.
 
 Jul 15
@@ -37,7 +34,6 @@ Jul 16
 ## Magical Nights soul armor now summons its own magical armor instead of plate armor
 
 - Wear it over other gear with no encumbrance.
-
 - Defense is lower, but it now gives ranged damage reduction, radiation resistance, and some protection from mental attacks.
 
 ## Wrenches can now be found in mechanic garages and tool drawers
@@ -55,7 +51,6 @@ Jul 16
 ## Expand the recipe search filter
 
 - Search for reversible recipes, byproducts, melee damage, protection, warmth, storage, and encumbrance.
-
 - Compare skill requirements and values, for example `s:electronics>=5`. Add `-` to exclude recipes that match.
 
 Jul 17
@@ -81,7 +76,6 @@ Jul 18
 ## Blindness now applies only when a projectile hits the head or eyes
 
 - Monsters with no eyes are immune to blindness. You do not go blind if a shield fully blocks the damage.
-
 - Riot shields can now block acid projectiles.
 
 ## The effects list now shows effects given by equipment enchantments, effects they block, and the mutations and traits they grant
