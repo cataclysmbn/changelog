@@ -185,8 +185,16 @@ Deno.test("postMarkdown keeps each post line, table and bullet list as a block t
   assertStringIncludes(markdown, "\n\n- 전환\n- 표시\n\n")
   // Date lines become "##" headings and entries "###" headings, so the sidebar nests entries under their date.
   assertStringIncludes(markdown, "\n\n## 1월 4일\n\n### [구역 <관리> & 표시](")
-  assertStringIncludes(markdown, "\n\n## 1월 5일\n\n### 자물쇠 따기 충돌 수정\n\n")
+  assertStringIncludes(
+    markdown,
+    "\n\n## 1월 5일\n\n### 자물쇠 따기 충돌 수정\n\n",
+  )
   assertEquals(postMarkdown(markdown), markdown)
+  // An entry titled like a date stays an entry: "Nov 14" then "## Nov 14" gives "## Nov 14" then "### Nov 14".
+  assertStringIncludes(
+    postMarkdown("# T\nNov 14\n## Nov 14\n본문"),
+    "## Nov 14\n\n### Nov 14\n\n본문",
+  )
   assertEquals(markdown.includes("\n\n\n"), false)
   assertEquals(
     renderPostHtml(markdown),
