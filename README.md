@@ -15,8 +15,10 @@ deno task tui
 ```text
 dist/2026-05-25_to_2026-06-21/
 ├── changelog.txt
+├── changelog.md
 ├── changelog.html
 ├── changelog.en.txt
+├── changelog.en.md
 ├── changelog.en.html
 └── commits.txt
 ```
@@ -27,7 +29,7 @@ dist/2026-05-25_to_2026-06-21/
 
 `changelog.html`을 DCInside 글쓰기의 HTML 모드에 붙여 넣고, `changelog.txt` 첫 줄의 제목을 제목 칸에 넣습니다. 이미지는 PR 본문에 적힌 GitHub 영구 주소(`https://github.com/user-attachments/assets/...`)에서 가져옵니다. 익명으로 내려받을 수 없는 이미지와 GitHub 밖의 이미지는 쓰지 않습니다. DCInside가 GitHub 이미지 주소를 지우므로, `changelog.html`에는 이미지 사본을 이 저장소의 `images` 브랜치에 push한 뒤 jsDelivr 주소를 넣습니다. 모든 이미지를 WebP로 변환해 보고 원본보다 작을 때만 WebP를 올립니다. 픽셀 아트(긴 변 128 px 이하 또는 256색 이하)는 무손실, 나머지는 품질 50입니다(ImageMagick 필요). 이미지는 최대 425 px 폭으로 보이고, 가로가 세로의 2배 이상인 이미지(변경 전후 비교 등)는 850 px까지 보입니다. `changelog.txt`에는 GitHub 주소가 남습니다.
 
-`changelog.txt`나 `changelog.en.txt`를 고친 뒤 옆의 HTML만 다시 만들 때:
+`changelog.md`는 이미지를 jsDelivr 주소로 바꾼 사이트용 글이고, `changelog.html`은 그 글로 만든 DCInside용 HTML입니다. `changelog.txt`나 `changelog.en.txt`를 고친 뒤 옆의 Markdown과 HTML만 다시 만들 때:
 
 ```sh
 deno task html dist/2026-05-25_to_2026-06-21/changelog.txt gpt-5.6-terra
@@ -35,12 +37,6 @@ deno task html dist/2026-05-25_to_2026-06-21/changelog.en.txt gpt-5.6-terra
 ```
 
 HTML 끝에는 글을 쓴 AI 모델을 밝히는 줄(`이 변경 내역은 AI(gpt-5.6-terra)로 자동 생성되었습니다.`)이 붙습니다. `deno task tui`는 실행에 쓴 모델 이름을 넣고, `deno task html`은 두 번째 인자로 받은 이름을 넣습니다.
-
-`deno task tui`는 HTML을 만든 뒤 한국어와 영문 글을 GitHub Pages(<https://cataclysmbn.github.io/changelog/>)에 올립니다. 한국어 글은 `<기간>/`, 영문 글은 `<기간>/en.html`에 있습니다. `<기간>/`은 브라우저 언어가 한국어가 아니면 영문 글로 넘어가고, `<기간>/?ko`는 언제나 한국어 글을 엽니다. 사이트 첫 화면은 가장 최근 글로 넘어가고, 모든 글 목록은 `archive/`에 있습니다. 글을 고친 뒤 다시 올릴 때(여러 기간을 한 번에 줄 수 있음):
-
-```sh
-deno task pages dist/2026-05-25_to_2026-06-21
-```
 
 PR에 변경 전후 스크린샷 묶음이 있으면 짝마다 왼쪽에 변경 전, 오른쪽에 변경 후를 놓고 1초마다 다음 짝으로 넘어가는 animated WebP를 만들 수 있습니다. 인자는 `변경 전 변경 후` 순서의 짝이고 URL이나 파일 경로입니다.
 
@@ -98,3 +94,30 @@ deno task dc --repo /home/scarf/repo/cata/Cataclysm-BN v0.10.0..HEAD --mode draf
 ```
 
 작성 규칙은 `.agents/skills/dcinside-changelog/SKILL.md`에 있습니다.
+
+## 사이트
+
+이 저장소는 mdBook 책 두 권입니다. 한국어 책은 `book/ko/`, 영문 책은 `book/en/`에 있고, 글은 `book/<언어>/src/<기간>/index.md`입니다. `main`에 push하면 GitHub Actions가 사이트를 만들어 GitHub Pages(<https://cataclysmbn.github.io/changelog/>)에 올립니다.
+
+| 주소           | 내용                                        |
+| -------------- | ------------------------------------------- |
+| `/`            | 가장 최근 글                                |
+| `/<기간>/`     | 그 기간의 글                                |
+| `/<기간>.html` | 같은 글의 DCInside용 HTML(그대로 붙여 넣기) |
+| `/archive/`    | 전체 목록                                   |
+| `/en/...`      | 영문 책의 같은 주소                         |
+
+왼쪽 목록에는 모든 글이 최신순으로 나옵니다. 한국어 책은 브라우저 언어가 한국어가 아니면 영문 책으로 넘어갑니다. 위쪽 막대의 `English`/`한국어`로 고른 언어는 기억되고, `?ko`를 붙이면 언제나 한국어 글을 엽니다.
+
+`deno task tui`는 글을 만든 뒤 `changelog.md`와 `changelog.en.md`를 두 책에 넣고 목록(`SUMMARY.md`, `archive/index.md`)을 다시 써서 `main`에 push합니다. 로컬 저장소에는 `git pull`로 받습니다. 글을 고친 뒤 다시 올릴 때(여러 기간을 한 번에 줄 수 있음):
+
+```sh
+deno task pages dist/2026-05-25_to_2026-06-21
+```
+
+책을 직접 고쳐도 됩니다. 미리 보기와 사이트 빌드(`mdbook` 필요):
+
+```sh
+deno task serve
+deno task site _site
+```

@@ -1,0 +1,26 @@
+<script>
+(() => {
+  // The 404 page has no path to the root, only a <base> at the root.
+  const root = new URL("{{ path_to_root }}", document.baseURI)
+  const path = location.pathname.slice(root.pathname.length)
+  const other = new URL("en/" + path, root).href
+  let pref
+  try { pref = localStorage.getItem("changelog-lang") } catch {}
+  // Pages serves this book's 404 page for missing English pages too, so never redirect those again.
+  if (!path.startsWith("en/") && pref !== "ko" && !new URLSearchParams(location.search).has("ko") && (pref === "en" || !/^ko\b/iu.test(navigator.languages?.[0] ?? navigator.language))) location.replace(other)
+  addEventListener("DOMContentLoaded", () => {
+    const link = document.createElement("a")
+    link.href = other
+    link.hreflang = "en"
+    link.textContent = "English"
+    link.className = "changelog-lang"
+    const pick = () => { try { localStorage.setItem("changelog-lang", link.hreflang) } catch {} }
+    link.addEventListener("click", pick)
+    link.addEventListener("auxclick", pick)
+    document.querySelector(".right-buttons")?.prepend(link)
+  })
+})()
+</script>
+<style>
+.changelog-lang { margin-inline: 8px; line-height: var(--menu-bar-height); color: var(--icons); text-decoration: none; }
+</style>

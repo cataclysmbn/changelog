@@ -6,8 +6,8 @@
  *
  * Uses dax prompts to choose a contiguous set of weekly ranges, merges them into one period, generates its
  * prompt in a temp directory, then invokes isolated pi writer/reviewer/translator passes. Final output is
- * one folder with the Korean changelog.txt and changelog.html, and the English changelog.en.txt and changelog.en.html.
- * Both pages are then published to GitHub Pages.
+ * one folder with the Korean changelog.txt, changelog.md and changelog.html, and the English changelog.en.* files.
+ * Both Markdown posts are then committed to the mdBook books in `book/`, and the GitHub Pages workflow publishes them.
  */
 
 import { Command } from "@cliffy/command"
@@ -34,7 +34,7 @@ import {
   validateTranslationReview,
   type VerifiedTerm,
 } from "../src/translation.ts"
-import { mirrorPostHtml } from "./mirror_images.ts"
+import { mirrorPost } from "./mirror_images.ts"
 import { publishPages } from "./pages.ts"
 
 const scriptDir = dirname(fromFileUrl(import.meta.url))
@@ -693,7 +693,7 @@ const run = async (options: Options): Promise<void> => {
     const changelog = `${review.changelog.trimEnd()}\n`
     if (!runOptions.dryRun) {
       assertPostFormat(changelog, sourcePrompt)
-      const html = await mirrorPostHtml(changelog, {
+      const korean = await mirrorPost(changelog, {
         footer: aiFooter(aiModel(runOptions)),
       })
       if (review.audit) {
@@ -716,7 +716,8 @@ const run = async (options: Options): Promise<void> => {
         `${promptFile}.commits.txt`,
         join(postDir, "commits.txt"),
       )
-      await Deno.writeTextFile(join(postDir, "changelog.html"), html)
+      await Deno.writeTextFile(join(postDir, "changelog.md"), korean.markdown)
+      await Deno.writeTextFile(join(postDir, "changelog.html"), korean.html)
       $.logStep("wrote", join(postDir, "changelog.html"))
       // The Korean post is saved first so a failed translation keeps it.
       const english = await translateWithPi(
@@ -726,11 +727,16 @@ const run = async (options: Options): Promise<void> => {
         join(tempDir, `${slug}.translate.prompt.md`),
       )
       await Deno.writeTextFile(join(postDir, "changelog.en.txt"), english)
+      const translated = await mirrorPost(english, {
+        footer: aiFooter(aiModel(runOptions), true),
+      })
+      await Deno.writeTextFile(
+        join(postDir, "changelog.en.md"),
+        translated.markdown,
+      )
       await Deno.writeTextFile(
         join(postDir, "changelog.en.html"),
-        await mirrorPostHtml(english, {
-          footer: aiFooter(aiModel(runOptions), true),
-        }),
+        translated.html,
       )
       $.logStep("wrote", join(postDir, "changelog.en.html"))
       $.logStep("published", (await publishPages([postDir]))[0])

@@ -3,7 +3,7 @@ import { assertEquals, assertRejects, assertStringIncludes } from "@std/assert"
 import { encodeHex } from "@std/encoding/hex"
 import { join } from "@std/path"
 
-import { mirrorPostHtml, mirrorPostImages } from "./mirror_images.ts"
+import { mirrorPost, mirrorPostImages } from "./mirror_images.ts"
 
 const magick = async (...args: string[]) =>
   new Uint8Array(await $`magick ${args}`.bytes())
@@ -147,10 +147,10 @@ Deno.test("mirrorPostImages keeps the smaller of the original and its WebP copy"
   })
 })
 
-Deno.test("mirrorPostHtml doubles the width of images at least twice as wide as tall", async () => {
+Deno.test("mirrorPost doubles the width of images at least twice as wide as tall", async () => {
   await withMirror(async ({ remote, cdn, source }) => {
     // 20x10 (ratio 2) gets 850px, 8x8 keeps 425px.
-    const html = await mirrorPostHtml(
+    const { html } = await mirrorPost(
       `# 제목\n## 항목\n![](${source}/wide.png)\n![](${source}/small.png)\n`,
       { remote, cdn },
     )

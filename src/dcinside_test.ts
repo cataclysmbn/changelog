@@ -7,6 +7,7 @@ import {
   type Commit,
   draftPost,
   githubImageUrls,
+  postMarkdown,
   renderPostHtml,
   reviewPrompt,
   rewritePrompt,
@@ -147,7 +148,7 @@ Deno.test("renderPostHtml renders the static reference layout without the title"
   )
 })
 
-Deno.test("renderPostHtml ends with the AI footer after a blank line", () => {
+Deno.test("postMarkdown ends with the AI footer that renderPostHtml shows after a blank line", () => {
   // Korean and English footers name the same model.
   for (
     const [footer, text] of [
@@ -162,13 +163,29 @@ Deno.test("renderPostHtml ends with the AI footer after a blank line", () => {
     ]
   ) {
     assertEquals(
-      renderPostHtml(post, { footer }).endsWith(
+      renderPostHtml(postMarkdown(post, footer)).endsWith(
         `<p>따는 도중 멈추던 문제 해결</p>\n<p><br></p>\n<p>${text}</p>\n`,
       ),
       true,
     )
   }
   assertEquals(renderPostHtml(post).includes("AI("), false)
+})
+
+Deno.test("postMarkdown keeps each post line and table row as a block that renderPostHtml reads back unchanged", () => {
+  // "a\nb" would join into one Markdown paragraph; table rows must stay together.
+  const markdown = postMarkdown(
+    `${post}| a | b |\n|---|---|\n| ![](x.png) | c |\n`,
+  )
+  assertStringIncludes(
+    markdown,
+    "\n\n| a | b |\n|---|---|\n| ![](x.png) | c |\n",
+  )
+  assertEquals(markdown.includes("\n\n\n"), false)
+  assertEquals(
+    renderPostHtml(markdown),
+    renderPostHtml(`${post}| a | b |\n|---|---|\n| ![](x.png) | c |\n`),
+  )
 })
 
 Deno.test("assertPostFormat accepts the template and rejects everything outside it", () => {

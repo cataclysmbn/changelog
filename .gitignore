@@ -1,3 +1,5 @@
 dist/
 .screenshots/
 .playwright-cli/
+_site/
+book/*/book/

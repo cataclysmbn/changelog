@@ -1,0 +1,9 @@
+[book]
+title = "Cataclysm: Bright Nights changelog"
+language = "en"
+
+[output.html]
+no-section-label = true
+
+[output.html.print]
+enable = false

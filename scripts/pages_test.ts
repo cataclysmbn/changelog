@@ -1,25 +1,29 @@
 import $ from "@david/dax"
 import { assertEquals, assertStringIncludes } from "@std/assert"
-import { join } from "@std/path"
+import { copy } from "@std/fs"
+import { fromFileUrl, join, toFileUrl } from "@std/path"
 
+import { renderPostHtml } from "../src/dcinside.ts"
 import { publishPages } from "./pages.ts"
+import { buildSite } from "./site.ts"
 
 const site = "https://example.test/changelog"
 
-const writeFixturePost = async (root: string, name: string) => {
+const writeFixturePost = async (root: string, name: string, image: string) => {
   const dir = join(root, name)
   await Deno.mkdir(dir)
-  await Deno.writeTextFile(join(dir, "changelog.txt"), "# 밝밤) 패치\n")
-  await Deno.writeTextFile(join(dir, "changelog.en.txt"), "# BN changelog\n")
   await Deno.writeTextFile(
-    join(dir, "changelog.html"),
-    '<p><img src="https://cdn.test/a.webp" alt=""></p>\n',
+    join(dir, "changelog.md"),
+    `# 밝밤) 패치\n\n## 항목\n\n![](${image})\n\n---\n\n이 변경 내역은 AI(test)로 자동 생성되었습니다.\n`,
   )
-  await Deno.writeTextFile(join(dir, "changelog.en.html"), "<p>Fix</p>\n")
+  await Deno.writeTextFile(
+    join(dir, "changelog.en.md"),
+    "# BN changelog\n\nFix\n",
+  )
   return dir
 }
 
-Deno.test("publishPages creates gh-pages, opens the newest period at the root, and lists every period in the archive newest first", async () => {
+Deno.test("publishPages commits both books newest first and buildSite serves each post with its DCInside page", async () => {
   const saved = Deno.env.toObject()
   for (const name of Object.keys(saved)) {
     if (name.startsWith("GIT_")) Deno.env.delete(name)
@@ -32,44 +36,96 @@ Deno.test("publishPages creates gh-pages, opens the newest period at the root, a
   }
   const root = await Deno.makeTempDir()
   const remote = join(root, "remote.git")
+  const seed = join(root, "seed")
   try {
+    // The remote main branch starts with this repository's book settings and no posts.
     await $`git init --quiet --bare --initial-branch=main ${remote}`
-    // First publish creates the branch; second publish keeps the first period.
-    const old = await writeFixturePost(root, "2026-11-01_to_2026-11-07")
-    const latest = await writeFixturePost(root, "2026-11-08_to_2026-11-14")
+    await $`git init --quiet --initial-branch=main ${seed}`
+    for (const code of ["ko", "en"]) {
+      const book = fromFileUrl(new URL(`../book/${code}`, import.meta.url))
+      await copy(book, join(seed, "book", code))
+      await Deno.remove(join(seed, "book", code, "src"), { recursive: true })
+    }
+    await $`git -C ${seed} add book`
+    await $`git -C ${seed} commit --quiet -m seed`
+    await $`git -C ${seed} push --quiet ${remote} main`
+
+    // 20x10 is twice as wide as tall, so the DCInside page shows it at 850px.
+    const image = join(root, "wide.png")
+    await $`magick -size 20x10 xc:red ${image}`
+    const old = await writeFixturePost(
+      root,
+      "2026-11-01_to_2026-11-07",
+      toFileUrl(image).href,
+    )
+    const latest = await writeFixturePost(
+      root,
+      "2026-11-08_to_2026-11-14",
+      toFileUrl(image).href,
+    )
     await publishPages([old], { remote, site })
     assertEquals(
       await publishPages([latest], { remote, site }),
       [`${site}/2026-11-08_to_2026-11-14/`],
     )
 
-    const show = (path: string) =>
-      $`git -C ${remote} show gh-pages:${path}`.text()
-    const archive = await show("archive/index.html")
+    const checkout = join(root, "checkout")
+    await $`git clone --quiet ${remote} ${checkout}`
     assertEquals(
-      [...archive.matchAll(/<li>(\S+)/gu)].map((match) => match[1]),
-      ["2026-11-08", "2026-11-01"],
+      await Deno.readTextFile(
+        join(checkout, "book/ko/src/2026-11-08_to_2026-11-14/index.md"),
+      ),
+      await Deno.readTextFile(join(latest, "changelog.md")),
     )
-    assertStringIncludes(archive, '<a href="../2026-11-01_to_2026-11-07/">')
+    const out = join(root, "out")
+    await buildSite({ root: checkout, out, site })
+    const read = (path: string) => Deno.readTextFile(join(out, path))
+
+    const archive = await read("archive/index.html")
+    assertEquals(
+      [...archive.matchAll(/<li><a href="\.\.\/([^/]+)\/index\.html">/gu)].map(
+        (match) => match[1],
+      ),
+      ["2026-11-08_to_2026-11-14", "2026-11-01_to_2026-11-07"],
+    )
+    // Root shows the newest post; the sidebar lists the older post too.
     assertStringIncludes(
-      await show("index.html"),
-      '<meta http-equiv="refresh" content="0; url=2026-11-08_to_2026-11-14/">',
+      await read("index.html"),
+      "<title>2026-11-08 ~ 2026-11-14",
     )
-    const korean = await show("2026-11-08_to_2026-11-14/index.html")
-    assertStringIncludes(korean, '<html lang="ko">')
-    assertStringIncludes(korean, "<title>밝밤) 패치</title>")
-    assertStringIncludes(korean, '<a href="en.html" hreflang="en">English</a>')
+    assertStringIncludes(
+      await read("toc.html"),
+      "2026-11-01_to_2026-11-07/index.html",
+    )
+    const korean = await read("2026-11-08_to_2026-11-14/index.html")
+    assertStringIncludes(korean, '<html lang="ko"')
     assertStringIncludes(
       korean,
-      '<meta property="og:image" content="https://cdn.test/a.webp">',
+      '<meta property="og:title" content="밝밤) 패치">',
     )
-    assertStringIncludes(korean, 'location.replace("en.html")')
-    const english = await show("2026-11-08_to_2026-11-14/en.html")
-    assertStringIncludes(english, "<title>BN changelog</title>")
+    assertStringIncludes(
+      korean,
+      `<meta property="og:image" content="${toFileUrl(image).href}">`,
+    )
+    assertStringIncludes(korean, "location.replace(other)")
+    // The DCInside page is the post HTML alone, with the wide image and the footer after a blank line.
+    const dcinside = await read("2026-11-08_to_2026-11-14.html")
+    assertEquals(
+      dcinside,
+      renderPostHtml(await Deno.readTextFile(join(latest, "changelog.md")), {
+        wide: new Set([toFileUrl(image).href]),
+      }),
+    )
+    assertStringIncludes(dcinside, "max-width:850px")
+    assertStringIncludes(
+      dcinside,
+      "<p><br></p>\n<p>이 변경 내역은 AI(test)로 자동 생성되었습니다.</p>\n",
+    )
+    const english = await read("en/2026-11-08_to_2026-11-14/index.html")
+    assertStringIncludes(english, '<html lang="en"')
     assertStringIncludes(english, "<p>Fix</p>")
-    assertEquals(english.includes("og:image"), false)
-    assertStringIncludes(english, '<a href="./?ko" hreflang="ko">한국어</a>')
     assertEquals(english.includes("location.replace"), false)
+    assertEquals(await read("en/2026-11-08_to_2026-11-14.html"), "<p>Fix</p>\n")
   } finally {
     await Deno.remove(root, { recursive: true })
     for (const name of Object.keys(Deno.env.toObject())) Deno.env.delete(name)

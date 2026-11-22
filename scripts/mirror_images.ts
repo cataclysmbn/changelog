@@ -9,18 +9,21 @@
  * An image line with several URLs (before, after, ...) becomes one side-by-side animated WebP.
  * Images at least twice as wide as tall (side-by-side comparisons) get twice the normal width in the HTML.
  *
- * Usage: deno task html dist/<period>/changelog.txt (or changelog.en.txt) [AI model]; writes the .html beside it.
- * With an AI model name, the HTML ends with a footer that names it.
+ * Usage: deno task html dist/<period>/changelog.txt (or changelog.en.txt) [AI model]; writes the .md and .html beside it.
+ * The .md is the post for the mdBook site with CDN image URLs; the .html is the same post for the DCInside HTML editor.
+ * With an AI model name, both end with a footer that names it.
  */
 
 import $ from "@david/dax"
 import { encodeHex } from "@std/encoding/hex"
 import { join } from "@std/path"
+import { imageSize } from "image-size"
 
 import {
   aiFooter,
   mapPostImages,
   postImageUrls,
+  postMarkdown,
   renderPostHtml,
 } from "../src/dcinside.ts"
 import { beforeAfter } from "./before_after.ts"
@@ -119,12 +122,30 @@ const assertServed = async (url: string): Promise<void> => {
   }
 }
 
-const isWide = async (bytes: Uint8Array<ArrayBuffer>): Promise<boolean> => {
-  const result = await $`magick identify -format ${"%w %h"} -[0]`
-    .stdin(bytes).stdout("piped").stderr("null").noThrow()
-  const [width, height] = result.stdout.split(" ").map(Number)
-  return result.code === 0 && width >= wideRatio * height
+/** Bytes that are not an image (some old posts have MP4 files named .png) are not wide. */
+const isWide = (bytes: Uint8Array): boolean => {
+  try {
+    const { width, height } = imageSize(bytes)
+    return width >= wideRatio * height
+  } catch {
+    return false
+  }
 }
+
+/** Images of a post that may grow to two normal widths in its HTML. */
+export const wideImages = async (post: string): Promise<Set<string>> =>
+  new Set(
+    (await Promise.all(
+      postImageUrls(post).map(async (url) => {
+        const response = await fetchWithTimeout(url)
+        if (!response.ok) {
+          await response.body?.cancel()
+          throw new Error(`이미지 다운로드 실패: ${url} (${response.status})`)
+        }
+        return isWide(new Uint8Array(await response.arrayBuffer())) ? [url] : []
+      }),
+    )).flat(),
+  )
 
 const mirror = async (
   post: string,
@@ -139,7 +160,7 @@ const mirror = async (
     const files = await Promise.all(urls.map(async (url) => {
       const { name, bytes } = await download(url)
       await Deno.writeFile(join(dir, name), bytes)
-      return { name, wide: await isWide(bytes) }
+      return { name, wide: isWide(bytes) }
     }))
     await $`git -C ${dir} add --all`
     const unchanged = await $`git -C ${dir} diff --cached --quiet`.noThrow()
@@ -165,16 +186,17 @@ export const mirrorPostImages = async (
   options: MirrorOptions = defaults,
 ): Promise<string> => (await mirror(post, options)).post
 
-/** Mirrors the post images and renders the post HTML with the CDN URLs. */
-export const mirrorPostHtml = async (
+/** Mirrors the post images and returns the post as Markdown with the AI footer, and the DCInside HTML rendered from it. */
+export const mirrorPost = async (
   post: string,
   { footer, ...options }: Partial<MirrorOptions> & { footer?: string } = {},
-): Promise<string> => {
+): Promise<{ markdown: string; html: string }> => {
   const { post: mirrored, wide } = await mirror(post, {
     ...defaults,
     ...options,
   })
-  return renderPostHtml(mirrored, { wide, footer })
+  const markdown = postMarkdown(mirrored, footer)
+  return { markdown, html: renderPostHtml(markdown, { wide }) }
 }
 
 if (import.meta.main) {
@@ -184,11 +206,10 @@ if (import.meta.main) {
       "Usage: deno task html <changelog.txt|changelog.en.txt> [AI model]",
     )
   }
-  const post = await Deno.readTextFile(changelog)
-  await Deno.writeTextFile(
-    changelog.replace(/\.txt$/u, ".html"),
-    await mirrorPostHtml(post, {
-      footer: model && aiFooter(model, changelog.endsWith(".en.txt")),
-    }),
+  const { markdown, html } = await mirrorPost(
+    await Deno.readTextFile(changelog),
+    { footer: model && aiFooter(model, changelog.endsWith(".en.txt")) },
   )
+  await Deno.writeTextFile(changelog.replace(/\.txt$/u, ".md"), markdown)
+  await Deno.writeTextFile(changelog.replace(/\.txt$/u, ".html"), html)
 }

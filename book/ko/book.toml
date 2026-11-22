@@ -1,0 +1,31 @@
+[book]
+title = "Cataclysm: Bright Nights 변경 내역"
+language = "ko"
+
+[output.html]
+no-section-label = true
+
+[output.html.print]
+enable = false
+
+# Old links to English posts
+[output.html.redirect]
+"/2026-11-14_to_2026-11-22/en.html" = "../en/2026-11-14_to_2026-11-22/index.html"
+"/2026-11-09_to_2026-11-14/en.html" = "../en/2026-11-09_to_2026-11-14/index.html"
+"/2026-11-02_to_2026-11-08/en.html" = "../en/2026-11-02_to_2026-11-08/index.html"
+"/2026-10-26_to_2026-11-03/en.html" = "../en/2026-10-26_to_2026-11-03/index.html"
+"/2026-10-19_to_2026-10-25/en.html" = "../en/2026-10-19_to_2026-10-25/index.html"
+"/2026-10-12_to_2026-10-18/en.html" = "../en/2026-10-12_to_2026-10-18/index.html"
+"/2026-10-05_to_2026-10-11/en.html" = "../en/2026-10-05_to_2026-10-11/index.html"
+"/2026-09-28_to_2026-10-04/en.html" = "../en/2026-09-28_to_2026-10-04/index.html"
+"/2026-09-13_to_2026-09-29/en.html" = "../en/2026-09-13_to_2026-09-29/index.html"
+"/2026-07-20_to_2026-09-12/en.html" = "../en/2026-07-20_to_2026-09-12/index.html"
+"/2026-07-13_to_2026-07-19/en.html" = "../en/2026-07-13_to_2026-07-19/index.html"
+"/2026-07-06_to_2026-07-12/en.html" = "../en/2026-07-06_to_2026-07-12/index.html"
+"/2026-06-29_to_2026-07-05/en.html" = "../en/2026-06-29_to_2026-07-05/index.html"
+"/2026-06-22_to_2026-06-28/en.html" = "../en/2026-06-22_to_2026-06-28/index.html"
+"/2026-06-15_to_2026-06-21/en.html" = "../en/2026-06-15_to_2026-06-21/index.html"
+"/2026-06-08_to_2026-06-14/en.html" = "../en/2026-06-08_to_2026-06-14/index.html"
+"/2026-06-01_to_2026-06-07/en.html" = "../en/2026-06-01_to_2026-06-07/index.html"
+"/2026-05-25_to_2026-05-31/en.html" = "../en/2026-05-25_to_2026-05-31/index.html"
+"/2026-02-10_to_2026-05-25/en.html" = "../en/2026-02-10_to_2026-05-25/index.html"

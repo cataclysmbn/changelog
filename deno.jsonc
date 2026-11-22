@@ -2,13 +2,17 @@
   "tasks": {
     "dc": "deno run --allow-read --allow-write --allow-run=git,gh --allow-net --allow-env=GH_TOKEN,GITHUB_TOKEN,PATH,HOME,XDG_CONFIG_HOME scripts/dc_changelog.ts",
     "tui": "deno run --allow-read --allow-write --allow-run --allow-env --allow-net scripts/dc_tui.ts",
-    // Re-render changelog.html from an edited changelog.txt
+    // Re-render changelog.md and changelog.html from an edited changelog.txt
     "html": "deno run --allow-read --allow-write --allow-run --allow-env --allow-net scripts/mirror_images.ts",
     // Side-by-side before/after animated WebP: deno task compare -o out.webp BEFORE AFTER [BEFORE AFTER ...]
     "compare": "deno run --allow-read --allow-write --allow-run --allow-env --allow-net scripts/before_after.ts",
-    // Publish one post folder to GitHub Pages: deno task pages dist/<period>
+    // Commit post folders to the mdBook books on main: deno task pages dist/<period>...
     "pages": "deno run --allow-read --allow-write --allow-run --allow-env --allow-net scripts/pages.ts",
-    "check": "deno check scripts/dc_changelog.ts scripts/dc_tui.ts scripts/mirror_images.ts scripts/before_after.ts scripts/pages.ts src/dcinside.ts src/weeks.ts",
+    // Build the Pages site (both books and the DCInside pages) into a folder: deno task site _site
+    "site": "deno run --allow-read --allow-write --allow-run --allow-env --allow-net scripts/site.ts",
+    // Preview the Korean book with live reload
+    "serve": "mdbook serve book/ko",
+    "check": "deno check scripts/dc_changelog.ts scripts/dc_tui.ts scripts/mirror_images.ts scripts/before_after.ts scripts/pages.ts scripts/site.ts src/dcinside.ts src/weeks.ts",
     "test": "deno test --allow-read --allow-write --allow-run --allow-env --allow-net",
   },
   "lint": {
@@ -27,6 +31,7 @@
     "@std/encoding": "jsr:@std/encoding@^1",
     "@std/fs": "jsr:@std/fs@^1.0.19",
     "@std/path": "jsr:@std/path@^1.1.2",
+    "image-size": "npm:image-size@^2.0.2",
     "@valibot/valibot": "jsr:@valibot/valibot@^1.1.0",
   },
 }

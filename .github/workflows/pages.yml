@@ -1,0 +1,33 @@
+name: pages
+
+on:
+  push:
+    branches: [main]
+    paths: [book/**, scripts/site.ts, scripts/pages.ts, scripts/mirror_images.ts, src/dcinside.ts, deno.jsonc, deno.lock, .github/workflows/pages.yml]
+  workflow_dispatch:
+
+permissions: { contents: read, pages: write, id-token: write }
+
+concurrency: { group: pages, cancel-in-progress: false }
+
+env: { MDBOOK_VERSION: 0.5.4 }
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: { name: github-pages, url: "${{ steps.deployment.outputs.page_url }}" }
+    steps:
+      - uses: actions/checkout@v5
+      - uses: denoland/setup-deno@v2
+        with: { deno-version: v2.x }
+      - name: Install mdBook
+        run: |
+          mkdir -p "$RUNNER_TEMP/mdbook"
+          curl -sSL "https://github.com/rust-lang/mdBook/releases/download/v$MDBOOK_VERSION/mdbook-v$MDBOOK_VERSION-x86_64-unknown-linux-gnu.tar.gz" | tar -xz -C "$RUNNER_TEMP/mdbook"
+          echo "$RUNNER_TEMP/mdbook" >> "$GITHUB_PATH"
+      - run: deno task site _site
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v4
+        with: { path: _site }
+      - id: deployment
+        uses: actions/deploy-pages@v4

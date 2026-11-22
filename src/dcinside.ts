@@ -253,17 +253,22 @@ export const aiFooter = (model: string, english = false): string =>
     ? `This changelog was generated automatically by AI (${model}).`
     : `이 변경 내역은 AI(${model})로 자동 생성되었습니다.`
 
-/** Renders a post to the HTML fragment for the DCInside HTML editor; the title goes in its own form field. Images in `wide` may grow to two normal widths, and `footer` becomes the last line. */
+/** Writes a post as Markdown with a blank line between blocks, so mdBook keeps each post line apart; `footer` follows a rule at the end. */
+export const postMarkdown = (post: string, footer?: string): string =>
+  postBlocks(postLines(post))
+    .map((block) => Array.isArray(block) ? block.join("\n") : block)
+    .concat(footer ? ["---", footer] : [])
+    .join("\n\n") + "\n"
+
+/** Renders a post to the HTML fragment for the DCInside HTML editor; the title goes in its own form field. Images in `wide` may grow to two normal widths, and a `---` line becomes a blank line. */
 export const renderPostHtml = (
   post: string,
-  { wide = new Set(), footer }: {
-    wide?: ReadonlySet<string>
-    footer?: string
-  } = {},
+  { wide = new Set() }: { wide?: ReadonlySet<string> } = {},
 ): string =>
   postBlocks(postLines(post).filter((line) => !line.startsWith("# ")))
     .map((line, index, lines) => {
       if (Array.isArray(line)) return renderTable(line)
+      if (line === "---") return "<p><br></p>"
       const image = line.match(imageLine)
       const link = line.match(linkedHeading)
       const previous = lines[index - 1]
@@ -290,7 +295,6 @@ export const renderPostHtml = (
       if (line.startsWith("- ")) return `<p>• ${escapeHtml(line.slice(2))}</p>`
       return `<p>${escapeHtml(line)}</p>`
     })
-    .concat(footer ? [`<p><br></p>\n<p>${escapeHtml(footer)}</p>`] : [])
     .join("\n") + "\n"
 
 export const translationGuide = `한국어 용어 확인:

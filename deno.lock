@@ -25,7 +25,8 @@
     "jsr:@std/path@^1.1.4": "1.1.4",
     "jsr:@std/semver@^1.0.8": "1.0.8",
     "jsr:@std/text@^1.0.17": "1.0.17",
-    "jsr:@valibot/valibot@^1.1.0": "1.2.0"
+    "jsr:@valibot/valibot@^1.1.0": "1.2.0",
+    "npm:image-size@^2.0.2": "2.1.0"
   },
   "jsr": {
     "@cliffy/command@1.0.0": {
@@ -132,6 +133,12 @@
       "integrity": "61c118a4d027ed55912caf381c78f0a178f335f46ad0c4bcb136498dc1ef2285"
     }
   },
+  "npm": {
+    "image-size@2.1.0": {
+      "integrity": "sha512-6Dbisa46RsgeAh3TMSFL2i8+uIFG+/LRmz6Q2oscSJJvXo1sOw3EgNO4M8jPl1P+gR1atJLDPrpclX4IHz63sA==",
+      "bin": true
+    }
+  },
   "workspace": {
     "dependencies": [
       "jsr:@cliffy/command@^1.0.0-rc.8",
@@ -140,7 +147,8 @@
       "jsr:@std/encoding@1",
       "jsr:@std/fs@^1.0.19",
       "jsr:@std/path@^1.1.2",
-      "jsr:@valibot/valibot@^1.1.0"
+      "jsr:@valibot/valibot@^1.1.0",
+      "npm:image-size@^2.0.2"
     ]
   }
 }

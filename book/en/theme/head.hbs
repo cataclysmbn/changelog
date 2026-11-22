@@ -1,0 +1,23 @@
+<script>
+(() => {
+  // The 404 page has no path to the root, only a <base> at the root.
+  const root = new URL("{{ path_to_root }}", document.baseURI)
+  const other = new URL("../" + location.pathname.slice(root.pathname.length), root).href
+  let pref
+  try { pref = localStorage.getItem("changelog-lang") } catch {}
+  addEventListener("DOMContentLoaded", () => {
+    const link = document.createElement("a")
+    link.href = other
+    link.hreflang = "ko"
+    link.textContent = "한국어"
+    link.className = "changelog-lang"
+    const pick = () => { try { localStorage.setItem("changelog-lang", link.hreflang) } catch {} }
+    link.addEventListener("click", pick)
+    link.addEventListener("auxclick", pick)
+    document.querySelector(".right-buttons")?.prepend(link)
+  })
+})()
+</script>
+<style>
+.changelog-lang { margin-inline: 8px; line-height: var(--menu-bar-height); color: var(--icons); text-decoration: none; }
+</style>
