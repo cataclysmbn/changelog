@@ -36,7 +36,7 @@ deno task html dist/2026-05-25_to_2026-06-21/changelog.en.txt gpt-5.6-terra
 
 HTML 끝에는 글을 쓴 AI 모델을 밝히는 줄(`이 변경 내역은 AI(gpt-5.6-terra)로 자동 생성되었습니다.`)이 붙습니다. `deno task tui`는 실행에 쓴 모델 이름을 넣고, `deno task html`은 두 번째 인자로 받은 이름을 넣습니다.
 
-`deno task tui`는 HTML을 만든 뒤 한국어와 영문 글을 GitHub Pages(<https://cataclysmbn.github.io/changelog/>)에 올립니다. 한국어 글은 `<기간>/`, 영문 글은 `<기간>/en.html`에 있습니다. 글을 고친 뒤 다시 올릴 때:
+`deno task tui`는 HTML을 만든 뒤 한국어와 영문 글을 GitHub Pages(<https://cataclysmbn.github.io/changelog/>)에 올립니다. 한국어 글은 `<기간>/`, 영문 글은 `<기간>/en.html`에 있습니다. `<기간>/`은 브라우저 언어가 한국어가 아니면 영문 글로 넘어가고, `<기간>/?ko`는 언제나 한국어 글을 엽니다. 글을 고친 뒤 다시 올릴 때:
 
 ```sh
 deno task pages dist/2026-05-25_to_2026-06-21

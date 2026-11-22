@@ -4,6 +4,7 @@
  *
  * Publishes one post folder to GitHub Pages on the `gh-pages` branch of this repository.
  * `changelog.html` becomes `<period>/index.html` (Korean) and `changelog.en.html` becomes `<period>/en.html`.
+ * The Korean page opens the English page unless the browser prefers Korean or the link asks for Korean (`./?ko`).
  * The site index links every published period, newest first.
  *
  * Usage: deno task pages dist/<period>
@@ -28,12 +29,13 @@ const defaults: PagesOptions = {
 }
 
 const page = (
-  { lang, title, url, image, other, body }: {
+  { lang, title, url, image, other, script, body }: {
     lang: string
     title: string
     url: string
     image?: string
     other?: { href: string; lang: string; label: string }
+    script?: string
     body: string
   },
 ) =>
@@ -59,7 +61,7 @@ ${
     other
       ? `<link rel="alternate" hreflang="${other.lang}" href="${other.href}">\n`
       : ""
-  }<style>
+  }${script ? `<script>${script}</script>\n` : ""}<style>
 body { max-width: 850px; margin: 0 auto; padding: 0 16px; font-family: sans-serif; line-height: 1.5; background: #fff; color: #111; }
 img { max-width: 100% !important; }
 table { max-width: 100%; }
@@ -74,6 +76,9 @@ ${
 ${body}</body>
 </html>
 `
+
+const englishFirst =
+  `if (!/^ko\\b/iu.test(navigator.languages?.[0] ?? navigator.language) && !new URLSearchParams(location.search).has("ko")) location.replace("en.html")`
 
 const postTitle = async (file: string) =>
   (await Deno.readTextFile(file)).split("\n")[0].replace(/^# /u, "")
@@ -95,6 +100,7 @@ const writePost = async (site: string, postDir: string, dir: string) => {
       url,
       image: firstImage(korean),
       other: { href: "en.html", lang: "en", label: "English" },
+      script: englishFirst,
       body: korean,
     }),
   )
@@ -105,7 +111,7 @@ const writePost = async (site: string, postDir: string, dir: string) => {
       title: await postTitle(join(postDir, "changelog.en.txt")),
       url: `${url}en.html`,
       image: firstImage(english),
-      other: { href: "./", lang: "ko", label: "한국어" },
+      other: { href: "./?ko", lang: "ko", label: "한국어" },
       body: english,
     }),
   )

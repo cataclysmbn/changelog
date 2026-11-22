@@ -58,10 +58,13 @@ Deno.test("publishPages creates gh-pages, then adds each period to the index new
       korean,
       '<meta property="og:image" content="https://cdn.test/a.webp">',
     )
+    assertStringIncludes(korean, 'location.replace("en.html")')
     const english = await show("2026-11-08_to_2026-11-14/en.html")
     assertStringIncludes(english, "<title>BN changelog</title>")
     assertStringIncludes(english, "<p>Fix</p>")
     assertEquals(english.includes("og:image"), false)
+    assertStringIncludes(english, '<a href="./?ko" hreflang="ko">한국어</a>')
+    assertEquals(english.includes("location.replace"), false)
   } finally {
     await Deno.remove(root, { recursive: true })
     for (const name of Object.keys(Deno.env.toObject())) Deno.env.delete(name)
