@@ -14,7 +14,7 @@ const writeFixturePost = async (root: string, name: string, image: string) => {
   await Deno.mkdir(dir)
   await Deno.writeTextFile(
     join(dir, "changelog.md"),
-    `# 밝밤) 패치\n\n## 항목\n\n![](${image})\n\n---\n\n이 변경 내역은 AI(test)로 자동 생성되었습니다.\n`,
+    `# 밝밤) 패치\n\n## [항목](https://example.test/pull/1)\n\n![](${image})\n\n---\n\n이 변경 내역은 AI(test)로 자동 생성되었습니다.\n`,
   )
   await Deno.writeTextFile(
     join(dir, "changelog.en.md"),
@@ -108,6 +108,11 @@ Deno.test("publishPages commits both books newest first and buildSite serves eac
       `<meta property="og:image" content="${toFileUrl(image).href}">`,
     )
     assertStringIncludes(korean, "location.replace(other)")
+    // The sidebar lists each heading by the text of its first link, so the PR link must not sit inside the heading anchor.
+    assertStringIncludes(
+      korean,
+      '<h2 id="항목"><a href="https://example.test/pull/1">항목</a></h2>',
+    )
     // The DCInside page is the post HTML alone, with the wide image and the footer after a blank line.
     const dcinside = await read("2026-11-08_to_2026-11-14.html")
     assertEquals(
