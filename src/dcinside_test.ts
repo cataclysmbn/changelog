@@ -129,7 +129,7 @@ const post = `# 밝밤) 1월 4일 ~ 1월 5일 패치
 `
 
 Deno.test("renderPostHtml renders the static reference layout without the title", () => {
-  const html = renderPostHtml(post)
+  const html = renderPostHtml(postMarkdown(post))
 
   assertEquals(html.includes("패치"), false)
   assertEquals(html.split("\n").slice(0, 8), [
@@ -169,10 +169,10 @@ Deno.test("postMarkdown ends with the AI footer that renderPostHtml shows after 
       true,
     )
   }
-  assertEquals(renderPostHtml(post).includes("AI("), false)
+  assertEquals(renderPostHtml(postMarkdown(post)).includes("AI("), false)
 })
 
-Deno.test("postMarkdown keeps each post line, table and bullet list as a block that renderPostHtml reads back unchanged", () => {
+Deno.test("postMarkdown writes each post line, table and bullet list as its own Markdown block", () => {
   // "a\nb" would join into one Markdown paragraph; table rows must stay together,
   // and "- 전환\n\n- 표시" would make a loose list with a paragraph gap between bullets.
   const markdown = postMarkdown(
@@ -189,17 +189,12 @@ Deno.test("postMarkdown keeps each post line, table and bullet list as a block t
     markdown,
     "\n\n## 1월 5일\n\n### 자물쇠 따기 충돌 수정\n\n",
   )
-  assertEquals(postMarkdown(markdown), markdown)
   // An entry titled like a date stays an entry: "Nov 14" then "## Nov 14" gives "## Nov 14" then "### Nov 14".
   assertStringIncludes(
     postMarkdown("# T\nNov 14\n## Nov 14\n본문"),
     "## Nov 14\n\n### Nov 14\n\n본문",
   )
   assertEquals(markdown.includes("\n\n\n"), false)
-  assertEquals(
-    renderPostHtml(markdown),
-    renderPostHtml(`${post}| a | b |\n|---|---|\n| ![](x.png) | c |\n`),
-  )
 })
 
 Deno.test("assertPostFormat accepts the template and rejects everything outside it", () => {
@@ -251,13 +246,12 @@ const tablePost = `# 제목
 
 Deno.test("renderPostHtml renders table rows as one table with a header row", () => {
   assertEquals(
-    renderPostHtml(tablePost).split("\n").slice(1, 6),
+    renderPostHtml(postMarkdown(tablePost)).split("\n").slice(1, 5),
     [
       `<table border="1" style="border-collapse:collapse;width:100%;max-width:850px;">`,
       "<tr><th>타일셋</th><th>전</th><th>후</th></tr>",
       `<tr><td>Ultica_iso</td><td><img src="${image}" alt="" style="max-width:100%;height:auto;"></td><td><img src="${after}" alt="" style="max-width:100%;height:auto;"></td></tr>`,
       "</table>",
-      `<p><img src="${image} ${after}" alt="" style="max-width:425px;height:auto;"></p>`,
     ],
   )
 })

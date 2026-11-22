@@ -1,3 +1,5 @@
+import { Lexer, type Tokens } from "marked"
+
 export type Commit = {
   hash: string
   date: string
@@ -128,21 +130,6 @@ const dateLine = /^(?:\d{1,2}월 \d{1,2}일|[A-Z][a-z]{2} \d{1,2})$/u
 const postLines = (post: string): string[] =>
   post.split("\n").map((line) => line.trim()).filter(Boolean)
 
-/** Post lines that also read site Markdown ("## " date, "### " entry) back as the post's date and "## " entry lines. */
-const markdownLines = (post: string): string[] => {
-  const lines = postLines(post)
-  // Only site Markdown has "### " entries; in a post "## Nov 14" is an entry titled like a date.
-  return lines.some((line) => line.startsWith("### "))
-    ? lines.map((line) =>
-      line.startsWith("### ")
-        ? line.slice(1)
-        : line.startsWith("## ") && dateLine.test(line.slice(3))
-        ? line.slice(3)
-        : line
-    )
-    : lines
-}
-
 const tableCells = (row: string): string[] =>
   row.slice(1, -1).split("|").map((cell) => cell.trim())
 
@@ -228,30 +215,6 @@ export const escapeHtml = (text: string): string =>
   text.replace(/&/gu, "&amp;").replace(/</gu, "&lt;").replace(/>/gu, "&gt;")
     .replace(/"/gu, "&quot;")
 
-const renderTable = (rows: string[]): string => {
-  const header = tableSeparator.test(rows[1] ?? "")
-  const cells = rows.filter((row) => !tableSeparator.test(row)).map((
-    row,
-    index,
-  ) =>
-    `<tr>${
-      tableCells(row).map((cell) => {
-        const tag = header && index === 0 ? "th" : "td"
-        const image = cell.match(imageLine)
-        const content = image
-          ? `<img src="${escapeHtml(image[2])}" alt="${
-            escapeHtml(image[1])
-          }" style="max-width:100%;height:auto;">`
-          : escapeHtml(cell)
-        return `<${tag}>${content}</${tag}>`
-      }).join("")
-    }</tr>`
-  )
-  return `<table border="1" style="border-collapse:collapse;width:100%;max-width:850px;">\n${
-    cells.join("\n")
-  }\n</table>`
-}
-
 /** Post lines with each run of table rows joined into one block. */
 const postBlocks = (lines: string[]): (string | string[])[] =>
   lines.reduce<(string | string[])[]>((blocks, line) => {
@@ -268,10 +231,10 @@ export const aiFooter = (model: string, english = false): string =>
     ? `This changelog was generated automatically by AI (${model}).`
     : `이 변경 내역은 AI(${model})로 자동 생성되었습니다.`
 
-/** Writes a post as Markdown with a blank line between blocks, so mdBook keeps each post line apart; dates and entries become nested headings, bullets stay one list, and `footer` follows a rule at the end. */
+/** Writes a post as Markdown with a blank line between blocks, so mdBook keeps each post line apart; dates and entries become nested headings for `renderPostHtml`, bullets stay one list, and `footer` follows a rule at the end. */
 export const postMarkdown = (post: string, footer?: string): string =>
   postBlocks(
-    markdownLines(post).map((line) =>
+    postLines(post).map((line) =>
       dateLine.test(line)
         ? `## ${line}`
         : line.startsWith("## ")
@@ -292,40 +255,85 @@ export const postMarkdown = (post: string, footer?: string): string =>
     )
     .join("") + "\n"
 
-/** Renders a post to the HTML fragment for the DCInside HTML editor; the title goes in its own form field. Images in `wide` may grow to two normal widths, and a `---` line becomes a blank line. */
+const htmlImage = (url: string, alt: string, width: string): string =>
+  `<img src="${escapeHtml(url)}" alt="${
+    escapeHtml(alt)
+  }" style="max-width:${width};height:auto;">`
+
+const renderCell = (tag: string, cell: Tokens.TableCell): string => {
+  const image = cell.tokens.length === 1 && cell.tokens[0].type === "image"
+    ? cell.tokens[0] as Tokens.Image
+    : undefined
+  return `<${tag}>${
+    image ? htmlImage(image.href, image.text, "100%") : escapeHtml(cell.text)
+  }</${tag}>`
+}
+
+const renderTable = (table: Tokens.Table): string =>
+  `<table border="1" style="border-collapse:collapse;width:100%;max-width:850px;">\n${
+    [
+      `<tr>${table.header.map((cell) => renderCell("th", cell)).join("")}</tr>`,
+      ...table.rows.map((row) =>
+        `<tr>${row.map((cell) => renderCell("td", cell)).join("")}</tr>`
+      ),
+    ].join("\n")
+  }\n</table>`
+
+/** Renders a post's site Markdown (from `postMarkdown`) to the HTML fragment for the DCInside HTML editor; the title goes in its own form field. Images in `wide` may grow to two normal widths, and a `---` rule becomes a blank line. */
 export const renderPostHtml = (
-  post: string,
+  markdown: string,
   { wide = new Set() }: { wide?: ReadonlySet<string> } = {},
 ): string =>
-  postBlocks(markdownLines(post).filter((line) => !line.startsWith("# ")))
-    .map((line, index, lines) => {
-      if (Array.isArray(line)) return renderTable(line)
-      if (line === "---") return "<p><br></p>"
-      const image = line.match(imageLine)
-      const link = line.match(linkedHeading)
-      const previous = lines[index - 1]
-      const gap = index > 0 &&
-          !(typeof previous === "string" && dateLine.test(previous))
-        ? "<p><br></p>\n<p><b><br></b></p>\n"
-        : ""
-      if (dateLine.test(line)) return `${gap}<p><b>${escapeHtml(line)}</b></p>`
-      if (line.startsWith("## ")) {
+  new Lexer().lex(markdown)
+    .filter((token) =>
+      token.type !== "space" && !(token.type === "heading" && token.depth === 1)
+    )
+    .map((token, index, tokens) => {
+      const previous = tokens[index - 1]
+      // A blank line and an empty bold line separate entries and dates, except an entry right below its date.
+      const gap =
+        index > 0 && !(previous.type === "heading" && previous.depth === 2)
+          ? "<p><br></p>\n<p><b><br></b></p>\n"
+          : ""
+      if (token.type === "heading") {
+        const link =
+          token.tokens?.length === 1 && token.tokens[0].type === "link"
+            ? token.tokens[0] as Tokens.Link
+            : undefined
         const name = link
-          ? `<a href="${escapeHtml(link[2])}" target="_blank">${
-            escapeHtml(link[1])
+          ? `<a href="${escapeHtml(link.href)}" target="_blank">${
+            escapeHtml(link.text)
           }</a>`
-          : escapeHtml(line.slice(3))
+          : escapeHtml(token.text)
         return `${gap}<p><b>${name}</b></p>`
       }
-      if (image) {
-        const [, caption, url] = image
-        const tag = `<p><img src="${escapeHtml(url)}" alt="${
-          escapeHtml(caption)
-        }" style="max-width:${wide.has(url) ? 850 : 425}px;height:auto;"></p>`
-        return caption ? `${tag}\n<p>▲ ${escapeHtml(caption)}</p>` : tag
+      if (token.type === "hr") return "<p><br></p>"
+      if (token.type === "table") return renderTable(token as Tokens.Table)
+      if (token.type === "list") {
+        const list = token as Tokens.List
+        return list.items.map((item, i) =>
+          `<p>${list.ordered ? `${Number(list.start || 1) + i}.` : "•"} ${
+            escapeHtml(item.text)
+          }</p>`
+        ).join("\n")
       }
-      if (line.startsWith("- ")) return `<p>• ${escapeHtml(line.slice(2))}</p>`
-      return `<p>${escapeHtml(line)}</p>`
+      const image = token.type === "paragraph" && token.tokens?.length === 1 &&
+          token.tokens[0].type === "image"
+        ? token.tokens[0] as Tokens.Image
+        : undefined
+      if (image) {
+        const tag = `<p>${
+          htmlImage(
+            image.href,
+            image.text,
+            `${wide.has(image.href) ? 850 : 425}px`,
+          )
+        }</p>`
+        return image.text ? `${tag}\n<p>▲ ${escapeHtml(image.text)}</p>` : tag
+      }
+      return ("text" in token ? String(token.text) : token.raw).trim().split(
+        "\n",
+      ).map((line: string) => `<p>${escapeHtml(line)}</p>`).join("\n")
     })
     .join("\n") + "\n"
 
