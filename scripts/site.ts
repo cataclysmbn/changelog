@@ -16,9 +16,16 @@ import { renderPostHtml } from "../src/dcinside.ts"
 import { wideImages } from "./mirror_images.ts"
 import { bookPosts, defaults, langs } from "./pages.ts"
 
-/** Adds Open Graph tags to a built page: its first heading, its URL, and the first image of its content. */
-const addOpenGraph = async (file: string, url: string) => {
-  const html = await Deno.readTextFile(file)
+/**
+ * Adds Open Graph tags to a built page: its first heading, its URL, and the first image of its content.
+ * Also removes the heading anchor around a linked heading: the browser splits the nested links and leaves the
+ * anchor empty, and the sidebar then lists the heading by that empty anchor.
+ */
+const finishPage = async (file: string, url: string) => {
+  const html = (await Deno.readTextFile(file)).replace(
+    /<a class="header" href="#[^"]*">(<a href="[^"]*">(?:(?!<\/?a[ >])[\s\S])*<\/a>)<\/a>/gu,
+    "$1",
+  )
   const title =
     html.match(/<main>\s*<h1[^>]*><a[^>]*>([^<]*)<\/a><\/h1>/u)?.[1] ??
       html.match(/<title>([^<]*)<\/title>/u)?.[1] ?? ""
@@ -56,10 +63,10 @@ export const buildSite = async (
         ? sitePath
         : `${sitePath}en/`,
     }).quiet()
-    await addOpenGraph(join(dest, "index.html"), base)
-    await addOpenGraph(join(dest, "archive", "index.html"), `${base}archive/`)
+    await finishPage(join(dest, "index.html"), base)
+    await finishPage(join(dest, "archive", "index.html"), `${base}archive/`)
     for (const name of await bookPosts(join(book, "src"))) {
-      await addOpenGraph(join(dest, name, "index.html"), `${base}${name}/`)
+      await finishPage(join(dest, name, "index.html"), `${base}${name}/`)
       const post = await Deno.readTextFile(
         join(book, "src", name, "index.md"),
       )
