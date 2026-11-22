@@ -733,7 +733,7 @@ const run = async (options: Options): Promise<void> => {
         }),
       )
       $.logStep("wrote", join(postDir, "changelog.en.html"))
-      $.logStep("published", await publishPages(postDir))
+      $.logStep("published", (await publishPages([postDir]))[0])
     }
   } catch (error) {
     failed = true

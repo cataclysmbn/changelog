@@ -19,7 +19,7 @@ const writeFixturePost = async (root: string, name: string) => {
   return dir
 }
 
-Deno.test("publishPages creates gh-pages, then adds each period to the index newest first", async () => {
+Deno.test("publishPages creates gh-pages, opens the newest period at the root, and lists every period in the archive newest first", async () => {
   const saved = Deno.env.toObject()
   for (const name of Object.keys(saved)) {
     if (name.startsWith("GIT_")) Deno.env.delete(name)
@@ -37,18 +37,23 @@ Deno.test("publishPages creates gh-pages, then adds each period to the index new
     // First publish creates the branch; second publish keeps the first period.
     const old = await writeFixturePost(root, "2026-11-01_to_2026-11-07")
     const latest = await writeFixturePost(root, "2026-11-08_to_2026-11-14")
-    await publishPages(old, { remote, site })
+    await publishPages([old], { remote, site })
     assertEquals(
-      await publishPages(latest, { remote, site }),
-      `${site}/2026-11-08_to_2026-11-14/`,
+      await publishPages([latest], { remote, site }),
+      [`${site}/2026-11-08_to_2026-11-14/`],
     )
 
     const show = (path: string) =>
       $`git -C ${remote} show gh-pages:${path}`.text()
-    const index = await show("index.html")
+    const archive = await show("archive/index.html")
     assertEquals(
-      [...index.matchAll(/<li>(\S+)/gu)].map((match) => match[1]),
+      [...archive.matchAll(/<li>(\S+)/gu)].map((match) => match[1]),
       ["2026-11-08", "2026-11-01"],
+    )
+    assertStringIncludes(archive, '<a href="../2026-11-01_to_2026-11-07/">')
+    assertStringIncludes(
+      await show("index.html"),
+      '<meta http-equiv="refresh" content="0; url=2026-11-08_to_2026-11-14/">',
     )
     const korean = await show("2026-11-08_to_2026-11-14/index.html")
     assertStringIncludes(korean, '<html lang="ko">')

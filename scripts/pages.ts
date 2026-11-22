@@ -5,9 +5,9 @@
  * Publishes one post folder to GitHub Pages on the `gh-pages` branch of this repository.
  * `changelog.html` becomes `<period>/index.html` (Korean) and `changelog.en.html` becomes `<period>/en.html`.
  * The Korean page opens the English page unless the browser prefers Korean or the link asks for Korean (`./?ko`).
- * The site index links every published period, newest first.
+ * The site root opens the newest period, and `archive/` links every published period, newest first.
  *
- * Usage: deno task pages dist/<period>
+ * Usage: deno task pages dist/<period>...
  */
 
 import $ from "@david/dax"
@@ -29,13 +29,14 @@ const defaults: PagesOptions = {
 }
 
 const page = (
-  { lang, title, url, image, other, script, body }: {
+  { lang, title, url, image, other, script, refresh, body }: {
     lang: string
     title: string
     url: string
     image?: string
     other?: { href: string; lang: string; label: string }
     script?: string
+    refresh?: string
     body: string
   },
 ) =>
@@ -61,7 +62,9 @@ ${
     other
       ? `<link rel="alternate" hreflang="${other.lang}" href="${other.href}">\n`
       : ""
-  }${script ? `<script>${script}</script>\n` : ""}<style>
+  }${script ? `<script>${script}</script>\n` : ""}${
+    refresh ? `<meta http-equiv="refresh" content="0; url=${refresh}">\n` : ""
+  }<style>
 body { max-width: 850px; margin: 0 auto; padding: 0 16px; font-family: sans-serif; line-height: 1.5; background: #fff; color: #111; }
 img { max-width: 100% !important; }
 table { max-width: 100%; }
@@ -117,7 +120,7 @@ const writePost = async (site: string, postDir: string, dir: string) => {
   )
 }
 
-/** Rewrites the site index from the period folders in a site checkout. */
+/** Points the site root at the newest period and rewrites the archive from the period folders in a site checkout. */
 const writeIndex = async (site: string, dir: string) => {
   const names = (await Array.fromAsync(Deno.readDir(dir)))
     .filter((entry) => entry.isDirectory && period.test(entry.name))
@@ -125,25 +128,38 @@ const writeIndex = async (site: string, dir: string) => {
     .sort().reverse()
   const items = names.map((name) => {
     const [, start, end] = name.match(period)!
-    return `<li>${start} ~ ${end}: <a href="${name}/">한국어</a> · <a href="${name}/en.html">English</a></li>`
+    return `<li>${start} ~ ${end}: <a href="../${name}/">한국어</a> · <a href="../${name}/en.html">English</a></li>`
   })
+  await Deno.mkdir(join(dir, "archive"), { recursive: true })
+  await Deno.writeTextFile(
+    join(dir, "archive", "index.html"),
+    page({
+      lang: "ko",
+      title: "Cataclysm: Bright Nights changelog archive",
+      url: `${site}/archive/`,
+      body: `<ul>\n${items.join("\n")}\n</ul>\n`,
+    }),
+  )
   await Deno.writeTextFile(
     join(dir, "index.html"),
     page({
       lang: "ko",
       title: "Cataclysm: Bright Nights changelog",
       url: `${site}/`,
-      body: `<ul>\n${items.join("\n")}\n</ul>\n`,
+      refresh: `${names[0]}/`,
+      body: `<p><a href="${names[0]}/">${
+        names[0]
+      }</a> · <a href="archive/">archive</a></p>\n`,
     }),
   )
   await Deno.writeTextFile(join(dir, ".nojekyll"), "")
 }
 
-/** Publishes the Korean and English pages of one post folder and updates the site index. */
+/** Publishes the Korean and English pages of the post folders and updates the site root and archive. */
 export const publishPages = async (
-  postDir: string,
+  postDirs: string[],
   { remote, site }: PagesOptions = defaults,
-): Promise<string> => {
+): Promise<string[]> => {
   const dir = await Deno.makeTempDir({ prefix: "changelog-pages-" })
   try {
     const exists =
@@ -155,26 +171,29 @@ export const publishPages = async (
       await $`git -C ${dir} init --quiet --initial-branch=${branch}`
       await $`git -C ${dir} remote add origin ${remote}`
     }
-    await writePost(site, postDir, dir)
+    for (const postDir of postDirs) await writePost(site, postDir, dir)
     await writeIndex(site, dir)
     await $`git -C ${dir} add --all`
     const unchanged = await $`git -C ${dir} diff --cached --quiet`.noThrow()
     if (unchanged.code !== 0) {
       await $`git -C ${dir} commit --quiet -m ${`chore: publish ${
-        basename(postDir)
+        postDirs.map((postDir) => basename(postDir)).join(", ")
       }`}`
       await $`git -C ${dir} push --quiet origin HEAD:${branch}`
     }
-    return `${site}/${basename(postDir)}/`
+    return postDirs.map((postDir) => `${site}/${basename(postDir)}/`)
   } finally {
     await Deno.remove(dir, { recursive: true })
   }
 }
 
 if (import.meta.main) {
-  const [postDir] = Deno.args
-  if (!postDir || !period.test(basename(postDir))) {
-    throw new Error("Usage: deno task pages dist/<start>_to_<end>")
+  const postDirs = Deno.args.map((arg) => arg.replace(/\/$/u, ""))
+  if (
+    postDirs.length === 0 ||
+    !postDirs.every((postDir) => period.test(basename(postDir)))
+  ) {
+    throw new Error("Usage: deno task pages dist/<start>_to_<end>...")
   }
-  console.log(await publishPages(postDir.replace(/\/$/u, "")))
+  console.log((await publishPages(postDirs)).join("\n"))
 }
