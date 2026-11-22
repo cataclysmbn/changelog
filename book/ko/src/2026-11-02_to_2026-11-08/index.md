@@ -1,8 +1,8 @@
 # 밝밤) 11월 2일 ~ 11월 8일 패치
 
-11월 2일
+## 11월 2일
 
-## [군인/SWAT 좀비 방어력 조정](https://github.com/cataclysmbn/Cataclysm-BN/pull/10780)
+### [군인/SWAT 좀비 방어력 조정](https://github.com/cataclysmbn/Cataclysm-BN/pull/10780)
 
 설정상 입고 있는 방어구와 맞게 방어력 수치를 바꿈 (타격/베기/사격 순)
 
@@ -12,7 +12,7 @@
 - 이성을 잃은 흑색작전 요원 강산/화염 저항 17/16 -> 18/17
 - SWAT, FPF 지휘관 계열 적도 착용 방어구 기준으로 조정. SWAT 계열은 강산 2/화염 1 저항이 생김
 
-## [스켈레톤 계열 방어력 조정](https://github.com/cataclysmbn/Cataclysm-BN/pull/10781)
+### [스켈레톤 계열 방어력 조정](https://github.com/cataclysmbn/Cataclysm-BN/pull/10781)
 
 스켈레톤 계열이 근접공격과 활에 더 단단해지고 총에는 상대적으로 약해짐
 
@@ -24,13 +24,13 @@
 - 스켈레톤 마스터/스켈레톤 리치 0/15/24 -> 20/30/20
 - 관통 저항이 베기 저항과 같아짐. 관통 저항이 유독 높던 기본 스켈레톤은 너프, 나머지는 버프
 
-## [새 장소 retirement community 추가](https://github.com/cataclysmbn/Cataclysm-BN/pull/10769)
+### [새 장소 retirement community 추가](https://github.com/cataclysmbn/Cataclysm-BN/pull/10769)
 
 DDA에서 가져온 큰 은퇴자 마을 특수 장소
 
 도구 같은 기본 물자가 나오고 지하실에서 특이한 물건이 나올 수 있음. 생성 확률은 DDA보다 높임 (20 -> 35)
 
-## [타코마 공동체 차량 위치 수정](https://github.com/cataclysmbn/Cataclysm-BN/pull/10777)
+### [타코마 공동체 차량 위치 수정](https://github.com/cataclysmbn/Cataclysm-BN/pull/10777)
 
 ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@f927f109d9f01758b8dd606b5fd7ce6cf64c33be/2bfb01a764c4a6fdc42c1f75488359cc0aca40c63900082f26bc3114915a9671.webp)
 
@@ -42,13 +42,13 @@ DDA에서 가져온 큰 은퇴자 마을 특수 장소
 
 ![정비소 주변 차량 배치](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@f927f109d9f01758b8dd606b5fd7ce6cf64c33be/a9b2b633492f8514787f65efebee13f9604da8774f925bb5fa5907ac18caba10.webp)
 
-## [인챈트 없는 퍽 설명 표시](https://github.com/cataclysmbn/Cataclysm-BN/pull/10772)
+### [인챈트 없는 퍽 설명 표시](https://github.com/cataclysmbn/Cataclysm-BN/pull/10772)
 
 인챈트가 없는 퍽은 설명이 아예 안 보이던 문제 수정
 
-11월 3일
+## 11월 3일
 
-## [화생방 좀비 방사능 진화 계열 추가](https://github.com/cataclysmbn/Cataclysm-BN/pull/10785)
+### [화생방 좀비 방사능 진화 계열 추가](https://github.com/cataclysmbn/Cataclysm-BN/pull/10785)
 
 ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@f927f109d9f01758b8dd606b5fd7ce6cf64c33be/d823a5ce78725734c3d71d7cbc93a9ef6129829d966e7bc01ab4f4a4b1beaa07.webp)
 
@@ -60,31 +60,31 @@ DDA에서 가져온 큰 은퇴자 마을 특수 장소
 - 처치하면 화생방 장비 조각과 무작위 방사성 물품을 떨굼. 소형핵이 너무 잘 나오던 드랍 확률은 후속 패치로 낮춤
 - 엘리트 과학자 좀비, 피폭된 방랑자, 그슬린 악몽, C.H.U.D, 진화한 돌연변이 실험체의 공격도 이제 방사능을 입힘
 
-## [환각 몬스터 hat man 추가](https://github.com/cataclysmbn/Cataclysm-BN/pull/10792)
+### [환각 몬스터 hat man 추가](https://github.com/cataclysmbn/Cataclysm-BN/pull/10792)
 
 환각 상태에서만 보이는 모자 쓴 남자 추가
 
 움직이지 않고 몇 턴 뒤 사라지지만 회피가 극도로 높고 총으로는 못 맞힘. 공포로 플레이어를 마비시킬 수 있음
 
-## [산탄총 탄 이름 앞에 12x70mm 붙음](https://github.com/cataclysmbn/Cataclysm-BN/pull/10784)
+### [산탄총 탄 이름 앞에 12x70mm 붙음](https://github.com/cataclysmbn/Cataclysm-BN/pull/10784)
 
 영문 이름 기준으로 모든 산탄총 탄 앞에 12x70mm가 붙고 산탄 탄피는 12x70mm hull로 바뀜
 
 자동 줍기, 정렬, 검색에서 맞는 탄을 찾기 쉬워짐
 
-## [망치, 쇠지렛대 아스키 아트 추가](https://github.com/cataclysmbn/Cataclysm-BN/pull/10782)
+### [망치, 쇠지렛대 아스키 아트 추가](https://github.com/cataclysmbn/Cataclysm-BN/pull/10782)
 
 그림이 없던 망치와 쇠지렛대 물품 정보 창에 아스키 그림이 생김
 
-11월 4일
+## 11월 4일
 
-## [광맥 그림 오류 수정](https://github.com/cataclysmbn/Cataclysm-BN/pull/10794)
+### [광맥 그림 오류 수정](https://github.com/cataclysmbn/Cataclysm-BN/pull/10794)
 
 방연석 광맥, 호박 광맥이 그림 ID 오타 때문에 제 그림 대신 엉뚱한 그림으로 보이던 문제 수정. 줄무늬 철 광맥은 철 광맥 그림을 씀
 
-11월 5일
+## 11월 5일
 
-## [디지털 파일 시스템 전면 개편](https://github.com/cataclysmbn/Cataclysm-BN/pull/10804)
+### [디지털 파일 시스템 전면 개편](https://github.com/cataclysmbn/Cataclysm-BN/pull/10804)
 
 ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@f927f109d9f01758b8dd606b5fd7ce6cf64c33be/b6fd701e705fc85d24806a91e2d1adf2c85ccd46ca70124ea36f779e8403b163.webp)
 
@@ -105,7 +105,7 @@ DDA에서 가져온 큰 은퇴자 마을 특수 장소
 
 ![디지털 콘텐츠 스크린샷](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@f927f109d9f01758b8dd606b5fd7ce6cf64c33be/107b234e163d500e0a0a806f83e5222070dd14462072a2a8b144d2da4da3a96d.webp)
 
-## [전투 드론 추가 + 원격 조종 개편](https://github.com/cataclysmbn/Cataclysm-BN/pull/10758)
+### [전투 드론 추가 + 원격 조종 개편](https://github.com/cataclysmbn/Cataclysm-BN/pull/10758)
 
 폭격 장치가 달린 군용 자폭 드론과 탄소섬유판으로 만드는 소형 바구니 차량 부품 추가
 
@@ -117,13 +117,13 @@ DDA에서 가져온 큰 은퇴자 마을 특수 장소
 - 조종기 배터리가 다 닳으면 사라지지 않고 꺼진 상태로 돌아감. 꺼진 카메라가 배터리를 계속 먹던 문제도 수정
 - 조종 중인 차량인데도 합선시켜 시동걸기가 필요하다고 뜨던 문제 수정
 
-## [EMP 맞은 탑승 로봇이 적으로 돌아서던 문제 수정](https://github.com/cataclysmbn/Cataclysm-BN/pull/10797)
+### [EMP 맞은 탑승 로봇이 적으로 돌아서던 문제 수정](https://github.com/cataclysmbn/Cataclysm-BN/pull/10797)
 
 영구히 우호적인 로봇이 EMP를 맞으면 일시적 우호로 바뀌어 나중에 적대하던 문제 수정. 탑승 로봇에서 내린 사이 로봇이 돌아서서 플레이어를 죽이던 일이 없어짐
 
-11월 6일
+## 11월 6일
 
-## [커피 농사](https://github.com/cataclysmbn/Cataclysm-BN/pull/10787)
+### [커피 농사](https://github.com/cataclysmbn/Cataclysm-BN/pull/10787)
 
 ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@f927f109d9f01758b8dd606b5fd7ce6cf64c33be/61178355611babb3079685657ad5f54e67f4b900057f9a1620f51db376488d9c.webp)
 
@@ -131,7 +131,7 @@ DDA에서 가져온 큰 은퇴자 마을 특수 장소
 
 coffee seeds 심기 → coffee cherries 수확 → 커피콩 만들기 → 볶은 커피콩 → 갈아서 커피가루로 만든 뒤 끓이기
 
-## [피난민 시나리오 시작 대피소 조정](https://github.com/cataclysmbn/Cataclysm-BN/pull/10811)
+### [피난민 시나리오 시작 대피소 조정](https://github.com/cataclysmbn/Cataclysm-BN/pull/10811)
 
 피난민 시나리오와 월드 경계가 있는 변형 시나리오에서 엉망이 된 대피소에서 시작하지 않음
 
@@ -139,19 +139,19 @@ coffee seeds 심기 → coffee cherries 수확 → 커피콩 만들기 → 볶�
 - 엉망이 된 대피소 지하실은 싱크대가 털려 있지만 대신 약물이 나올 때가 있음
 - 포스트 아포칼립스 시나리오 2종에서는 두 대피소가 모두 나옴
 
-## [모텔 맵 교체](https://github.com/cataclysmbn/Cataclysm-BN/pull/10810)
+### [모텔 맵 교체](https://github.com/cataclysmbn/Cataclysm-BN/pull/10810)
 
 DDA 0.I의 모텔 맵을 가져와 모텔에 있을 법한 물건이 거의 없던 낡은 구조를 새로 바꿈
 
-## [돌출된 저장소 변이가 갈증을 줄임](https://github.com/cataclysmbn/Cataclysm-BN/pull/10814)
+### [돌출된 저장소 변이가 갈증을 줄임](https://github.com/cataclysmbn/Cataclysm-BN/pull/10814)
 
 돌출된 저장소(Bulging Reservoir)가 설명과 반대로 갈증을 더 빨리 나게 하던 문제 수정 (갈증 배율 0.75 -> -0.25)
 
-## [소형 냉장고 끌고 다니는 데 필요한 체력 절반](https://github.com/cataclysmbn/Cataclysm-BN/pull/10812)
+### [소형 냉장고 끌고 다니는 데 필요한 체력 절반](https://github.com/cataclysmbn/Cataclysm-BN/pull/10812)
 
 소형 냉장고가 냉장고와 같은 체력 10을 요구하던 것을 소형 냉동고처럼 5로 낮춤 (10 -> 5)
 
-## [번역 안 되던 문구 번역 가능](https://github.com/cataclysmbn/Cataclysm-BN/pull/10747)
+### [번역 안 되던 문구 번역 가능](https://github.com/cataclysmbn/Cataclysm-BN/pull/10747)
 
 한국어로 해도 영어로만 나오던 문구를 번역할 수 있게 함
 
@@ -160,13 +160,13 @@ DDA 0.I의 모텔 맵을 가져와 모텔에 있을 법한 물건이 거의 없�
 - 수련 메시지 같은 물품 사용 메시지
 - 유전자 스캐너/편집기 메시지와 샘플 이름. 스캐너 이름 대신 서식 오류가 뜨던 문제도 수정
 
-## [리눅스 민트에서 실험판 실행 가능](https://github.com/cataclysmbn/Cataclysm-BN/pull/10808)
+### [리눅스 민트에서 실험판 실행 가능](https://github.com/cataclysmbn/Cataclysm-BN/pull/10808)
 
 리눅스 빌드를 Ubuntu 24 기준으로 만들어 glibc가 오래된 리눅스 민트에서도 릴리스 파일이 실행됨
 
-11월 7일
+## 11월 7일
 
-## [케이블 조명 켜기/끄기 + 제작법 복구](https://github.com/cataclysmbn/Cataclysm-BN/pull/10818)
+### [케이블 조명 켜기/끄기 + 제작법 복구](https://github.com/cataclysmbn/Cataclysm-BN/pull/10818)
 
 케이블 조명을 일반 조명처럼 껐다 켤 수 있고 다시 만들 수 있음
 
@@ -175,24 +175,24 @@ DDA 0.I의 모텔 맵을 가져와 모텔에 있을 법한 물건이 거의 없�
 - 조명 제작법이 전구를 먼저 쓰게 바뀌어 분해하면 전구가 나옴. 전구만 끼울 수 있는 조명 가구용 재료 구하기가 쉬워짐
 - 전구 설명이 LED 전구로 바뀌고 재질도 플라스틱으로 바뀜
 
-## [버섯 수확 시 독/환각 성질 유지](https://github.com/cataclysmbn/Cataclysm-BN/pull/10813)
+### [버섯 수확 시 독/환각 성질 유지](https://github.com/cataclysmbn/Cataclysm-BN/pull/10813)
 
 직접 따든 수확기로 거두든 기른 버섯의 독과 환각 성질이 그대로 남음
 
 - 약물이 나오는 곳에서 환각 성분이 있는 버섯도 나옴
 - 마약상 은신처에서 LSD 대량, 환각 성분이 있는 건조 버섯, 큰 통에 담긴 GHB가 나올 수 있음
 
-## [음식 부패 예상 시간에 현재 온도 반영](https://github.com/cataclysmbn/Cataclysm-BN/pull/10752)
+### [음식 부패 예상 시간에 현재 온도 반영](https://github.com/cataclysmbn/Cataclysm-BN/pull/10752)
 
 물품 정보의 부패 예상 시간이 온도를 무시하던 문제 수정. 냉장고, 차량 짐칸 등 놓인 자리의 현재 온도로 계산함
 
-## [물에 닿으면 꺼지는 물품 버릴 때 튕김 수정](https://github.com/cataclysmbn/Cataclysm-BN/pull/10820)
+### [물에 닿으면 꺼지는 물품 버릴 때 튕김 수정](https://github.com/cataclysmbn/Cataclysm-BN/pull/10820)
 
 물에 닿으면 꺼지는 물품(WATER_DISABLE)을 바닥에 버리면 게임이 튕기던 문제 수정
 
-11월 8일
+## 11월 8일
 
-## [켜 둔 톱류가 다시 작동 소음을 냄](https://github.com/cataclysmbn/Cataclysm-BN/pull/10819)
+### [켜 둔 톱류가 다시 작동 소음을 냄](https://github.com/cataclysmbn/Cataclysm-BN/pull/10819)
 
 엔진톱 (켜짐), 전투용 엔진톱 (켜짐), 엔진톱 월아산 (켜짐), 원형톱 (켜짐), 전정기 (켜짐), 전동칼 (켜짐), 석조 톱 (켜짐) 상태에서 계속 소음과 메시지가 나옴
 
@@ -203,7 +203,7 @@ DDA 0.I의 모텔 맵을 가져와 모텔에 있을 법한 물건이 거의 없�
 - 사운드팩에서 작동음 지원
 - 켜 둔 톱이 안 꺼지던 문제와 작동음이 끝없이 겹쳐 나던 문제 수정
 
-## [새 직업 Vault Personnel](https://github.com/cataclysmbn/Cataclysm-BN/pull/10827)
+### [새 직업 Vault Personnel](https://github.com/cataclysmbn/Cataclysm-BN/pull/10827)
 
 네크로폴리스로 실려 가던 도중 대재앙을 맞은 민간 계약직 직업 추가
 
@@ -211,6 +211,6 @@ DDA 0.I의 모텔 맵을 가져와 모텔에 있을 법한 물건이 거의 없�
 
 - 대피소에서, 중과부적, 도전 - 트랜스-코스트 로지스틱스 중앙 홀, Challenge - Emergency Shutdown 시나리오에서 고를 수 있음
 
-## [아울렛 지붕 새 디자인](https://github.com/cataclysmbn/Cataclysm-BN/pull/10829)
+### [아울렛 지붕 새 디자인](https://github.com/cataclysmbn/Cataclysm-BN/pull/10829)
 
 아울렛 지붕에 빗물 홈통, 배수관, 각종 설비가 생김

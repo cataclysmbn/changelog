@@ -128,6 +128,16 @@ const dateLine = /^(?:\d{1,2}월 \d{1,2}일|[A-Z][a-z]{2} \d{1,2})$/u
 const postLines = (post: string): string[] =>
   post.split("\n").map((line) => line.trim()).filter(Boolean)
 
+/** Post lines that also read site Markdown ("## " date, "### " entry) back as the post's date and "## " entry lines. */
+const markdownLines = (post: string): string[] =>
+  postLines(post).map((line) =>
+    line.startsWith("### ")
+      ? line.slice(1)
+      : line.startsWith("## ") && dateLine.test(line.slice(3))
+      ? line.slice(3)
+      : line
+  )
+
 const tableCells = (row: string): string[] =>
   row.slice(1, -1).split("|").map((cell) => cell.trim())
 
@@ -253,9 +263,17 @@ export const aiFooter = (model: string, english = false): string =>
     ? `This changelog was generated automatically by AI (${model}).`
     : `이 변경 내역은 AI(${model})로 자동 생성되었습니다.`
 
-/** Writes a post as Markdown with a blank line between blocks, so mdBook keeps each post line apart; bullets stay one list, and `footer` follows a rule at the end. */
+/** Writes a post as Markdown with a blank line between blocks, so mdBook keeps each post line apart; dates and entries become nested headings, bullets stay one list, and `footer` follows a rule at the end. */
 export const postMarkdown = (post: string, footer?: string): string =>
-  postBlocks(postLines(post))
+  postBlocks(
+    markdownLines(post).map((line) =>
+      dateLine.test(line)
+        ? `## ${line}`
+        : line.startsWith("## ")
+        ? `#${line}`
+        : line
+    ),
+  )
     .map((block) => Array.isArray(block) ? block.join("\n") : block)
     .concat(footer ? ["---", footer] : [])
     .map((block, index, blocks) =>
@@ -274,7 +292,7 @@ export const renderPostHtml = (
   post: string,
   { wide = new Set() }: { wide?: ReadonlySet<string> } = {},
 ): string =>
-  postBlocks(postLines(post).filter((line) => !line.startsWith("# ")))
+  postBlocks(markdownLines(post).filter((line) => !line.startsWith("# ")))
     .map((line, index, lines) => {
       if (Array.isArray(line)) return renderTable(line)
       if (line === "---") return "<p><br></p>"
