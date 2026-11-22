@@ -245,23 +245,24 @@ export const postMarkdown = (post: string, footer?: string): string =>
 const htmlImage = (url: string, alt: string, width: string): string =>
   `<img src="${escapeHtml(url)}" alt="${escapeHtml(alt)}" style="max-width:${width};height:auto;">`
 
-const renderCell = (tag: string, cell: Tokens.TableCell): string => {
-  const image =
-    cell.tokens.length === 1 && cell.tokens[0].type === "image"
-      ? (cell.tokens[0] as Tokens.Image)
-      : undefined
-  return `<${tag}>${
-    image ? htmlImage(image.href, image.text, "100%") : escapeHtml(cell.text)
-  }</${tag}>`
+/** Renders table rows as one table; a separator second row makes the first row the header. */
+const renderTable = (rows: string[]): string => {
+  const header = tableSeparator.test(rows[1] ?? "")
+  return `<table border="1" style="border-collapse:collapse;width:100%;max-width:850px;">\n${rows
+    .filter((row) => !tableSeparator.test(row))
+    .map((row, index) => {
+      const tag = header && index === 0 ? "th" : "td"
+      return `<tr>${tableCells(row)
+        .map((cell) => {
+          const image = cell.match(imageLine)
+          return `<${tag}>${image ? htmlImage(image[2], image[1], "100%") : escapeHtml(cell)}</${tag}>`
+        })
+        .join("")}</tr>`
+    })
+    .join("\n")}\n</table>`
 }
 
-const renderTable = (table: Tokens.Table): string =>
-  `<table border="1" style="border-collapse:collapse;width:100%;max-width:850px;">\n${[
-    `<tr>${table.header.map((cell) => renderCell("th", cell)).join("")}</tr>`,
-    ...table.rows.map((row) => `<tr>${row.map((cell) => renderCell("td", cell)).join("")}</tr>`),
-  ].join("\n")}\n</table>`
-
-/** Renders a post's site Markdown (from `postMarkdown`) to the HTML fragment for the DCInside HTML editor; the title goes in its own form field. Images in `wide` may grow to two normal widths, and a `---` rule becomes a blank line. */
+/** Renders a post's site Markdown (from `postMarkdown`) to the HTML fragment for the DCInside HTML editor; the title goes in its own form field. Images in `wide` may grow to two normal widths, a `---` rule becomes a blank line, and lines outside the template stay as typed. */
 export const renderPostHtml = (
   markdown: string,
   { wide = new Set() }: { wide?: ReadonlySet<string> } = {},
@@ -271,12 +272,13 @@ export const renderPostHtml = (
     .filter((token) => token.type !== "space" && !(token.type === "heading" && token.depth === 1))
     .map((token, index, tokens) => {
       const previous = tokens[index - 1]
+      const lines = token.raw.trim().split("\n")
       // A blank line and an empty bold line separate entries and dates, except an entry right below its date.
       const gap =
         index > 0 && !(previous.type === "heading" && previous.depth === 2)
           ? "<p><br></p>\n<p><b><br></b></p>\n"
           : ""
-      if (token.type === "heading") {
+      if (token.type === "heading" && lines[0].startsWith("#")) {
         const link =
           token.tokens?.length === 1 && token.tokens[0].type === "link"
             ? (token.tokens[0] as Tokens.Link)
@@ -286,19 +288,8 @@ export const renderPostHtml = (
           : escapeHtml(token.text)
         return `${gap}<p><b>${name}</b></p>`
       }
-      if (token.type === "hr") return "<p><br></p>"
-      if (token.type === "table") return renderTable(token as Tokens.Table)
-      if (token.type === "list") {
-        const list = token as Tokens.List
-        return list.items
-          .map(
-            (item, i) =>
-              `<p>${list.ordered ? `${Number(list.start || 1) + i}.` : "•"} ${escapeHtml(
-                item.text,
-              )}</p>`,
-          )
-          .join("\n")
-      }
+      if (lines.join("\n") === "---") return "<p><br></p>"
+      if (lines.every((line) => tableRow.test(line))) return renderTable(lines)
       const image =
         token.type === "paragraph" && token.tokens?.length === 1 && token.tokens[0].type === "image"
           ? (token.tokens[0] as Tokens.Image)
@@ -311,10 +302,9 @@ export const renderPostHtml = (
         )}</p>`
         return image.text ? `${tag}\n<p>▲ ${escapeHtml(image.text)}</p>` : tag
       }
-      return ("text" in token ? String(token.text) : token.raw)
-        .trim()
-        .split("\n")
-        .map((line: string) => `<p>${escapeHtml(line)}</p>`)
+      const bullets = token.type === "list" && lines.every((line) => line.startsWith("- "))
+      return lines
+        .map((line) => `<p>${bullets ? `• ${escapeHtml(line.slice(2))}` : escapeHtml(line)}</p>`)
         .join("\n")
     })
     .join("\n") + "\n"
