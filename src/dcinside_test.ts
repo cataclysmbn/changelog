@@ -223,6 +223,33 @@ test("renderPostHtml renders table rows as one table with a header row", () => {
   ])
 })
 
+test("renderPostHtml keeps lines outside the template as text and keeps every table cell", () => {
+  // Markdown reads "> ", "***", "+ " and "1) " as other blocks; DCInside shows them as typed.
+  const html = renderPostHtml(
+    postMarkdown(
+      "# 제목\n## 항목\n> 주의\n***\n+ 하나\n1) 둘\n| a | b |\n| c | d | e |\n끝\n| a |\n|---|\n| c | d |\n",
+    ),
+  )
+  const table = `<table border="1" style="border-collapse:collapse;width:100%;max-width:850px;">`
+  expect(html.split("\n")).toEqual([
+    "<p><b>항목</b></p>",
+    "<p>&gt; 주의</p>",
+    "<p>***</p>",
+    "<p>+ 하나</p>",
+    "<p>1) 둘</p>",
+    table,
+    "<tr><td>a</td><td>b</td></tr>",
+    "<tr><td>c</td><td>d</td><td>e</td></tr>",
+    "</table>",
+    "<p>끝</p>",
+    table,
+    "<tr><th>a</th></tr>",
+    "<tr><td>c</td><td>d</td></tr>",
+    "</table>",
+    "",
+  ])
+})
+
 test("assertPostFormat accepts image tables and before/after pairs from PR evidence", () => {
   assertPostFormat(tablePost, tableSource)
   for (const [text, message] of [
