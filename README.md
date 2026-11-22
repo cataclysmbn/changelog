@@ -71,7 +71,13 @@ deno task compare -o dist/2026-11-09_to_2026-11-14/10834-before-after.webp <전1
 
 `--no-review`는 기존처럼 검수와 PO 대조를 명시적으로 건너뜁니다. `--pi-tools none`은 직접 조회 도구를 끄지만 기본 검수의 PO 대조는 유지합니다. `--skip-glossary`는 프롬프트에 자동 첨부하는 용어 근거만 생략합니다.
 
-`--agent claude`를 주면 pi 대신 `claude -p`로 같은 세 단계를 실행합니다. 사용자 설정·MCP·슬래시 명령을 끄고 `Read,Grep`만 허용하며, 모델은 `--model`로 지정합니다. 기본값은 `--agent pi`(모델 `openai-codex/gpt-5.6-terra:medium`)입니다.
+`--agent claude`를 주면 pi 대신 `claude -p`로 같은 세 단계를 실행합니다. 사용자 설정·MCP·슬래시 명령을 끄고 `Read,Grep`만 허용하며, 모델은 `--model`로 지정합니다. `--agent`와 `--model`을 둘 다 주지 않으면 `claude auth status`의 요금제를 보고 고릅니다.
+
+| 요금제              | 실행                                 |
+| ------------------- | ------------------------------------ |
+| Claude Max 10x 이상 | `claude -p`, `claude-opus-5-5`       |
+| Claude Max 5x       | `claude -p`, `claude-sonnet-5-5`     |
+| 그 밖               | pi, `openai-codex/gpt-6-luna:medium` |
 
 이번 주만 pi 실행 없이 프롬프트/명령 확인:
 

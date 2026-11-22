@@ -1,7 +1,7 @@
 import { assertEquals } from "@std/assert"
 import { fromFileUrl, join } from "@std/path"
 
-import { missingCommits } from "./dc_tui.ts"
+import { missingCommits, planAgent } from "./dc_tui.ts"
 
 Deno.test("missingCommits lists commits the previous post skipped before the new range", async () => {
   const appRoot = fromFileUrl(new URL("../", import.meta.url))
@@ -97,5 +97,20 @@ Deno.test("missingCommits lists commits the previous post skipped before the new
       stderr: "piped",
     }).output()
     assertEquals(result.success, true, new TextDecoder().decode(result.stderr))
+  }
+})
+
+Deno.test("planAgent picks Opus for Claude Max 10x and up, Sonnet for Max 5x, Codex otherwise", () => {
+  assertEquals(planAgent("default_claude_max_20x"), {
+    agent: "claude",
+    model: "claude-opus-5-5",
+  })
+  assertEquals(planAgent("default_claude_max_10x").model, "claude-opus-5-5")
+  assertEquals(planAgent("default_claude_max_5x"), {
+    agent: "claude",
+    model: "claude-sonnet-5-5",
+  })
+  for (const tier of ["default_claude_pro", "default_claude_ai", undefined]) {
+    assertEquals(planAgent(tier), { agent: "pi" })
   }
 })

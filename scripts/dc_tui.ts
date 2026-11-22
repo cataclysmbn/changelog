@@ -327,7 +327,31 @@ const makePiWorkspace = async (
   return { root, cwd, instructions }
 }
 
-const defaultPiModel = "openai-codex/gpt-5.6-terra:medium"
+const defaultPiModel = "openai-codex/gpt-6-luna:medium"
+
+/** Claude Max 10x or more writes with Opus, Max 5x with Sonnet, any other plan with Codex through pi. */
+export const planAgent = (
+  tier: string | undefined,
+): Pick<Options, "agent" | "model"> => {
+  const times = Number(tier?.match(/max_(\d+)x/u)?.[1] ?? 0)
+  return times >= 10
+    ? { agent: "claude", model: "claude-opus-5-5" }
+    : times >= 5
+    ? { agent: "claude", model: "claude-sonnet-5-5" }
+    : { agent: "pi" }
+}
+
+/** Rate limit tier of the logged-in Claude subscription, or nothing without one. */
+const claudeTier = async (claude: string): Promise<string | undefined> => {
+  try {
+    const status = JSON.parse(
+      await $`${claude} auth status --json`.stderr("null").text(),
+    )
+    return status.loggedIn ? status.rateLimitTier ?? undefined : undefined
+  } catch {
+    return undefined
+  }
+}
 
 /** Model name for the post footer, without provider and thinking level. */
 const aiModel = ({ agent, model }: Options): string =>
@@ -733,15 +757,18 @@ const main = new Command()
     default: 180,
     value: parsePositiveInt,
   })
-  .option("--agent <agent:string>", "Agent CLI to run: pi or claude", {
-    default: "pi",
-    value: (value: string) => {
-      if (value !== "pi" && value !== "claude") {
-        throw new Error(`Expected pi or claude, got ${value}`)
-      }
-      return value
+  .option(
+    "--agent <agent:string>",
+    "Agent CLI to run: pi or claude (default: picked from the Claude plan)",
+    {
+      value: (value: string) => {
+        if (value !== "pi" && value !== "claude") {
+          throw new Error(`Expected pi or claude, got ${value}`)
+        }
+        return value
+      },
     },
-  })
+  )
   .option("--model <model:string>", "Optional agent model argument")
   .option("--pi <command:string>", "pi executable", { default: "pi" })
   .option("--claude <command:string>", "claude executable", {
@@ -799,7 +826,10 @@ const main = new Command()
     "deno task tui --yes --dry-run --newest 0 --oldest 0",
   )
   .action(async (rawOptions) => {
-    await run(rawOptions as Options)
+    const plan = rawOptions.agent || rawOptions.model
+      ? { agent: rawOptions.agent ?? "pi" }
+      : planAgent(await claudeTier(rawOptions.claude))
+    await run({ ...rawOptions, ...plan } as Options)
   })
 
 if (import.meta.main) {
