@@ -3,6 +3,12 @@
   // The 404 page has no path to the root, only a <base> at the root.
   const root = new URL("{{ path_to_root }}", document.baseURI)
   const path = location.pathname.slice(root.pathname.length)
+  // /ko and /ko/... are not pages; open the Korean site root and remember the choice.
+  if (/^ko(\/|$)/u.test(path)) {
+    try { localStorage.setItem("changelog-lang", "ko") } catch {}
+    location.replace(new URL(path.slice(3).replace(/^\//u, ""), root).href)
+    return
+  }
   const other = new URL("en/" + path, root).href
   let pref
   try { pref = localStorage.getItem("changelog-lang") } catch {}
