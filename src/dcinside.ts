@@ -267,8 +267,10 @@ export const renderPostHtml = (
   markdown: string,
   { wide = new Set() }: { wide?: ReadonlySet<string> } = {},
 ): string =>
-  new Lexer()
-    .lex(markdown)
+  // Lex each blank-line block on its own, so an unclosed fence or comment cannot swallow the rest of the post.
+  markdown
+    .split(/\n{2,}/u)
+    .flatMap((block) => new Lexer().lex(block))
     .filter((token) => token.type !== "space" && !(token.type === "heading" && token.depth === 1))
     .map((token, index, tokens) => {
       const previous = tokens[index - 1]
