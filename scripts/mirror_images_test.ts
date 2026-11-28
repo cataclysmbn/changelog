@@ -6,7 +6,7 @@ import $ from "dax"
 import { expect, test } from "vite-plus/test"
 import { join } from "node:path"
 
-import { mirrorPost, mirrorPostImages } from "./mirror_images.ts"
+import { isAnimated, mirrorPost, mirrorPostImages } from "./mirror_images.ts"
 
 const magick = async (...args: string[]) => new Uint8Array(await $`magick ${args}`.bytes())
 const png = await magick("-size", "8x8", "xc:red", "png:-")
@@ -229,11 +229,19 @@ test("mirrorPostImages keeps every frame of an APNG in a before/after pair", asy
     const commit = await tip()
     const names = [...mirrored.matchAll(/@\w+\/(\S+)\)/gu)].map((match) => match[1])
     expect(names.length).toEqual(2)
-    const frames = await $`git -C ${remote} cat-file blob ${commit}:${names[1]}`
-      .pipe($`magick identify -format ${"%n\n"} -`)
-      .text()
-    expect(frames.split("\n")[0]).toEqual("2")
+    const stored = await $`git -C ${remote} cat-file blob ${commit}:${names[1]}`.bytes()
+    expect(await isAnimated(new Uint8Array(stored))).toEqual(true)
   })
+})
+
+test("isAnimated reads the APNG frame count without ImageMagick", async () => {
+  const path = process.env["PATH"]
+  process.env["PATH"] = ""
+  try {
+    expect(await isAnimated(apng)).toEqual(true)
+  } finally {
+    process.env["PATH"] = path
+  }
 })
 
 test("mirrorPostImages keeps images ImageMagick cannot encode as WebP", async () => {

@@ -95,17 +95,20 @@ const download = async (source: string) => {
   }
 }
 
-/** ImageMagick reads only the first frame of an APNG unless the input names the APNG format. */
-const magickInput = (bytes: Uint8Array): string => {
-  const text = Buffer.from(bytes).toString("latin1")
-  const animation = text.indexOf("acTL")
-  return text.startsWith("\x89PNG") && animation !== -1 && animation < text.indexOf("IDAT")
-    ? "apng:-"
-    : "-"
+/**
+ * Frame count in the acTL chunk of an APNG, or 0 for any other file. ImageMagick reads an APNG as one frame unless the
+ * input names the APNG format, and then it needs ffmpeg.
+ */
+const apngFrames = (bytes: Uint8Array): number => {
+  const buffer = Buffer.from(bytes.buffer, bytes.byteOffset, bytes.byteLength)
+  if (buffer.toString("latin1", 1, 4) !== "PNG") return 0
+  const chunk = buffer.indexOf("acTL")
+  return chunk !== -1 && chunk < buffer.indexOf("IDAT") ? buffer.readUInt32BE(chunk + 4) : 0
 }
 
 export const isAnimated = async (bytes: Uint8Array<ArrayBuffer>): Promise<boolean> => {
-  const result = await $`magick identify -format ${"%n\n"} ${magickInput(bytes)}`
+  if (apngFrames(bytes) > 1) return true
+  const result = await $`magick identify -format ${"%n\n"} -`
     .stdin(bytes)
     .stdout("piped")
     .stderr("null")
@@ -130,7 +133,7 @@ const toWebp = async (bytes: Uint8Array<ArrayBuffer>) => {
   const pixelArt = await isPixelArt(bytes)
   if (pixelArt === undefined) return undefined
   const mode = pixelArt ? ["-define", "webp:lossless=true"] : ["-quality", `${webpQuality}`]
-  const result = await $`magick ${magickInput(bytes)} ${mode} webp:-`
+  const result = await $`magick ${apngFrames(bytes) > 0 ? "apng:-" : "-"} ${mode} webp:-`
     .stdin(bytes)
     .stdout("piped")
     .stderr("null")
