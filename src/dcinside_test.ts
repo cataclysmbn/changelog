@@ -278,6 +278,8 @@ test("assertPostFormat accepts image tables and before/after pairs from PR evide
     [`# 제목\n## 항목\n| a | ${image} |`, "템플릿에 없는 줄"],
     [`# 제목\n## 항목\n![](${image} ${after} ${image})`, "짝"],
     [`# 제목\n## 항목\n![](${image} ${pr})`, "없는 이미지"],
+    [`# 제목\n## 항목\n![](${image}) ![](${after})`, "템플릿에 없는 줄"],
+    [`# 제목\n## 항목\n| a | ![](${image}) ![](${after}) |`, "템플릿에 없는 줄"],
   ]) {
     expect(() => assertPostFormat(text, tableSource)).toThrow(message)
   }

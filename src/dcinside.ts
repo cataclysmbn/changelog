@@ -114,7 +114,7 @@ export const githubImageUrls = (markdown: string): string[] =>
   ].filter((url) => permanentImageUrl.test(url))
 
 // One URL is a plain image; an even count of URLs alternates before, after and becomes one comparison image.
-const imageLine = /^!\[([^\]]*)\]\((\S+(?: \S+)*)\)$/u
+const imageLine = /^!\[([^\]]*)\]\((\S+(?: (?!!\[)\S+)*)\)$/u
 const tableRow = /^\|.*\|$/u
 const tableSeparator = /^\|(?:\s*:?-+:?\s*\|)+$/u
 const linkedHeading = /^## \[([^\]]+)\]\((\S+)\)$/u

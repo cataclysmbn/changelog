@@ -13,7 +13,7 @@ const png = await magick("-size", "8x8", "xc:red", "png:-")
 const webp = await magick("-size", "8x8", "xc:red", "-define", "webp:lossless=true", "webp:-")
 const photo = await magick("-size", "300x300", "plasma:fractal", "png:-")
 const wide = await magick("-size", "20x10", "xc:blue", "png:-")
-const animation = (...colors: string[]) =>
+const animation = (format: string, ...colors: string[]) =>
   magick(
     "-delay",
     "10",
@@ -22,10 +22,11 @@ const animation = (...colors: string[]) =>
     ...colors.map((color) => `xc:${color}`),
     "-loop",
     "0",
-    "webp:-",
+    `${format}:-`,
   )
-const redBlue = await animation("red", "blue")
-const blueRed = await animation("blue", "red")
+const redBlue = await animation("webp", "red", "blue")
+const blueRed = await animation("webp", "blue", "red")
+const apng = await animation("apng", "red", "blue")
 const sha256 = async (bytes: Uint8Array<ArrayBuffer>) =>
   Buffer.from(await crypto.subtle.digest("SHA-256", bytes)).toString("hex")
 const pngName = `${await sha256(png)}.png`
@@ -95,6 +96,9 @@ const withMirror = async (
     if (pathname === "/red-blue.webp" || pathname === "/blue-red.webp") {
       const bytes = pathname === "/red-blue.webp" ? redBlue : blueRed
       return new Response(bytes, { headers: { "content-type": "image/webp" } })
+    }
+    if (pathname === "/apng.png") {
+      return new Response(apng, { headers: { "content-type": "image/png" } })
     }
     if (pathname === "/page") {
       return new Response("x", { headers: { "content-type": "text/html" } })
@@ -212,6 +216,23 @@ test("mirrorPostImages keeps both images of an animated before/after pair as the
     expect(mirrored).toEqual(
       `# 제목\n## 항목\n![](${before})\n![전후](${after})\n| 전후 | ![](${before}) ![](${after}) |\n`,
     )
+  })
+})
+
+test("mirrorPostImages keeps every frame of an APNG in a before/after pair", async () => {
+  await withMirror(async ({ remote, cdn, source, tip }) => {
+    const mirrored = await mirrorPostImages(`# 제목\n![](${source}/small.png ${source}/apng.png)`, {
+      remote,
+      cdn,
+    })
+
+    const commit = await tip()
+    const names = [...mirrored.matchAll(/@\w+\/(\S+)\)/gu)].map((match) => match[1])
+    expect(names.length).toEqual(2)
+    const frames = await $`git -C ${remote} cat-file blob ${commit}:${names[1]}`
+      .pipe($`magick identify -format ${"%n\n"} -`)
+      .text()
+    expect(frames.split("\n")[0]).toEqual("2")
   })
 })
 

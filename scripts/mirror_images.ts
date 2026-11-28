@@ -95,8 +95,17 @@ const download = async (source: string) => {
   }
 }
 
+/** ImageMagick reads only the first frame of an APNG unless the input names the APNG format. */
+const magickInput = (bytes: Uint8Array): string => {
+  const text = Buffer.from(bytes).toString("latin1")
+  const animation = text.indexOf("acTL")
+  return text.startsWith("\x89PNG") && animation !== -1 && animation < text.indexOf("IDAT")
+    ? "apng:-"
+    : "-"
+}
+
 export const isAnimated = async (bytes: Uint8Array<ArrayBuffer>): Promise<boolean> => {
-  const result = await $`magick identify -format ${"%n\n"} -`
+  const result = await $`magick identify -format ${"%n\n"} ${magickInput(bytes)}`
     .stdin(bytes)
     .stdout("piped")
     .stderr("null")
@@ -121,7 +130,7 @@ const toWebp = async (bytes: Uint8Array<ArrayBuffer>) => {
   const pixelArt = await isPixelArt(bytes)
   if (pixelArt === undefined) return undefined
   const mode = pixelArt ? ["-define", "webp:lossless=true"] : ["-quality", `${webpQuality}`]
-  const result = await $`magick - ${mode} webp:-`
+  const result = await $`magick ${magickInput(bytes)} ${mode} webp:-`
     .stdin(bytes)
     .stdout("piped")
     .stderr("null")
