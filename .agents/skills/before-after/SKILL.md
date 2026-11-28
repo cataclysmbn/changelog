@@ -23,6 +23,8 @@ Each frame shows one before image on the left (`Before`) and one after image on 
      <before1> <after1> <before2> <after2> ...
    ```
 
+   `vp run compare` refuses animated sources (GIF or animated WebP recordings), because a panel keeps only the first frame. Keep their image lines as they are. `vp run html` mirrors an animated pair line as two images.
+
    Panels pad every image to the largest size without scaling. Pixel art (see `isPixelArt` in `scripts/mirror_images.ts`) is lossless; other images use the mirror's WebP quality. `-d <seconds>` changes the frame time.
 
 4. Look at the frames before using the file:

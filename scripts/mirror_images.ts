@@ -5,7 +5,8 @@
  * repository and served through jsDelivr. Files are named by content hash and URLs pin the commit, so they never change.
  * Each image is also converted to WebP (lossless for pixel art) and the smaller file is kept. Requires ImageMagick.
  *
- * An image line with several URLs (before, after, ...) becomes one side-by-side animated WebP.
+ * Still images on one image line (before, after, ...) are joined into one side-by-side animated WebP. If one of them
+ * is animated, each image is mirrored unchanged on its own line.
  * Images at least twice as wide as tall (side-by-side comparisons) get twice the normal width in the HTML.
  *
  * Usage: vp run html dist/<period>/changelog.txt (or changelog.en.txt) [AI model]; writes the .md and .html beside it.
@@ -54,20 +55,9 @@ const pixelArtMaxColors = 256
 const fetchWithTimeout = (url: string): Promise<Response> =>
   fetch(url, { signal: AbortSignal.timeout(60_000) })
 
-/** A source of several URLs becomes one before/after comparison image. */
-const download = async (url: string) => {
-  if (url.includes(" ")) {
-    const dir = await mkdtemp(join(tmpdir(), "dc-changelog-pair-"))
-    const output = join(dir, "pair.webp")
-    try {
-      await beforeAfter({ sources: url.split(" "), output })
-      return compress(await readFile(output), "webp")
-    } finally {
-      await rm(dir, { recursive: true })
-    }
-  }
+const fetchImage = async (url: string) => {
   if (url.startsWith("file:")) {
-    return compress(await readFile(new URL(url)), url.split(".").at(-1)!)
+    return { bytes: await readFile(new URL(url)), extension: url.split(".").at(-1)! }
   }
   const response = await fetchWithTimeout(url)
   const type = response.headers.get("content-type")?.split(";")[0] ?? ""
@@ -76,7 +66,42 @@ const download = async (url: string) => {
     await response.body?.cancel()
     throw new Error(`이미지 다운로드 실패: ${url} (${response.status} ${type})`)
   }
-  return compress(new Uint8Array(await response.arrayBuffer()), extension)
+  return { bytes: new Uint8Array(await response.arrayBuffer()), extension }
+}
+
+/** Returns the files to mirror for one source. Still images of a before/after source are joined into one comparison image. */
+const download = async (source: string) => {
+  const images = await Promise.all(source.split(" ").map(fetchImage))
+  if (
+    images.length === 1 ||
+    (await Promise.all(images.map(({ bytes }) => isAnimated(bytes)))).some(Boolean)
+  ) {
+    return Promise.all(images.map(({ bytes, extension }) => compress(bytes, extension)))
+  }
+  const dir = await mkdtemp(join(tmpdir(), "dc-changelog-pair-"))
+  try {
+    const sources = await Promise.all(
+      images.map(async ({ bytes }, index) => {
+        const file = join(dir, `${index}`)
+        await writeFile(file, bytes)
+        return file
+      }),
+    )
+    const output = join(dir, "pair.webp")
+    await beforeAfter({ sources, output })
+    return [await compress(await readFile(output), "webp")]
+  } finally {
+    await rm(dir, { recursive: true })
+  }
+}
+
+export const isAnimated = async (bytes: Uint8Array<ArrayBuffer>): Promise<boolean> => {
+  const result = await $`magick identify -format ${"%n\n"} -`
+    .stdin(bytes)
+    .stdout("piped")
+    .stderr("null")
+    .noThrow()
+  return result.code === 0 && Number(result.stdout.split("\n")[0]) > 1
 }
 
 /** Pixel art is small or palette-sized, and lossy compression would blur it. Returns nothing when ImageMagick cannot read the image. */
@@ -165,11 +190,14 @@ const mirror = async (
   try {
     await $`git clone --quiet --depth 1 --branch ${branch} ${remote} ${dir}`
     const files = await Promise.all(
-      urls.map(async (url) => {
-        const { name, bytes } = await download(url)
-        await writeFile(join(dir, name), bytes)
-        return { name, wide: isWide(bytes) }
-      }),
+      urls.map(async (url) =>
+        Promise.all(
+          (await download(url)).map(async ({ name, bytes }) => {
+            await writeFile(join(dir, name), bytes)
+            return { name, wide: isWide(bytes) }
+          }),
+        ),
+      ),
     )
     await $`git -C ${dir} add --all`
     const unchanged = await $`git -C ${dir} diff --cached --quiet`.noThrow()
@@ -178,11 +206,18 @@ const mirror = async (
       await $`git -C ${dir} push --quiet origin HEAD:${branch}`
     }
     const commit = await $`git -C ${dir} rev-parse HEAD`.text()
-    const mirrored = files.map(({ name }) => `${cdn}@${commit}/${name}`)
-    await Promise.all(mirrored.map(assertServed))
+    const mirrored = files.map((images) =>
+      images.map(({ name, wide }) => ({ url: `${cdn}@${commit}/${name}`, wide })),
+    )
+    await Promise.all(mirrored.flat().map(({ url }) => assertServed(url)))
     return {
-      post: mapPostImages(post, (url) => mirrored[urls.indexOf(url)]),
-      wide: new Set(mirrored.filter((_, index) => files[index].wide)),
+      post: mapPostImages(post, (url) => mirrored[urls.indexOf(url)].map((image) => image.url)),
+      wide: new Set(
+        mirrored
+          .flat()
+          .filter(({ wide }) => wide)
+          .map(({ url }) => url),
+      ),
     }
   } finally {
     await rm(dir, { recursive: true })

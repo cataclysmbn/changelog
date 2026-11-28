@@ -2,7 +2,8 @@
  * @module
  *
  * Builds a looping animated WebP that shows before/after screenshot pairs side by side, `Before` on the left and
- * `After` on the right. Each pair is one frame. Requires ImageMagick.
+ * `After` on the right. Each pair is one frame. It refuses animated sources, because a panel shows only their first
+ * frame. Requires ImageMagick.
  *
  * Usage: vp run compare -o out.webp BEFORE1 AFTER1 [BEFORE2 AFTER2 ...]; each source is a URL or a file path.
  */
@@ -13,7 +14,7 @@ import $ from "dax"
 import { Command } from "@cliffy/command"
 import { join } from "node:path"
 
-import { isPixelArt, webpQuality } from "./mirror_images.ts"
+import { isAnimated, isPixelArt, webpQuality } from "./mirror_images.ts"
 
 const background = "#202020"
 const labelHeight = 44
@@ -70,6 +71,10 @@ export const beforeAfter = async ({
   const dir = await mkdtemp(join(tmpdir(), "dc-changelog-compare-"))
   try {
     const images = await Promise.all(sources.map(read))
+    const animated = (await Promise.all(images.map(isAnimated))).indexOf(true)
+    if (animated !== -1) {
+      throw new Error(`움직이는 이미지는 합치지 말고 그대로 쓰세요: ${sources[animated]}`)
+    }
     const files = await Promise.all(
       images.map(async (bytes, index) => {
         const file = join(dir, `${index}`)

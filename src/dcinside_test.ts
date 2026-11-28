@@ -224,6 +224,12 @@ test("renderPostHtml renders table rows as one table with a header row", () => {
   ])
 })
 
+test("renderPostHtml renders every image of a table cell", () => {
+  expect(renderPostHtml(`| ![](${image}) ![](${after}) |\n`)).toEqual(
+    `<table border="1" style="border-collapse:collapse;width:100%;max-width:850px;">\n<tr><td><img src="${image}" alt="" style="max-width:100%;height:auto;"><br><img src="${after}" alt="" style="max-width:100%;height:auto;"></td></tr>\n</table>\n`,
+  )
+})
+
 test("renderPostHtml keeps lines outside the template as text and keeps every table cell", () => {
   // Markdown reads "> ", "***", "+ " and "1) " as other blocks; DCInside shows them as typed.
   const html = renderPostHtml(

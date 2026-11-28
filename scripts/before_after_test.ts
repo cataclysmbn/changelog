@@ -63,3 +63,13 @@ test("beforeAfter rejects a before image without its after image", () =>
       beforeAfter({ sources: [before], output: join(dir, "out.webp") }),
     ).rejects.toThrow("짝")
   }))
+
+test("beforeAfter rejects animated images, which it would cut to their first frame", () =>
+  withDir(async (dir) => {
+    const before = join(dir, "before.webp")
+    await $`magick -delay 10 -size 8x8 xc:red xc:blue -loop 0 ${before}`
+    const after = await solid(dir, "a", "8x8", "blue")
+    await expect(() =>
+      beforeAfter({ sources: [before, after], output: join(dir, "out.webp") }),
+    ).rejects.toThrow("움직이는 이미지")
+  }))

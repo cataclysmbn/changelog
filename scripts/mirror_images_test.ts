@@ -13,6 +13,19 @@ const png = await magick("-size", "8x8", "xc:red", "png:-")
 const webp = await magick("-size", "8x8", "xc:red", "-define", "webp:lossless=true", "webp:-")
 const photo = await magick("-size", "300x300", "plasma:fractal", "png:-")
 const wide = await magick("-size", "20x10", "xc:blue", "png:-")
+const animation = (...colors: string[]) =>
+  magick(
+    "-delay",
+    "10",
+    "-size",
+    "8x8",
+    ...colors.map((color) => `xc:${color}`),
+    "-loop",
+    "0",
+    "webp:-",
+  )
+const redBlue = await animation("red", "blue")
+const blueRed = await animation("blue", "red")
 const sha256 = async (bytes: Uint8Array<ArrayBuffer>) =>
   Buffer.from(await crypto.subtle.digest("SHA-256", bytes)).toString("hex")
 const pngName = `${await sha256(png)}.png`
@@ -78,6 +91,10 @@ const withMirror = async (
       return new Response(new Uint8Array(100).fill(7), {
         headers: { "content-type": "image/png" },
       })
+    }
+    if (pathname === "/red-blue.webp" || pathname === "/blue-red.webp") {
+      const bytes = pathname === "/red-blue.webp" ? redBlue : blueRed
+      return new Response(bytes, { headers: { "content-type": "image/webp" } })
     }
     if (pathname === "/page") {
       return new Response("x", { headers: { "content-type": "text/html" } })
@@ -178,6 +195,23 @@ test("mirrorPostImages turns a before/after line into one animated WebP and mirr
       .pipe($`magick identify -format ${"%n\n"} -`)
       .text()
     expect(frames.split("\n")[0]).toEqual("2")
+  })
+})
+
+test("mirrorPostImages keeps both images of an animated before/after pair as they are", async () => {
+  await withMirror(async ({ remote, cdn, source, tip }) => {
+    const pair = `${source}/red-blue.webp ${source}/blue-red.webp`
+    const mirrored = await mirrorPostImages(
+      `# 제목\n## 항목\n![전후](${pair})\n| 전후 | ![](${pair}) |\n`,
+      { remote, cdn },
+    )
+
+    const base = `${cdn}@${await tip()}`
+    const before = `${base}/${await sha256(redBlue)}.webp`
+    const after = `${base}/${await sha256(blueRed)}.webp`
+    expect(mirrored).toEqual(
+      `# 제목\n## 항목\n![](${before})\n![전후](${after})\n| 전후 | ![](${before}) ![](${after}) |\n`,
+    )
   })
 })
 

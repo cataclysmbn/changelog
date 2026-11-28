@@ -132,11 +132,15 @@ const tableCells = (row: string): string[] =>
     .split("|")
     .map((cell) => cell.trim())
 
+/** Image matches of a text that holds only images. After mirroring, one table cell can hold several images. */
+const textImages = (text: string): RegExpMatchArray[] | undefined => {
+  const images = text.split(/(?<=\)) (?=!\[)/u).map((part) => part.match(imageLine))
+  return images.every((image) => image !== null) ? images : undefined
+}
+
 /** Image matches of an image line or of the image cells of a table row. */
 const lineImages = (line: string): RegExpMatchArray[] =>
-  (tableRow.test(line) ? tableCells(line) : [line])
-    .map((text) => text.match(imageLine))
-    .filter((image): image is RegExpMatchArray => image !== null)
+  (tableRow.test(line) ? tableCells(line) : [line]).flatMap((text) => textImages(text) ?? [])
 
 const evidenceUrls = (source: string, label: string): Set<string> =>
   new Set([...source.matchAll(new RegExp(`^  ${label}: (\\S+)$`, "gmu"))].map((match) => match[1]))
@@ -188,18 +192,24 @@ export const postImageUrls = (post: string): string[] => [
   ...new Set(postLines(post).flatMap((line) => lineImages(line).map((image) => image[2]))),
 ]
 
-/** Replaces the source of each image line and image table cell; other lines keep their URLs. */
-export const mapPostImages = (post: string, replace: (url: string) => string): string =>
+/** Returns one image per URL that replaces a source. Only the last image keeps the caption, so the caption shows once below all of them. */
+const images = ([, caption, source]: RegExpMatchArray, replace: (url: string) => string[]) =>
+  replace(source).map(
+    (url, index, urls) => `![${index === urls.length - 1 ? caption : ""}](${url})`,
+  )
+
+/** Replaces the source of each image line and image table cell with one image per returned URL; other lines keep their URLs. */
+export const mapPostImages = (post: string, replace: (url: string) => string[]): string =>
   post
     .split("\n")
     .map((line) => {
       const image = line.trim().match(imageLine)
-      if (image) return `![${image[1]}](${replace(image[2])})`
+      if (image) return images(image, replace).join("\n")
       if (!tableRow.test(line.trim())) return line
       return `| ${tableCells(line.trim())
         .map((cell) => {
           const cellImage = cell.match(imageLine)
-          return cellImage ? `![${cellImage[1]}](${replace(cellImage[2])})` : cell
+          return cellImage ? images(cellImage, replace).join(" ") : cell
         })
         .join(" | ")} |`
     })
@@ -254,8 +264,8 @@ const renderTable = (rows: string[]): string => {
       const tag = header && index === 0 ? "th" : "td"
       return `<tr>${tableCells(row)
         .map((cell) => {
-          const image = cell.match(imageLine)
-          return `<${tag}>${image ? htmlImage(image[2], image[1], "100%") : escapeHtml(cell)}</${tag}>`
+          const images = textImages(cell)
+          return `<${tag}>${images ? images.map(([, alt, url]) => htmlImage(url, alt, "100%")).join("<br>") : escapeHtml(cell)}</${tag}>`
         })
         .join("")}</tr>`
     })
@@ -341,7 +351,7 @@ M월 D일
 - 항목 이름에 PR 링크를 겁니다. 한 항목에 PR이 여럿이면 첫 번째 PR만 겁니다. 따로 된 링크 줄은 쓰지 않습니다.
 - 이미지 URL은 근거의 "Image:" 값을, 링크 URL은 근거의 "URL:" 값을 그대로 복사합니다. 추가 이미지에는 설명을 붙입니다.
 - 근거 본문에 전/후 비교 이미지가 있으면 아래 두 방식 중 항목을 더 잘 보여 주는 쪽을 고릅니다.
-  - 비교 이미지: "![](전 URL 후 URL)"처럼 한 줄에 전, 후 URL을 공백으로 나란히 씁니다. 짝이 여럿이면 "![](전1 후1 전2 후2)"로 이어 씁니다. 프로그램이 왼쪽 Before, 오른쪽 After로 붙이고 짝마다 한 장씩 넘어가는 움직이는 이미지로 만듭니다. 화면 한 곳의 단순 전/후에 씁니다.
+  - 비교 이미지: "![](전 URL 후 URL)"처럼 한 줄에 전, 후 URL을 공백으로 나란히 씁니다. 짝이 여럿이면 "![](전1 후1 전2 후2)"로 이어 씁니다. 프로그램이 왼쪽 Before, 오른쪽 After로 붙이고 짝마다 한 장씩 넘어가는 움직이는 이미지로 만듭니다. 전이나 후가 움직이는 이미지면 붙이지 않고 두 장을 차례로 그대로 올립니다. 화면 한 곳의 단순 전/후에 씁니다.
   - 표: 행이나 열 이름(타일셋, 설정값 등)이 비교의 핵심이면 근거의 표를 같은 행과 열로 옮깁니다. "| 타일셋 | 전 | 후 |", "|---|---|---|", "| HitButton_iso | ![](URL) | ![](URL) |"처럼 씁니다. 칸에는 짧은 글이나 이미지 하나만 넣고, 머리 행 글은 한국어로 씁니다.
 - 문장은 "~함", "~추가"처럼 짧게 끝냅니다.
 - 한국어 위주로 쓰고 필요한 경우 첫 언급에만 영어 원문을 괄호로 병기합니다.
