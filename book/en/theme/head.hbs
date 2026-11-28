@@ -16,6 +16,42 @@
     link.addEventListener("click", pick)
     link.addEventListener("auxclick", pick)
     document.querySelector(".left-buttons")?.append(link)
+    // Add a share menu to a post page. Click DCInside to copy the DCInside HTML of the post.
+    const dcinside = document.querySelector('meta[name="changelog-dcinside"]')?.content
+    if (dcinside) {
+      const share = document.createElement("button")
+      share.type = "button"
+      share.className = "icon-button"
+      share.title = share.ariaLabel = "Share"
+      share.ariaHasPopup = "menu"
+      share.innerHTML = `<span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M352 224c53 0 96-43 96-96s-43-96-96-96s-96 43-96 96c0 4 .2 8 .7 11.9l-94.1 47C145.4 170.2 121.9 160 96 160c-53 0-96 43-96 96s43 96 96 96c25.9 0 49.4-10.2 66.6-26.9l94.1 47c-.5 3.9-.7 7.8-.7 11.9c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-25.9 0-49.4 10.2-66.6 26.9l-94.1-47c.5-3.9 .7-7.8 .7-11.9s-.2-8-.7-11.9l94.1-47C302.6 213.8 326.1 224 352 224z"/></svg></span>`
+      const menu = document.createElement("ul")
+      menu.className = "theme-popup"
+      menu.role = "menu"
+      menu.style.cssText = "left:auto;right:10px"
+      menu.innerHTML = `<li role=none><button type=button role=menuitem class=theme><img src="data:image/webp;base64,UklGRgQCAABXRUJQVlA4TPcBAAAvH8AHEK/joG0kSar7jz/amdntMg2HbRs5ku/z91/sXhrTcdtGkqR57pl/rt1VdFXbtlJN3P+0AG1JQEEnAE8Df9IuEkgIgEJAMvdqgZaIQCIFtNzXIEBmljJl74ckmAEUyd6v6xpAADqcc8wsmFnnGIVyzqulpcN0RYrIdEWg5boG6Sxy34PAOcdaR7ta1n6BUtzXgpnVQTL3AqgEBCQBSQqTyqQVTUKkRjBzHmRJUVLL7p0r6c72fJL+uiPzR/D5vOb//z8lFUkLJEiSbdpWPdu2bdv+/s9a1zb3/COO9plBRP8nQClPueQTrb5S2aOU8hbFxaJXeYriatFTFpfLJbdKPrd8Yntz982Z5avJHj1nX3q2GL4RkRNgVE8vMHZv0qSnGuP8oT6AZhgBuuTjdO3gUcft9QBA9+M40Lj17OxOPmeBzmVMW/c/nMkhULtgBn0X3452gZoFGH+47AeYsWow2wFqF1j6FPk4aqH3p9Wo2TRQt7Ahpr8H/4r1AXAl/yqB+l9i/vUkNj8moON8H6BX9L6s10C7YUiTyJ+5CoyD2kR+TE0CVcfv2kT+twG0zV7aCtiSz9UqYOXTTiBkT+R1sXdbbIciTpxH0kF3gulC0u+GP1mIZbJhfeFsJqbimXw2EdWayOYzcaVUrJDK5bXmUoWYUgA=" alt="" width=16 height=16 style="vertical-align:-3px"> <span>DCInside</span></button></li>`
+      const label = menu.querySelector("span")
+      const toggle = (open) => {
+        menu.style.display = open ? "block" : ""
+        share.ariaExpanded = String(open)
+        if (open) label.textContent = "DCInside"
+      }
+      share.addEventListener("click", () => toggle(menu.style.display !== "block"))
+      document.addEventListener("click", (event) => {
+        if (!share.contains(event.target) && !menu.contains(event.target)) toggle(false)
+      })
+      menu.querySelector("button").addEventListener("click", async () => {
+        // Give ClipboardItem the pending fetch. Safari rejects a clipboard write that starts after an await in the click handler.
+        const html = fetch(new URL(dcinside, root)).then((response) => response.ok ? response.blob() : Promise.reject(new Error(response.statusText)))
+        try {
+          await navigator.clipboard.write([new ClipboardItem({ "text/plain": html.then((blob) => new Blob([blob], { type: "text/plain" })) })])
+          label.textContent = "Copied"
+        } catch {
+          label.textContent = "Copy failed"
+        }
+      })
+      document.querySelector(".right-buttons")?.append(share, menu)
+    }
     // Show the date sections of a post newest first when the reader picked that order; the sidebar is built after this.
     const main = document.querySelector("main")
     const dates = [...(main?.querySelectorAll(":scope > h2") ?? [])]

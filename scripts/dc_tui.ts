@@ -33,6 +33,12 @@ import {
   translatePrompt,
   translationGuide,
 } from "../src/dcinside.ts"
+import {
+  type Description,
+  describePrompt,
+  descriptionText,
+  parseDescription,
+} from "../src/description.ts"
 import { execText } from "../src/exec.ts"
 import { mergeRanges, rangesBetween, weeklyRanges, type WeekRange } from "../src/weeks.ts"
 import { parsePo, validateTranslationReview, type VerifiedTerm } from "../src/translation.ts"
@@ -298,10 +304,19 @@ You translate a finished Korean Cataclysm: Bright Nights changelog into English.
 - Do not run notify or any completion hook.
 `
 
+const describerAgents = `# Changelog Describer Rules
+
+You pick the biggest changes of a finished Cataclysm: Bright Nights changelog for its link preview.
+
+- Output only the JSON object the prompt asks for. Do not add explanations, prefaces, tool logs, or notifications.
+- Do not run notify or any completion hook.
+`
+
 const roleAgents = {
   writer: writerAgents,
   reviewer: reviewerAgents,
   translator: translatorAgents,
+  describer: describerAgents,
 }
 
 const makePiWorkspace = async (role: keyof typeof roleAgents): Promise<PiWorkspace> => {
@@ -329,7 +344,7 @@ export const planAgent = (tier: string | undefined): Pick<Options, "agent" | "mo
  * Rate limit tier of the logged-in Claude subscription, or nothing without one.
  * `claude auth status` can print a null tier, so fall back to `oauthAccount` in `.claude.json`.
  */
-const claudeTier = async (claude: string): Promise<string | undefined> => {
+export const claudeTier = async (claude: string): Promise<string | undefined> => {
   try {
     const status = JSON.parse(await $`${claude} auth status --json`.stderr("null").text())
     if (!status.loggedIn) return undefined
@@ -351,7 +366,7 @@ const aiModel = ({ agent, model }: Options): string =>
     ? (model ?? "Claude")
     : (model ?? defaultPiModel).split("/").at(-1)!.split(":")[0]
 
-const claudeArgs = (options: Options, workspace: PiWorkspace, skill: string): string[] => {
+const claudeArgs = (options: AgentOptions, workspace: PiWorkspace, skill: string): string[] => {
   const args = [
     options.claude,
     "-p",
@@ -381,7 +396,7 @@ const claudeArgs = (options: Options, workspace: PiWorkspace, skill: string): st
 }
 
 const piArgs = (
-  options: Options,
+  options: AgentOptions,
   promptFile: string,
   workspace: PiWorkspace,
   skill = "",
@@ -412,8 +427,10 @@ const piArgs = (
   return args
 }
 
+type AgentOptions = Pick<Options, "agent" | "model" | "pi" | "claude" | "piTools" | "keepTemp">
+
 const runPiText = async (
-  options: Options,
+  options: AgentOptions,
   promptFile: string,
   workspace: PiWorkspace,
 ): Promise<string> => {
@@ -530,30 +547,55 @@ const translateWithPi = async (
       terms,
     }),
   )
-  const workspace = await makePiWorkspace("translator")
+  $.logStep("pi translator", range.label)
+  return await askChecked(options, "translator", promptFile, (answer) => {
+    const english = `${answer.trim()}\n`
+    assertSameLayout(changelog, english)
+    return english
+  })
+}
+
+/**
+ * Runs `role` on `promptFile` and returns `check` of its answer. When the check throws, asks once more with the
+ * error and the previous answer.
+ */
+const askChecked = async <T>(
+  options: AgentOptions,
+  role: keyof typeof roleAgents,
+  promptFile: string,
+  check: (answer: string) => T,
+): Promise<T> => {
+  const workspace = await makePiWorkspace(role)
   try {
-    $.logStep("pi translator", range.label)
-    for (let attempt = 0; attempt < 2; attempt++) {
-      const english = `${(await runPiText(options, promptFile, workspace)).trim()}\n`
+    for (let attempt = 0; ; attempt++) {
+      const answer = await runPiText(options, promptFile, workspace)
       try {
-        assertSameLayout(changelog, english)
-        return english
+        return check(answer)
       } catch (error) {
         if (attempt === 1) throw error
         const reason = error instanceof Error ? error.message : String(error)
-        $.logStep("translation correction", reason)
+        $.logStep(`${role} correction`, reason)
         await writeFile(
           promptFile,
-          `${await readFile(promptFile, "utf8")}\n\n# Program check failed\n${reason}\nFix the previous translation and return the whole post.\n\n# Previous translation\n${english}`,
+          `${await readFile(promptFile, "utf8")}\n\n# Program check failed\n${reason}\nFix the previous answer and return all of it.\n\n# Previous answer\n${answer}\n`,
         )
       }
     }
-    throw new Error("영문 번역을 완료하지 못했습니다")
   } finally {
-    if (!options.keepTemp) {
-      await rm(workspace.root, { recursive: true })
-    }
+    if (!options.keepTemp) await rm(workspace.root, { recursive: true })
   }
+}
+
+/** The biggest changes of the Korean and English Markdown posts, for the link preview. */
+export const describeWithPi = async (
+  options: AgentOptions,
+  posts: { korean: string; english: string },
+  promptFile: string,
+): Promise<Description> => {
+  await writeFile(promptFile, describePrompt(posts))
+  return await askChecked({ ...options, piTools: "none" }, "describer", promptFile, (answer) =>
+    parseDescription(answer, posts.english),
+  )
 }
 
 const sha256 = async (text: string): Promise<string> =>
@@ -659,6 +701,14 @@ const run = async (options: Options): Promise<void> => {
       await writeFile(join(postDir, "changelog.en.md"), translated.markdown)
       await writeFile(join(postDir, "changelog.en.html"), translated.html)
       $.logStep("wrote", join(postDir, "changelog.en.html"))
+      $.logStep("pi describer", range.label)
+      const description = await describeWithPi(
+        runOptions,
+        { korean: korean.markdown, english: translated.markdown },
+        join(tempDir, `${slug}.describe.prompt.md`),
+      )
+      await writeFile(join(postDir, "description.txt"), descriptionText(description.ko))
+      await writeFile(join(postDir, "description.en.txt"), descriptionText(description.en))
       $.logStep("published", (await publishPages([postDir]))[0])
     }
   } catch (error) {

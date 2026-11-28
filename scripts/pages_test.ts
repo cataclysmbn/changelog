@@ -19,6 +19,8 @@ const writeFixturePost = async (root: string, name: string, image: string) => {
     `# 밝밤) 패치\n\n## [항목](https://example.test/pull/1)\n\n![](${image})\n\n---\n\n이 변경 내역은 AI(test)로 자동 생성되었습니다.\n`,
   )
   await writeFile(join(dir, "changelog.en.md"), "# BN changelog\n\nFix\n")
+  await writeFile(join(dir, "description.txt"), "항목 & 수정\n로딩 2배\n")
+  await writeFile(join(dir, "description.en.txt"), "Fix\nLoading 2x\n")
   return dir
 }
 
@@ -83,6 +85,15 @@ test("publishPages commits both books newest first and buildSite serves each pos
     expect(korean).toContain('<html lang="ko"')
     expect(korean).toContain('<meta property="og:title" content="밝밤) 패치">')
     expect(korean).toContain(`<meta property="og:image" content="${pathToFileURL(image).href}">`)
+    expect(korean).toContain(
+      '<meta property="og:description" content="항목 &amp; 수정 · 로딩 2배">',
+    )
+    expect(korean).toContain(
+      '<meta name="changelog-dcinside" content="2026-11-08_to_2026-11-14.html">',
+    )
+    expect(await read("index.html")).toContain(
+      '<meta property="og:description" content="항목 &amp; 수정 · 로딩 2배">',
+    )
     expect(korean).toContain("location.replace(other)")
     // The sidebar lists each heading by the text of its first link, so the PR link must not sit inside the heading anchor.
     expect(korean).toContain('<h2 id="항목"><a href="https://example.test/pull/1">항목</a></h2>')
@@ -101,6 +112,7 @@ test("publishPages commits both books newest first and buildSite serves each pos
     expect(english).toContain('<html lang="en"')
     expect(english).toContain("<p>Fix</p>")
     expect(english.includes("location.replace")).toEqual(false)
+    expect(english).toContain('<meta property="og:description" content="Fix · Loading 2x">')
     expect(await read("en/2026-11-08_to_2026-11-14.html")).toEqual("<p>Fix</p>\n")
   } finally {
     await rm(root, { recursive: true })

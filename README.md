@@ -19,13 +19,15 @@ vp run tui
 
 고른 주를 글 하나로 묶어 `dist/<시작일>_to_<종료일>/`에 저장하고 사이트에 올립니다.
 
-| 파일             | 내용                                        |
-| ---------------- | ------------------------------------------- |
-| `changelog.txt`  | 원고. 첫 줄이 제목이고 이미지는 GitHub 주소 |
-| `changelog.md`   | 이미지를 jsDelivr 주소로 바꾼 사이트용 글   |
-| `changelog.html` | `changelog.md`로 만든 DCInside용 HTML       |
-| `changelog.en.*` | 영문본                                      |
-| `commits.txt`    | 글에 넣은 커밋 해시                         |
+| 파일                 | 내용                                              |
+| -------------------- | ------------------------------------------------- |
+| `changelog.txt`      | 원고. 첫 줄이 제목이고 이미지는 GitHub 주소       |
+| `changelog.md`       | 이미지를 jsDelivr 주소로 바꾼 사이트용 글         |
+| `changelog.html`     | `changelog.md`로 만든 DCInside용 HTML             |
+| `changelog.en.*`     | 영문본                                            |
+| `commits.txt`        | 글에 넣은 커밋 해시                               |
+| `description.txt`    | 링크 미리보기에 나올 큰 변경 5~10개, 한 줄에 하나 |
+| `description.en.txt` | 영문 미리보기                                     |
 
 DCInside에 올릴 때는 `changelog.html`을 HTML 모드에 붙여 넣고, `changelog.txt` 첫 줄을 제목 칸에 넣습니다.
 
@@ -76,7 +78,7 @@ vp run compare -o dist/2026-11-09_to_2026-11-14/10834-before-after.webp <전1> <
 
 ## 작성과 검수
 
-pi가 작성자, 검수자, 영문 번역자 순서로 글을 씁니다.
+pi가 작성자, 검수자, 영문 번역자 순서로 글을 쓰고, 마지막에 큰 변경 5~10개를 골라 `description.txt`와 `description.en.txt`에 씁니다. 관련된 항목은 하나로 묶고 수치를 합칩니다(대기 1.2배, 3배, 1.4배 빨라짐 → 대기 약 5배 빨라짐).
 
 - 프롬프트와 pi 작업 디렉터리는 임시 디렉터리에만 만들고, 전역 `AGENTS.md` 대신 역할별 지침을 줍니다(`--no-context-files`).
 - 프롬프트에 `/home/scarf/repo/cata/translations/lang/po/ko.po`의 용어 번역을 문맥(`msgctxt`), 번역 상태와 함께 넣습니다. 작성자와 검수자는 기본 도구인 읽기 전용 `read,grep`으로 PO를 직접 찾아볼 수 있습니다.
@@ -131,6 +133,8 @@ vp run dc --repo /home/scarf/repo/cata/Cataclysm-BN v0.10.0..HEAD --mode draft
 - 왼쪽 목록에 모든 글이 최신순으로 나옵니다.
 - 브라우저 언어가 한국어가 아니면 영문 글이 열립니다. 주소에 `?ko`를 붙이면 한국어 글이 열립니다.
 - 위쪽 막대 왼쪽의 아이콘으로 언어와 날짜 순서(오래된 날짜부터, 최근 날짜부터)를 바꿉니다. 고른 값은 브라우저에 남습니다.
+- 위쪽 막대 오른쪽의 공유 버튼에서 디시인사이드를 누르면 그 글의 `/<기간>.html`이 클립보드에 복사됩니다.
+- 링크 미리보기 설명(`og:description`)은 `book/<언어>/src/<기간>/description.txt`의 줄을 `·`로 이은 것입니다. 설명이 없는 글에는 `vp run describe`로 만들고, 기간을 주면 그 글만 만듭니다.
 
 사이트는 mdBook 책 두 권입니다. 한국어 책은 `book/ko/`, 영문 책은 `book/en/`이고, 글은 `book/<언어>/src/<기간>/index.md`입니다. `vp run tui`는 두 책에 글을 넣고 목록(`SUMMARY.md`, `archive/index.md`)을 다시 써서 `main`에 push합니다. `vp run pages`나 책을 직접 고친 커밋도 `main`에 push하면 GitHub Actions가 사이트를 GitHub Pages에 올립니다. 로컬 저장소는 `git pull`로 맞춥니다.
 

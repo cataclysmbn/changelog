@@ -3,7 +3,7 @@ name: pages
 on:
   push:
     branches: [main]
-    paths: [book/**, scripts/site.ts, scripts/pages.ts, scripts/mirror_images.ts, src/dcinside.ts, package.json, package-lock.json, .github/workflows/pages.yml]
+    paths: [book/**, scripts/site.ts, scripts/pages.ts, scripts/mirror_images.ts, src/dcinside.ts, src/description.ts, package.json, package-lock.json, .github/workflows/pages.yml]
   workflow_dispatch:
 
 permissions: { contents: read, pages: write, id-token: write }

@@ -3,6 +3,7 @@
  *
  * Publishes post folders to the mdBook books in `book/` on the `main` branch of this repository.
  * The Korean post goes to `book/ko/src/<period>/index.md` and the English post to `book/en/src/<period>/index.md`.
+ * `description.txt` and `description.en.txt` go beside them, both named `description.txt`.
  * Each book's sidebar (`SUMMARY.md`) and `archive/` list every post, newest first.
  * The push starts the GitHub Pages workflow, which builds the site with `vp run site`.
  *
@@ -28,8 +29,13 @@ export const defaults: PagesOptions = {
 }
 
 export const langs = [
-  { code: "ko", markdown: "changelog.md", archive: "전체 목록" },
-  { code: "en", markdown: "changelog.en.md", archive: "All posts" },
+  { code: "ko", markdown: "changelog.md", description: "description.txt", archive: "전체 목록" },
+  {
+    code: "en",
+    markdown: "changelog.en.md",
+    description: "description.en.txt",
+    archive: "All posts",
+  },
 ] as const
 
 /** Posts of a book source folder, newest first. */
@@ -64,12 +70,16 @@ export const publishPages = async (
   const dir = await mkdtemp(join(tmpdir(), "changelog-pages-"))
   try {
     await $`git clone --quiet --depth 1 --branch ${branch} ${remote} ${dir}`
-    for (const { code, markdown, archive } of langs) {
+    for (const { code, markdown, description, archive } of langs) {
       const src = join(dir, "book", code, "src")
       for (const postDir of postDirs) {
         const target = join(src, basename(postDir))
         await mkdir(target, { recursive: true })
         await copyFile(join(postDir, markdown), join(target, "index.md"))
+        // Skip a post folder without a description file, so the book keeps its description.
+        await copyFile(join(postDir, description), join(target, "description.txt")).catch((error) =>
+          error.code === "ENOENT" ? undefined : Promise.reject(error),
+        )
       }
       await writeIndex(src, archive)
     }

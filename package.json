@@ -9,6 +9,7 @@
     "compare": "node scripts/before_after.ts",
     "pages": "node scripts/pages.ts",
     "site": "node scripts/site.ts",
+    "describe": "node scripts/describe.ts",
     "serve": "mdbook serve book/ko"
   },
   "dependencies": {
