@@ -43,6 +43,7 @@ const OptionsSchema = v.object({
   excludeCommits: v.optional(v.string()),
   title: v.optional(v.string()),
   repoSlug: v.optional(v.string()),
+  rawUrl: v.string(),
   noPrDetails: v.optional(v.boolean()),
   allowMissingPrDetails: v.optional(v.boolean()),
   glossaryPo: v.string(),
@@ -195,10 +196,53 @@ const isAnonymousImage = async (url: string): Promise<boolean> => {
   }
 }
 
-const permanentImages = async (body: string): Promise<string[]> => {
-  const urls = githubImageUrls(body)
+const usableImages = async (urls: string[]): Promise<string[]> => {
   const usable = await Promise.all(urls.map(isAnonymousImage))
   return urls.filter((_, index) => usable[index])
+}
+
+/** A commit that adds more images than this is a sprite batch, too many to show one by one. */
+const maxAddedImages = 10
+
+/**
+ * Raw GitHub URLs of the images a commit adds or changes, pinned to that commit. Tileset sheets (under `gfx/` or a
+ * path with "tileset" in it) are left out. So are URLs that GitHub does not serve, such as for a local commit.
+ */
+const addedImages = async (
+  commit: Commit,
+  options: { repo: string; repoSlug: string; rawUrl: string },
+): Promise<string[]> => {
+  const [hash = "", ...files] = (
+    await commandText(
+      "git",
+      [
+        "-C",
+        options.repo,
+        "-c",
+        "core.quotePath=false",
+        "show",
+        "--format=%H",
+        "--name-only",
+        "--diff-filter=AM",
+        "--diff-merges=first-parent",
+        "-z",
+        commit.hash,
+      ],
+      { clearEnv: true },
+    )
+  )
+    .split(/\0\n?/u)
+    .filter(Boolean)
+  const images = files.filter(
+    (file) => !/^gfx\/|tileset/iu.test(file) && /\.(?:png|jpe?g|gif|webp)$/iu.test(file),
+  )
+  if (images.length > maxAddedImages) return []
+  return await usableImages(
+    images.map(
+      (file) =>
+        `${options.rawUrl}/${options.repoSlug}/${hash}/${file.split("/").map(encodeURIComponent).join("/")}`,
+    ),
+  )
 }
 
 const fetchPullRequest = async (
@@ -222,7 +266,7 @@ const fetchPullRequest = async (
     url: parsed.url,
     body,
     files: parsed.files.map((file) => file.path),
-    images: await permanentImages(body),
+    images: await usableImages(githubImageUrls(body)),
   }
 }
 
@@ -254,7 +298,12 @@ const withPullRequestDetails = async (commits: Commit[], options: Options): Prom
           ])
           return merged.trim() ? await lookup(Number(merged)) : undefined
         })
-        return pullRequest ? { ...commit, pullRequest } : commit
+        if (!pullRequest) return commit
+        const images = await addedImages(commit, { repo, repoSlug, rawUrl: options.rawUrl })
+        return {
+          ...commit,
+          pullRequest: { ...pullRequest, images: [...pullRequest.images, ...images] },
+        }
       } catch (error) {
         if (!options.allowMissingPrDetails) throw error
         return {
@@ -332,6 +381,10 @@ const main = new Command()
     { default: false },
   )
   .option("--repo-slug <owner/repo:string>", "GitHub repository slug for PR lookups")
+  .option("--raw-url <url:string>", "Base URL of raw files in GitHub repositories", {
+    default: "https://raw.githubusercontent.com",
+    hidden: true,
+  })
   .option("--no-pr-details", "Do not query GitHub PR bodies/files/images", {
     default: false,
   })

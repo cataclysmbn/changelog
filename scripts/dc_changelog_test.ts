@@ -1,7 +1,9 @@
 import { mkdir, mkdtemp, readFile, writeFile } from "node:fs/promises"
 import { fileURLToPath } from "node:url"
 import { expect, test } from "vite-plus/test"
-import { join } from "node:path"
+import { createServer } from "node:http"
+import type { AddressInfo } from "node:net"
+import { dirname, join } from "node:path"
 
 import $ from "dax"
 import { execText } from "../src/exec.ts"
@@ -91,6 +93,58 @@ test("weekly CLI selects and titles commits by local integration dates and skips
     expect(text.includes("previous week")).toEqual(false)
     expect(text.includes("next week")).toEqual(false)
   })
+})
+
+test("offers the images a PR commit adds as evidence images, except tileset sheets and images GitHub does not serve", async () => {
+  const server = createServer((request, response) => {
+    const served = request.url?.endsWith("/loading/hub%2001.webp") || request.url?.endsWith(".png")
+    response.writeHead(served ? 200 : 404, { "content-type": served ? "image/webp" : "text/plain" })
+    response.end()
+  })
+  await new Promise<void>((done) => server.listen(0, "localhost", done))
+  const rawUrl = `http://localhost:${(server.address() as AddressInfo).port}`
+  await withRepo(async (repo, git) => {
+    for (const file of [
+      "loading/hub 01.webp",
+      "loading/gone.webp",
+      "gfx/sheet.png",
+      "mod_tileset/sheet.png",
+    ]) {
+      await mkdir(join(repo, dirname(file)), { recursive: true })
+      await writeFile(join(repo, file), "image")
+    }
+    await git(["add", "."])
+    await git(["commit", "-m", "feat: add loading screens (#11000)"])
+    const hash = (await git(["rev-parse", "HEAD"])).trim()
+    const bin = join(repo, "bin")
+    await mkdir(bin)
+    await writeFile(
+      join(bin, "gh"),
+      `#!/bin/sh
+echo '{"number":11000,"title":"loading screens","url":"https://github.com/fixture/repo/pull/11000","body":null,"files":[]}'
+`,
+      { mode: 0o755 },
+    )
+    const text = await execText(
+      process.execPath,
+      [
+        join(appRoot, "scripts/dc_changelog.ts"),
+        "--repo",
+        repo,
+        "HEAD",
+        "--repo-slug",
+        "fixture/repo",
+        "--skip-glossary",
+        "--raw-url",
+        rawUrl,
+      ],
+      { ...env, PATH: `${bin}:${env["PATH"] ?? ""}` },
+      "dc_changelog failed",
+    )
+    expect(text.match(/Image: .*/gu)).toEqual([
+      `Image: ${rawUrl}/fixture/repo/${hash}/loading/hub%2001.webp`,
+    ])
+  }).finally(() => server.close())
 })
 
 test("links a commit whose subject ends in an issue number to the PR that holds the commit", async () => {
