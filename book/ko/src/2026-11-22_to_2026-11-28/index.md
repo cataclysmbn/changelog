@@ -25,7 +25,7 @@ DDA가 타일 회전 방식을 바꾼 뒤의 타일셋이 실험판에 들어가
 
 ### [진균 동물 5종 추가](https://github.com/cataclysmbn/Cataclysm-BN/pull/10981)
 
-![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/11124e3547da80cea30955ad71944f288bb7d543566a3d97264e0f59a1303594.webp)
+![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/11124e3547da80cea30955ad71944f288bb7d543566a3d97264e0f59a1303594.webp)
 
 고양이, 코요테, 늑대, 쿠거, 소의 진균 버전 추가
 
@@ -35,11 +35,11 @@ DDA가 타일 회전 방식을 바꾼 뒤의 타일셋이 실험판에 들어가
 - 마이커스가 아닌 캐릭터가 키우던 동물이 진균에 감염되면 길들인 상태가 풀리고 적이 됨
 - 예: 사람 캐릭터가 키우던 개가 진균 개가 되면 주인을 공격함
 
-![진균 동물 스프라이트](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/18751baaa1c404ad8c60fd03998f0d36da9cca378a5f9c590f06b85eb4e88122.webp)
+![진균 동물 스프라이트](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/18751baaa1c404ad8c60fd03998f0d36da9cca378a5f9c590f06b85eb4e88122.webp)
 
-![진균 동물 스프라이트 2](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/63ad7456445a61989c8bfd0ef7c5d0d1fd62bfb71e8a5c922d1f865d610f6b16.webp)
+![진균 동물 스프라이트 2](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/63ad7456445a61989c8bfd0ef7c5d0d1fd62bfb71e8a5c922d1f865d610f6b16.webp)
 
-![마이커스 펫과 야생 진균 괴물이 싸우지 않는 장면](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/6a0c73b7ad2707ca662b474e0c9a0f54b8e6333b542650e9ba216d656761e3f9.webp)
+![마이커스 펫과 야생 진균 괴물이 싸우지 않는 장면](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/6a0c73b7ad2707ca662b474e0c9a0f54b8e6333b542650e9ba216d656761e3f9.webp)
 
 ### [마약 거래, 죽은 생존자, 군대 특이한 지역 너프](https://github.com/cataclysmbn/Cataclysm-BN/pull/10993)
 
@@ -61,11 +61,11 @@ DDA가 타일 회전 방식을 바꾼 뒤의 타일셋이 실험판에 들어가
 - 이전 세이브에 있던 농장 오버맵 지형 중 없어진 7종은 비슷한 지형으로 자동으로 바뀜. 이 처리가 들어가기 전에는 "Loaded invalid oter_id" 오류가 뜨고 해당 타일이 망가졌음
 - 아직 생성되지 않은 출입구 있는 철조망 타일은 출입구 없는 철조망으로 바뀜
 
-![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/6dcb65c38e186951767709cd4784838e536e7dd095227c1b33366561a061754a.webp)
+![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/6dcb65c38e186951767709cd4784838e536e7dd095227c1b33366561a061754a.webp)
 
 ### [세이브 불러오기 약 2배 빨라짐](https://github.com/cataclysmbn/Cataclysm-BN/pull/10924)
 
-![세이브를 불러와 지도가 뜰 때까지: 4.1초 -> 2.1초](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/75e6e3b5f38c1563dfb2290548509f48661808120160e474e4a0410436fd97d9.webp)
+![세이브를 불러와 지도가 뜰 때까지: 4.1초 -> 2.1초](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/75e6e3b5f38c1563dfb2290548509f48661808120160e474e4a0410436fd97d9.webp)
 
 타일셋을 읽는 동안 지도 생성 데이터 준비를 다른 스레드에서 같이 함
 
@@ -77,7 +77,7 @@ DDA가 타일 회전 방식을 바꾼 뒤의 타일셋이 실험판에 들어가
 
 ### [침착한 NPC 옆에서 대기 속도 향상](https://github.com/cataclysmbn/Cataclysm-BN/pull/10986)
 
-![NPC 8명이 보이는 곳에서 6시간 대기: 8.3초 -> 7.2초](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/577ad84af07ee2dd2c04c9226894f6ab0b78944f0615cab52bc6afe3aecfc8ee.webp)
+![NPC 8명이 보이는 곳에서 6시간 대기: 8.3초 -> 7.2초](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/577ad84af07ee2dd2c04c9226894f6ab0b78944f0615cab52bc6afe3aecfc8ee.webp)
 
 대기 중에 침착한 NPC가 위험한지 매 턴 확인하지 않고 5턴마다 확인함. 최대 1.16배 빨라짐
 
@@ -93,7 +93,7 @@ UDP 타일셋 오버맵에서 ASCII 글자로 나오던 생존자의 벙커와 �
 
 ### [화재감시탑에 진짜 깃대 설치](https://github.com/cataclysmbn/Cataclysm-BN/pull/10992)
 
-![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/2f32453e7a058127b153031eb46abc4aa8b118a5d473adb8be3775f4037329df.webp)
+![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/2f32453e7a058127b153031eb46abc4aa8b118a5d473adb8be3775f4037329df.webp)
 
 화재감시탑에서 깃대 흉내를 내던 기둥이 진짜 깃대로 바뀜
 
@@ -101,9 +101,9 @@ UDP 타일셋 오버맵에서 ASCII 글자로 나오던 생존자의 벙커와 �
 
 ### [하늘섬 두 번째 캐릭터가 허공에서 시작해 떨어지던 문제 수정](https://github.com/cataclysmbn/Cataclysm-BN/pull/11017)
 
-![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/37a1c92ac1115af725ecd6f5a382e7b3b163507cc023538551fb44b5c1caba04.webp)
+![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/37a1c92ac1115af725ecd6f5a382e7b3b163507cc023538551fb44b5c1caba04.webp)
 
-![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/7485ca68797f883af1cf100b0f88b054d2dcfacd8a71bba56ed2529001950d0c.webp)
+![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/7485ca68797f883af1cf100b0f88b054d2dcfacd8a71bba56ed2529001950d0c.webp)
 
 게임을 끄지 않고 메인 메뉴에서 새 캐릭터를 만들면 지난 판에 있던 주머니 차원 안, 그것도 범위 밖에서 시작했음
 
@@ -111,7 +111,7 @@ UDP 타일셋 오버맵에서 ASCII 글자로 나오던 생존자의 벙커와 �
 
 ### [오버맵 탐험 기록이 날아가던 세이브 문제 수정](https://github.com/cataclysmbn/Cataclysm-BN/pull/11007)
 
-![바이오닉 전력이 -100 J인 NPC가 있는 세이브가 오류 없이 열림](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/47365e4303c86b67bdc721f38a97df0e16715050bcbf924753b18da194550b7f.webp)
+![바이오닉 전력이 -100 J인 NPC가 있는 세이브가 오류 없이 열림](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/47365e4303c86b67bdc721f38a97df0e16715050bcbf924753b18da194550b7f.webp)
 
 오토닥으로 CBM:전력 저장소를 빼면 전력 용량이 두 번 빠져서 바이오닉 전력이 음수가 됐음. 이런 NPC가 있는 오버맵은 불러오지 못했고, 다음에 저장하면 탐험한 오버맵 기록이 덮어써져서 날아갔음
 
@@ -128,15 +128,19 @@ UDP 타일셋 오버맵에서 ASCII 글자로 나오던 생존자의 벙커와 �
 
 DDA에서 로딩 화면 이미지 4장을 가져옴
 
-- 기본 게임: 허브 01
-- 마이 스위트 카타클리즘: 밝은밤 에디션 모드: 네코 그림
-- 어두운 미래의 저주(Dark Days of the Dead) 모드: 영화 포스터 패러디 그림
-- 숲속생활(innawoods) 모드 그림
 - 실험판 타일 버전을 받으면 로딩 화면 이미지가 같이 들어 있음
+
+![기본 게임: 허브 01](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/538361f0211bd608d412858cc429dbcf5246520a3122cb688d9489238e38bc9d.webp)
+
+![마이 스위트 카타클리즘: 밝은밤 에디션 모드: 네코 그림](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/7a28464f86642c41c4ba9edc9a9e0bf431631eef2cba312d1145e7866ee86b9a.webp)
+
+![어두운 미래의 저주(Dark Days of the Dead) 모드: 영화 포스터 패러디 그림](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/35f3e7decba0e92f7d103d38b9c1b257de7f41bd28517ade087ea0a18d0f3f30.webp)
+
+![숲속생활(innawoods) 모드 그림](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/74aab701ca9c43630894b88ab1a575c12b32d1c185bab1fb98b6e5d0b322d2a3.webp)
 
 ### [본 적 있는 가스나 필드도 지도에 기억됨](https://github.com/cataclysmbn/Cataclysm-BN/pull/11025)
 
-![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/af18c1f5e6d7f0c06f1e3a4295f80307c501cae546e700e8b41e9bdd6108a9fc.webp)
+![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/af18c1f5e6d7f0c06f1e3a4295f80307c501cae546e700e8b41e9bdd6108a9fc.webp)
 
 독성 가스 같은 필드가 시야 밖으로 나가도 지도에 계속 표시됨
 
@@ -170,7 +174,7 @@ DDA의 숲 스폰 목록을 바탕으로 숲, 평야에서 나오는 동물 종�
 
 ### [불 근처에서 대기 최대 10배 빨라짐](https://github.com/cataclysmbn/Cataclysm-BN/pull/11049)
 
-![땔감을 계속 넣는 벽난로 옆에서 12시간 대기: 34.5초 -> 7.5초](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/f8a4889d27f08704e722a11cbd1730a04b519a0cb9d9628e1d88d0a95063a07e.webp)
+![땔감을 계속 넣는 벽난로 옆에서 12시간 대기: 34.5초 -> 7.5초](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/f8a4889d27f08704e722a11cbd1730a04b519a0cb9d9628e1d88d0a95063a07e.webp)
 
 근처에 불이 타고 있으면 대기나 제작을 한 턴씩 처리해서 느렸음. 땔감 타일에서 땔감을 계속 받는 벽난로 옆이 특히 심했음. 이제 불이 있어도 5분 단위로 묶어서 처리함
 
@@ -178,7 +182,7 @@ DDA의 숲 스폰 목록을 바탕으로 숲, 평야에서 나오는 동물 종�
 - 번지는 불 근처: 14.79배 빨라짐
 - 불이 있는 구역과 불이 번지는 옆 구역은 계속 턴마다 처리해서 불 번짐은 그대로임
 
-![번지는 불 근처에서 2시간 대기: 4.6초 -> 1.0초](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/4fa198fc2232febee540ed7751efaae30429e2fcdfe28cee852cdabcb8a389f7.webp)
+![번지는 불 근처에서 2시간 대기: 4.6초 -> 1.0초](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/4fa198fc2232febee540ed7751efaae30429e2fcdfe28cee852cdabcb8a389f7.webp)
 
 ### [차량 작업 속도 월드 옵션 추가](https://github.com/cataclysmbn/Cataclysm-BN/pull/11022)
 
@@ -192,7 +196,7 @@ DDA의 숲 스폰 목록을 바탕으로 숲, 평야에서 나오는 동물 종�
 
 ### [알비노와 다른 피부색을 번갈아 고르면 특성 포인트가 쌓이던 문제 수정](https://github.com/cataclysmbn/Cataclysm-BN/pull/11004)
 
-![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/ae049d5ec925dca688f7a741ce90fd3f39bb9e21c7a37abcef1077411d36987d.webp)
+![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/ae049d5ec925dca688f7a741ce90fd3f39bb9e21c7a37abcef1077411d36987d.webp)
 
 캐릭터 생성에서 알비노를 골랐다가 다른 피부색으로 바꿔도 알비노로 얻은 포인트가 회수되지 않았음
 
@@ -216,15 +220,15 @@ DDA의 숲 스폰 목록을 바탕으로 숲, 평야에서 나오는 동물 종�
 
 ### [UPS로 배터리 도구 충전 오류 수정](https://github.com/cataclysmbn/Cataclysm-BN/pull/11041)
 
-![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/b8eedf263e52208d7ba1bc7ac805528d74cd3122f3d67b931843ed9327a3e967.webp)
+![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/b8eedf263e52208d7ba1bc7ac805528d74cd3122f3d67b931843ed9327a3e967.webp)
 
-![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/3911da5c1e308aa15ba2522a188df26d3ea23f95311e4df16825e4157ad4b596.webp)
+![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/3911da5c1e308aa15ba2522a188df26d3ea23f95311e4df16825e4157ad4b596.webp)
 
 모드가 켠 바이오닉 탐지기처럼 탄약 종류 없이 정의한 도구를 UPS로 충전하면 "Tried to set invalid ammo battery" 오류 창이 떴음. 이제 도구 안에 든 배터리를 바로 충전함
 
 ### [눈먼 상태로 부딪혀 기억한 타일이 제 방향으로 보임](https://github.com/cataclysmbn/Cataclysm-BN/pull/11054)
 
-![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/c08db10e6ae6fc1db6892649a996b83dda71f2fce26a1d72b918441fa657e3ce.webp)
+![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/c08db10e6ae6fc1db6892649a996b83dda71f2fce26a1d72b918441fa657e3ce.webp)
 
 눈먼 캐릭터가 벽이나 가구에 부딪혀 기억한 타일이 이제 실제 방향대로 지도에 그려짐
 
@@ -244,7 +248,7 @@ SDL3로 바뀐 뒤 화면 배율이 2x, 4x면 로딩 화면 이미지와 출처 
 
 ### [대기 속도 최대 1.2배 향상](https://github.com/cataclysmbn/Cataclysm-BN/pull/11057)
 
-![불이 없는 곳에서 12시간 대기, 왼쪽 전, 오른쪽 후](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/ab8ad1162f3e41a5f6af0c9ccb23a33b6087766496d5035e09460826ed9b6a00.webp)
+![불이 없는 곳에서 12시간 대기, 왼쪽 전, 오른쪽 후](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/ab8ad1162f3e41a5f6af0c9ccb23a33b6087766496d5035e09460826ed9b6a00.webp)
 
 근처에 불이나 함정이 없으면 대기 중에 불에 땔감 넣을 곳 찾기와 숨은 함정 찾기를 매 턴 하지 않음
 
@@ -252,9 +256,9 @@ SDL3로 바뀐 뒤 화면 배율이 2x, 4x면 로딩 화면 이미지와 출처 
 - 마을 1.15배, 벽난로 옆 1.10배, 건초 불 옆 1.23배 빨라짐
 - 허공, 구덩이처럼 지형에 딸린 함정도 함정 목록에 들어가서, 함정 찾기를 건너뛰어도 이런 함정은 놓치지 않음
 
-![벽난로 옆에서 12시간 대기, 왼쪽 전, 오른쪽 후](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/150d9398b0662d0552bd68d290139fe84e61cb47d2bd6f96083698ce79c1dd9a.webp)
+![벽난로 옆에서 12시간 대기, 왼쪽 전, 오른쪽 후](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/150d9398b0662d0552bd68d290139fe84e61cb47d2bd6f96083698ce79c1dd9a.webp)
 
-![건초 불 옆에서 12시간 대기, 왼쪽 전, 오른쪽 후](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/b1fe4badce1461afdd2a353aab627daf1f074d2e1f09c780d5ba1f7a628ec3e8.webp)
+![건초 불 옆에서 12시간 대기, 왼쪽 전, 오른쪽 후](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/b1fe4badce1461afdd2a353aab627daf1f074d2e1f09c780d5ba1f7a628ec3e8.webp)
 
 ---
 
