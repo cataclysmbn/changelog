@@ -11,8 +11,9 @@
 
 import { Command } from "@cliffy/command"
 import { mkdir, readFile, writeFile } from "node:fs/promises"
-import { dirname, resolve } from "node:path"
-import { fileURLToPath } from "node:url"
+import { homedir } from "node:os"
+import { dirname, join, resolve } from "node:path"
+import { fileURLToPath, pathToFileURL } from "node:url"
 import * as v from "valibot"
 
 import {
@@ -25,6 +26,7 @@ import {
 
 import { execText } from "../src/exec.ts"
 import { parsePo, poGlossary } from "../src/translation.ts"
+import { isTilesetSheet, tilesetDiff } from "./tileset_diff.ts"
 
 const scriptDir = dirname(fileURLToPath(import.meta.url))
 const appRoot = dirname(scriptDir)
@@ -44,6 +46,7 @@ const OptionsSchema = v.object({
   title: v.optional(v.string()),
   repoSlug: v.optional(v.string()),
   rawUrl: v.string(),
+  imageDir: v.string(),
   noPrDetails: v.optional(v.boolean()),
   allowMissingPrDetails: v.optional(v.boolean()),
   glossaryPo: v.string(),
@@ -205,12 +208,13 @@ const usableImages = async (urls: string[]): Promise<string[]> => {
 const maxAddedImages = 10
 
 /**
- * Raw GitHub URLs of the images a commit adds or changes, pinned to that commit. Tileset sheets (under `gfx/` or a
- * path with "tileset" in it) are left out. So are URLs that GitHub does not serve, such as for a local commit.
+ * Raw GitHub URLs of the images a commit adds or changes, pinned to that commit, except URLs that GitHub does not
+ * serve, such as for a local commit. Tileset sheets are shown as one file URL of an onion skin of the changed sprites,
+ * written to `imageDir`.
  */
 const addedImages = async (
   commit: Commit,
-  options: { repo: string; repoSlug: string; rawUrl: string },
+  options: { repo: string; repoSlug: string; rawUrl: string; imageDir: string },
 ): Promise<string[]> => {
   const [hash = "", ...files] = (
     await commandText(
@@ -234,15 +238,30 @@ const addedImages = async (
     .split(/\0\n?/u)
     .filter(Boolean)
   const images = files.filter(
-    (file) => !/^gfx\/|tileset/iu.test(file) && /\.(?:png|jpe?g|gif|webp)$/iu.test(file),
+    (file) => !isTilesetSheet(file) && /\.(?:png|jpe?g|gif|webp)$/iu.test(file),
   )
-  if (images.length > maxAddedImages) return []
-  return await usableImages(
-    images.map(
-      (file) =>
-        `${options.rawUrl}/${options.repoSlug}/${hash}/${file.split("/").map(encodeURIComponent).join("/")}`,
-    ),
-  )
+  const sheets = files.filter(isTilesetSheet)
+  const diff =
+    sheets.length > 0 &&
+    (await tilesetDiff({
+      repo: options.repo,
+      commit: hash,
+      sheets,
+      outDir: options.imageDir,
+    }).catch((error: unknown) =>
+      console.warn(`타일셋 비교 이미지 생성 실패: ${hash} (${String(error)})`),
+    ))
+  return [
+    ...(images.length > maxAddedImages
+      ? []
+      : await usableImages(
+          images.map(
+            (file) =>
+              `${options.rawUrl}/${options.repoSlug}/${hash}/${file.split("/").map(encodeURIComponent).join("/")}`,
+          ),
+        )),
+    ...(diff ? [pathToFileURL(diff).href] : []),
+  ]
 }
 
 const fetchPullRequest = async (
@@ -299,7 +318,12 @@ const withPullRequestDetails = async (commits: Commit[], options: Options): Prom
           return merged.trim() ? await lookup(Number(merged)) : undefined
         })
         if (!pullRequest) return commit
-        const images = await addedImages(commit, { repo, repoSlug, rawUrl: options.rawUrl })
+        const images = await addedImages(commit, {
+          repo,
+          repoSlug,
+          rawUrl: options.rawUrl,
+          imageDir: options.imageDir,
+        })
         return {
           ...commit,
           pullRequest: { ...pullRequest, images: [...pullRequest.images, ...images] },
@@ -384,6 +408,9 @@ const main = new Command()
   .option("--raw-url <url:string>", "Base URL of raw files in GitHub repositories", {
     default: "https://raw.githubusercontent.com",
     hidden: true,
+  })
+  .option("--image-dir <dir:string>", "Folder for generated tileset diff images", {
+    default: join(process.env["XDG_CACHE_HOME"] || join(homedir(), ".cache"), "cata-changelog"),
   })
   .option("--no-pr-details", "Do not query GitHub PR bodies/files/images", {
     default: false,

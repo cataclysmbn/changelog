@@ -242,6 +242,8 @@ const buildPrompt = async (
     `${promptFile}.commits.txt`,
     "--exclude-commits",
     excludeFile,
+    "--image-dir",
+    join(options.outputDir, rangeSlug(range)),
   ]
   if (options.allowMissingPrDetails) {
     args.push("--allow-missing-pr-details")

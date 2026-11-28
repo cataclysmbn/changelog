@@ -95,7 +95,7 @@ test("weekly CLI selects and titles commits by local integration dates and skips
   })
 })
 
-test("offers the images a PR commit adds as evidence images, except tileset sheets and images GitHub does not serve", async () => {
+test("offers the images a PR commit adds as evidence images, except tileset sheets it cannot read and images GitHub does not serve", async () => {
   const server = createServer((request, response) => {
     const served = request.url?.endsWith("/loading/hub%2001.webp") || request.url?.endsWith(".png")
     response.writeHead(served ? 200 : 404, { "content-type": served ? "image/webp" : "text/plain" })
@@ -137,6 +137,8 @@ echo '{"number":11000,"title":"loading screens","url":"https://github.com/fixtur
         "--skip-glossary",
         "--raw-url",
         rawUrl,
+        "--image-dir",
+        join(repo, "images"),
       ],
       { ...env, PATH: `${bin}:${env["PATH"] ?? ""}` },
       "dc_changelog failed",
@@ -145,6 +147,61 @@ echo '{"number":11000,"title":"loading screens","url":"https://github.com/fixtur
       `Image: ${rawUrl}/fixture/repo/${hash}/loading/hub%2001.webp`,
     ])
   }).finally(() => server.close())
+})
+
+test("offers the sprites a PR commit changes in a tileset sheet as one onion skin image", async () => {
+  await withRepo(async (repo, git) => {
+    const sheet = join(repo, "gfx/Fixture/sheet.png")
+    await mkdir(dirname(sheet), { recursive: true })
+    await writeFile(
+      join(repo, "gfx/Fixture/tile_config.json"),
+      JSON.stringify({
+        tile_info: [{ width: 32, height: 32 }],
+        "tiles-new": [{ file: "sheet.png" }],
+      }),
+    )
+    // Two 32x32 sprites side by side: a red sprite with a faint edge, then a blue sprite. The PR commit turns the blue
+    // sprite lime. It also changes the red sprite the way re-encoding a sheet does: the body by 8 levels, and the
+    // color of the edge, which has alpha 16 and does not show.
+    const drawSheet = ({ edge, body, second }: { edge: string; body: string; second: string }) =>
+      $`magick -size 64x32 xc:none -fill ${edge} -draw ${"rectangle 0,0 31,31"} -fill ${body} -draw ${"rectangle 4,4 27,27"} -fill ${second} -draw ${"rectangle 32,0 63,31"} ${sheet}`
+    await drawSheet({ edge: "#FF000010", body: "#FF0000", second: "blue" })
+    await git(["add", "."])
+    await git(["commit", "-m", "feat: add fixture tileset"])
+    await drawSheet({ edge: "#0000FF10", body: "#F70000", second: "lime" })
+    await git(["commit", "-am", "feat: recolor a sprite (#11001)"])
+    const bin = join(repo, "bin")
+    await mkdir(bin)
+    await writeFile(
+      join(bin, "gh"),
+      `#!/bin/sh
+echo '{"number":11001,"title":"recolor","url":"https://github.com/fixture/repo/pull/11001","body":null,"files":[]}'
+`,
+      { mode: 0o755 },
+    )
+    const text = await execText(
+      process.execPath,
+      [
+        join(appRoot, "scripts/dc_changelog.ts"),
+        "--repo",
+        repo,
+        "HEAD",
+        "--repo-slug",
+        "fixture/repo",
+        "--skip-glossary",
+        "--image-dir",
+        join(repo, "images"),
+      ],
+      { ...env, PATH: `${bin}:${env["PATH"] ?? ""}` },
+      "dc_changelog failed",
+    )
+    const images = text.match(/(?<=Image: )\S+/gu) ?? []
+    expect(images).toHaveLength(1)
+    const image = fileURLToPath(images[0]!)
+    // Only the changed sprite, scaled 5x to 160x160 with an 8 px margin, and drawn in its new color.
+    expect(await $`magick identify -format ${"%wx%h"} ${image}`.text()).toEqual("176x176")
+    expect(await $`magick ${image} -format ${"%[hex:p{88,88}]"} info:`.text()).toEqual("00FF00")
+  })
 })
 
 test("links a commit whose subject ends in an issue number to the PR that holds the commit", async () => {
