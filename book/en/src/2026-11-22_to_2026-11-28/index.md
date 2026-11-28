@@ -25,7 +25,7 @@ The experimental build used a tileset made after DDA changed how tiles rotate, s
 
 ### [Add 5 fungal animals](https://github.com/cataclysmbn/Cataclysm-BN/pull/10981)
 
-![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@36504da23968a15b1f6f48add137d51fd9e7111b/11124e3547da80cea30955ad71944f288bb7d543566a3d97264e0f59a1303594.webp)
+![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/11124e3547da80cea30955ad71944f288bb7d543566a3d97264e0f59a1303594.webp)
 
 Adds fungal versions of the cat, coyote, wolf, cougar, and cow.
 
@@ -35,11 +35,11 @@ A character with Mycus mutations can tame all of them. You can ride the fungal c
 - If a pet of a non-Mycus character gets a fungal infection, it is no longer tame and becomes hostile.
 - Example: A human character's dog becomes a fungal dog and attacks its owner.
 
-![Fungal animal sprites](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@36504da23968a15b1f6f48add137d51fd9e7111b/18751baaa1c404ad8c60fd03998f0d36da9cca378a5f9c590f06b85eb4e88122.webp)
+![Fungal animal sprites](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/18751baaa1c404ad8c60fd03998f0d36da9cca378a5f9c590f06b85eb4e88122.webp)
 
-![Fungal animal sprites 2](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@36504da23968a15b1f6f48add137d51fd9e7111b/63ad7456445a61989c8bfd0ef7c5d0d1fd62bfb71e8a5c922d1f865d610f6b16.webp)
+![Fungal animal sprites 2](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/63ad7456445a61989c8bfd0ef7c5d0d1fd62bfb71e8a5c922d1f865d610f6b16.webp)
 
-![Mycus pets and wild fungal monsters do not fight](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@36504da23968a15b1f6f48add137d51fd9e7111b/6a0c73b7ad2707ca662b474e0c9a0f54b8e6333b542650e9ba216d656761e3f9.webp)
+![Mycus pets and wild fungal monsters do not fight](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/6a0c73b7ad2707ca662b474e0c9a0f54b8e6333b542650e9ba216d656761e3f9.webp)
 
 ### [Nerf the Drug Deal, Dead Survivors, and Military Map extras](https://github.com/cataclysmbn/Cataclysm-BN/pull/10993)
 
@@ -61,11 +61,11 @@ Some apple orchard map generation also changed.
 - In old saves, 7 removed farm overmap terrains change automatically to similar terrains. Before this fix, the game showed a "Loaded invalid oter_id" error and broke those tiles.
 - Wire fence tiles with a gate that are not generated yet change to wire fence without a gate.
 
-![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@36504da23968a15b1f6f48add137d51fd9e7111b/6dcb65c38e186951767709cd4784838e536e7dd095227c1b33366561a061754a.webp)
+![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/6dcb65c38e186951767709cd4784838e536e7dd095227c1b33366561a061754a.webp)
 
 ### [Save loading is about 2 times faster](https://github.com/cataclysmbn/Cataclysm-BN/pull/10924)
 
-![Time from loading a save to showing the map: 4.1 s -> 2.1 s](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@36504da23968a15b1f6f48add137d51fd9e7111b/75e6e3b5f38c1563dfb2290548509f48661808120160e474e4a0410436fd97d9.webp)
+![Time from loading a save to showing the map: 4.1 s -> 2.1 s](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/75e6e3b5f38c1563dfb2290548509f48661808120160e474e4a0410436fd97d9.webp)
 
 While the game reads the tileset, a different thread prepares map generation data at the same time.
 
@@ -77,7 +77,7 @@ The game also stops doing several unnecessary tasks while it loads a save.
 
 ### [Faster waiting near calm NPCs](https://github.com/cataclysmbn/Cataclysm-BN/pull/10986)
 
-![Waiting 6 hours with 8 NPCs in view: 8.3 s -> 7.2 s](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@36504da23968a15b1f6f48add137d51fd9e7111b/577ad84af07ee2dd2c04c9226894f6ab0b78944f0615cab52bc6afe3aecfc8ee.webp)
+![Waiting 6 hours with 8 NPCs in view: 8.3 s -> 7.2 s](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/577ad84af07ee2dd2c04c9226894f6ab0b78944f0615cab52bc6afe3aecfc8ee.webp)
 
 While you wait, the game checks calm NPCs for danger every 5 turns, not every turn. Up to 1.16 times faster.
 
@@ -93,7 +93,7 @@ On the UDP tileset overmap, the survivor's bunker and trans-coast logistics (TCL
 
 ### [Real flagpole on the fire lookout tower](https://github.com/cataclysmbn/Cataclysm-BN/pull/10992)
 
-![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@36504da23968a15b1f6f48add137d51fd9e7111b/2f32453e7a058127b153031eb46abc4aa8b118a5d473adb8be3775f4037329df.webp)
+![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/2f32453e7a058127b153031eb46abc4aa8b118a5d473adb8be3775f4037329df.webp)
 
 On the fire lookout tower, the pillar that acted as a flagpole is now a real flagpole.
 
@@ -101,7 +101,9 @@ On the fire lookout tower, the pillar that acted as a flagpole is now a real fla
 
 ### [Fix: Second Sky Island character started in the air and fell](https://github.com/cataclysmbn/Cataclysm-BN/pull/11017)
 
-![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@36504da23968a15b1f6f48add137d51fd9e7111b/cf26cc9dea9836a1dd895ef2bc13fc47967bb9fc916bbf44e2725667870e78f9.webp)
+![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/37a1c92ac1115af725ecd6f5a382e7b3b163507cc023538551fb44b5c1caba04.webp)
+
+![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/7485ca68797f883af1cf100b0f88b054d2dcfacd8a71bba56ed2529001950d0c.webp)
 
 If you made a new character from the main menu without closing the game, the character started in the Pocket Dimension of the last game, and also outside its bounds.
 
@@ -109,7 +111,7 @@ Now the game always returns to the main world when you start a new game or load 
 
 ### [Fix: Save problem that deleted overmap exploration data](https://github.com/cataclysmbn/Cataclysm-BN/pull/11007)
 
-![A save with an NPC at -100 J bionic power opens without errors](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@36504da23968a15b1f6f48add137d51fd9e7111b/47365e4303c86b67bdc721f38a97df0e16715050bcbf924753b18da194550b7f.webp)
+![A save with an NPC at -100 J bionic power opens without errors](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/47365e4303c86b67bdc721f38a97df0e16715050bcbf924753b18da194550b7f.webp)
 
 When an autodoc removed a Power Storage CBM, the game removed the power capacity two times, so bionic power became negative. The game could not load an overmap with such an NPC. At the next save, the game overwrote and deleted the explored overmap data.
 
@@ -134,7 +136,7 @@ Adds 4 loading screen images from DDA.
 
 ### [Gases and fields you saw stay on the map](https://github.com/cataclysmbn/Cataclysm-BN/pull/11025)
 
-![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@36504da23968a15b1f6f48add137d51fd9e7111b/af18c1f5e6d7f0c06f1e3a4295f80307c501cae546e700e8b41e9bdd6108a9fc.webp)
+![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/af18c1f5e6d7f0c06f1e3a4295f80307c501cae546e700e8b41e9bdd6108a9fc.webp)
 
 Fields such as toxic gas stay on the map after they go out of view.
 
@@ -168,7 +170,7 @@ The two enchantments used a DDA-style 0~1 decimal chance, so a character with th
 
 ### [Waiting near fire is up to 10 times faster](https://github.com/cataclysmbn/Cataclysm-BN/pull/11049)
 
-![Waiting 12 hours next to a fireplace that keeps getting fuel: 34.5 s -> 7.5 s](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@36504da23968a15b1f6f48add137d51fd9e7111b/f8a4889d27f08704e722a11cbd1730a04b519a0cb9d9628e1d88d0a95063a07e.webp)
+![Waiting 12 hours next to a fireplace that keeps getting fuel: 34.5 s -> 7.5 s](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/f8a4889d27f08704e722a11cbd1730a04b519a0cb9d9628e1d88d0a95063a07e.webp)
 
 When a fire burned nearby, the game processed waiting and crafting one turn at a time, so it was slow. This was worst next to a fireplace that kept getting fuel from a firewood source. Now the game processes in 5-minute steps also when a fire is present.
 
@@ -176,7 +178,7 @@ When a fire burned nearby, the game processed waiting and crafting one turn at a
 - Near a spreading fire: 14.79 times faster
 - The game still processes the area with the fire and the adjacent areas where fire can spread every turn, so fire spread does not change.
 
-![Waiting 2 hours near a spreading fire: 4.6 s -> 1.0 s](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@36504da23968a15b1f6f48add137d51fd9e7111b/4fa198fc2232febee540ed7751efaae30429e2fcdfe28cee852cdabcb8a389f7.webp)
+![Waiting 2 hours near a spreading fire: 4.6 s -> 1.0 s](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/4fa198fc2232febee540ed7751efaae30429e2fcdfe28cee852cdabcb8a389f7.webp)
 
 ### [Add a vehicle work speed world option](https://github.com/cataclysmbn/Cataclysm-BN/pull/11022)
 
@@ -190,7 +192,7 @@ You can set it from 0 to 1000%. The default is 100%. At 0%, work finishes immedi
 
 ### [Fix: Switching between Albino and other skin tones added trait points](https://github.com/cataclysmbn/Cataclysm-BN/pull/11004)
 
-![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@36504da23968a15b1f6f48add137d51fd9e7111b/ae049d5ec925dca688f7a741ce90fd3f39bb9e21c7a37abcef1077411d36987d.webp)
+![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/ae049d5ec925dca688f7a741ce90fd3f39bb9e21c7a37abcef1077411d36987d.webp)
 
 In character creation, if you selected Albino and then changed to a different skin tone, the game did not remove the points from Albino.
 
@@ -214,13 +216,15 @@ Fixed a crash from a memory access error when you loaded a save made during cons
 
 ### [Fix: Error when charging battery tools with a UPS](https://github.com/cataclysmbn/Cataclysm-BN/pull/11041)
 
-![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@36504da23968a15b1f6f48add137d51fd9e7111b/43135e67d5a9a6d8ba532faf834ad9515176e292f37cf6cf9548b4e2cde2ad01.webp)
+![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/b8eedf263e52208d7ba1bc7ac805528d74cd3122f3d67b931843ed9327a3e967.webp)
+
+![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/3911da5c1e308aa15ba2522a188df26d3ea23f95311e4df16825e4157ad4b596.webp)
 
 When you charged a tool with no ammo type with a UPS, such as a bionic scanner that a mod enables, the game showed a "Tried to set invalid ammo battery" error window. Now the game charges the battery in the tool directly.
 
 ### [Tiles you remember from bumping into them while blind show the correct direction](https://github.com/cataclysmbn/Cataclysm-BN/pull/11054)
 
-![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@36504da23968a15b1f6f48add137d51fd9e7111b/c08db10e6ae6fc1db6892649a996b83dda71f2fce26a1d72b918441fa657e3ce.webp)
+![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/c08db10e6ae6fc1db6892649a996b83dda71f2fce26a1d72b918441fa657e3ce.webp)
 
 When a blind character bumps into a wall or furniture, the remembered tile now shows on the map in its real direction.
 
@@ -240,7 +244,7 @@ The apartment distribution value in the default region settings was 0, so the Fl
 
 ### [Waiting is up to 1.2 times faster](https://github.com/cataclysmbn/Cataclysm-BN/pull/11057)
 
-![Waiting 12 hours with no fire nearby, left before, right after](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@36504da23968a15b1f6f48add137d51fd9e7111b/ab8ad1162f3e41a5f6af0c9ccb23a33b6087766496d5035e09460826ed9b6a00.webp)
+![Waiting 12 hours with no fire nearby, left before, right after](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/ab8ad1162f3e41a5f6af0c9ccb23a33b6087766496d5035e09460826ed9b6a00.webp)
 
 If no fire or trap is nearby, the game does not search for fires to refuel or for hidden traps every turn while you wait.
 
@@ -248,9 +252,9 @@ If no fire or trap is nearby, the game does not search for fires to refuel or fo
 - Town: 1.15 times, next to a fireplace: 1.10 times, next to a hay fire: 1.23 times faster
 - Traps that are part of terrain, such as a ledge or pit, are now in the trap list, so the game does not miss them when it skips the trap search.
 
-![Waiting 12 hours next to a fireplace, left before, right after](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@36504da23968a15b1f6f48add137d51fd9e7111b/150d9398b0662d0552bd68d290139fe84e61cb47d2bd6f96083698ce79c1dd9a.webp)
+![Waiting 12 hours next to a fireplace, left before, right after](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/150d9398b0662d0552bd68d290139fe84e61cb47d2bd6f96083698ce79c1dd9a.webp)
 
-![Waiting 12 hours next to a hay fire, left before, right after](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@36504da23968a15b1f6f48add137d51fd9e7111b/b1fe4badce1461afdd2a353aab627daf1f074d2e1f09c780d5ba1f7a628ec3e8.webp)
+![Waiting 12 hours next to a hay fire, left before, right after](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@41f78d4f7b259dd02a3be407b245558947d5c287/b1fe4badce1461afdd2a353aab627daf1f074d2e1f09c780d5ba1f7a628ec3e8.webp)
 
 ---
 
