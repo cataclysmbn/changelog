@@ -231,17 +231,30 @@ const withPullRequestDetails = async (commits: Commit[], options: Options): Prom
   const repo = resolve(options.repo)
   const repoSlug = await resolveRepoSlug(repo, options.repoSlug)
   const cache = new Map<number, Promise<PullRequestDetails>>()
+  const lookup = (number: number): Promise<PullRequestDetails> => {
+    const cached = cache.get(number) ?? fetchPullRequest(number, { repoSlug })
+    cache.set(number, cached)
+    return cached
+  }
 
   return await Promise.all(
     commits.map(async (commit) => {
       const number = prNumber(commit.subject)
       if (!number) return commit
 
-      const cached = cache.get(number) ?? fetchPullRequest(number, { repoSlug })
-      cache.set(number, cached)
-
       try {
-        return { ...commit, pullRequest: await cached }
+        const pullRequest = await lookup(number).catch(async (error: unknown) => {
+          if (!String(error).includes("Could not resolve to a PullRequest")) throw error
+          // After a rebase merge, a commit subject can end in an issue number. Look up the PR that holds the commit.
+          const merged = await commandText("gh", [
+            "api",
+            `repos/${repoSlug}/commits/${commit.hash}/pulls`,
+            "--jq",
+            ".[0].number // empty",
+          ])
+          return merged.trim() ? await lookup(Number(merged)) : undefined
+        })
+        return pullRequest ? { ...commit, pullRequest } : commit
       } catch (error) {
         if (!options.allowMissingPrDetails) throw error
         return {
