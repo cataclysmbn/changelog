@@ -1,0 +1,10 @@
+Office towers and labs spawn with multiple floors
+Plastered wall loopholes; .22 LR pierces plaster
+Recipe search compares values and excludes
+Soul armor summons its own magical armor
+Spell armor works with all mutant body types
+Bionic that stops things waking you in sleep
+Blindness only from head or eye projectile hits
+Fix pet armor that could not be taken off
+Draw liquids into a ground container nearby
+Wrenches found in mechanic garages and drawers

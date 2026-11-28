@@ -1,0 +1,10 @@
+Overhaul the body armor system with separate plates
+Add oil rig on lakes
+Add more monster kinds to subways and sewers
+Military special locations are more varied
+Monsters can grab each other too
+Auto-travel to remembered stairs is possible
+Add jet skier profession to Pond Scum scenario
+Add colored light to flares, glow sticks, torches
+Disassemble 13 bionics to recover parts
+Breaking doors at close range with shot is easy

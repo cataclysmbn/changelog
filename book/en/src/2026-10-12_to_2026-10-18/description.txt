@@ -1,0 +1,10 @@
+Add perk menu (Ctrl+P)
+Strengthen the hulk and juggernaut lines
+Powered microwave works as a cooking tool
+Autodrive avoids craters, minefields, road blocks
+Add carbon fiber armor plate and ram
+Tacoma Commune gets roofs, lighting, and tools
+hauler bot carry weight 180 kg -> 270 kg
+Saddle bag capacity 30 L -> 50 L
+Fix trained animals losing training after saving
+Sailboats can be steered without start-up bypass

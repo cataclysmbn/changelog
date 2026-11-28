@@ -1,0 +1,10 @@
+Triffid, mi-go and fungal colonies in city parks
+Add camouflage zombie and camouflaged hunter
+New central lab reward rooms and a human lab
+Resting activities give some natural recovery
+Stat mutations apply to base stats, Prime 1.5x
+Crouch, prone and camouflage cut enemy detection
+Zombies hit trees to knock down climbing players
+Add the Contaminant Particle Ionizer CBM
+Press reload repeatedly to reload held weapon
+NPCs shoot from behind cover

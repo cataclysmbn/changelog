@@ -1,0 +1,10 @@
+Water boss Kraken added
+Sound processing changed greatly to decibels
+Military medic and Gambler professions added
+First aid kits split, first aid items rebalanced
+Diamond-coated melee weapons get armor penetration
+Graphical lighting changed, colored lighting added
+Crafting tools and tool furniture use base power
+Electric engine noise reduced to 10%
+40mm shot range increased, casings unified
+Craftable magazines, ski gear, windbreaker recipes

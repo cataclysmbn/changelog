@@ -1,0 +1,10 @@
+Add ore smelter for ore and charcoal
+Tame several wild animals and fungal monsters
+Rework LMOE shelter with freezers and enemies
+Adjust forest animal spawns with young animals
+Add fleeing enemy to Crazy Cataclysm
+Battery charger output from 15W to 60W
+Fix lake and river saving and save lag
+Improve The Tacoma Commune buildings
+Show taming food and required traits
+Fix dimension shift crash after death

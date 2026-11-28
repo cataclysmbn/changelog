@@ -1,0 +1,10 @@
+Add 5 fungal animals
+Forest animal spawn rework
+Add farms with large farm fields
+Nerf Drug Deal, Dead Survivors, Military extras
+Waiting is up to about 14 times faster
+Save loading is about 2 times faster
+Add 4 starting traits
+Add a vehicle work speed world option
+Fix save bug that deleted overmap exploration
+GPS location search is about 9 times faster

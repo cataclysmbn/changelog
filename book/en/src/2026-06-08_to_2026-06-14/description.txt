@@ -1,0 +1,10 @@
+Add a washing activity for showers and bathtubs
+Add pets and bond levels
+Add Hellfire missiles and the minirose CBM
+Buff the handheld laser cannon, damage 10 -> 30
+Balance anti-tank weapons and explosions
+Adjust gun sounds and hearing protection
+Add the new trait Carry Permit
+Faster large tileset load, memory growth fixed
+Fix cooking ingredients counted as rotten
+Lighting falls back to CPU without GPU lighting

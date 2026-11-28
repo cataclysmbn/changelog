@@ -1,0 +1,10 @@
+F-35, F-15E, Harrier, hover tank and more added
+Military airfield, blacksite, police, outlet mall
+Many lab bosses and finales added, smaller labs
+Map and reality bubble reworked, less stutter
+Most of the tank mod merged into the main game
+Water plumbing system added
+You can give crafting jobs to NPCs
+Arcana and Magic Items return as built-in mods
+Construction menu reworked, nested craft menu
+Underground survivor scenarios added

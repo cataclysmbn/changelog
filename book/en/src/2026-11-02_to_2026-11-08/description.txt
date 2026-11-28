@@ -1,0 +1,10 @@
+Digital file system overhaul, Data Hoarder profession
+Adds combat drones + remote control rework
+Radioactive evolution line for hazmat zombies
+Soldier/SWAT and skeleton armor changes
+New retirement community, motel map replaced
+Coffee farming from seeds
+New profession: Vault Personnel
+New hallucination monster: hat man
+Saws that are on make operating noise again
+Lightstrip on/off + recipe restored

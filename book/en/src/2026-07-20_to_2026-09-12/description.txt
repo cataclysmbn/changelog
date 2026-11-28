@@ -1,0 +1,10 @@
+Rework the central lab into one large final area
+Add a large civilian airport and planes
+Add the Mi-go ship in the sky
+Damage above 15 through armor causes bleeding
+Split the Rockbreaker into exo-suit and plates
+Add a jump action that clears one tile
+Time skipping for sleep, crafting, vehicle work
+Choose starting spells with points at creation
+Add the feral SWAT team at SWAT vehicles
+Noise display can show audible tile distance

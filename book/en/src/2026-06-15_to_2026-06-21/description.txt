@@ -1,0 +1,10 @@
+Kraken boss rework, spawns only at lake shipwreck
+Sky Island, squirrel mod and more in experimental
+Read in the dark with night vision goggles
+Blacksite decoy vehicle is now an M60 tank
+Less mobile base lag and faster EMP blasts
+Ice labs get a lower spawn chance
+Add disassembly recipes for Hellfire missiles
+M72 LAW now weaker than the 84mm HEDP
+Fix whole stacks traded in the trade window
+Fix pets losing training and bond

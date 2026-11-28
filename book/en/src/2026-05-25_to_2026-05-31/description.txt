@@ -1,0 +1,10 @@
+Old Guard doctor quests 2 to 5 reworked
+4 new starting professions added
+New pickup menu option added
+Long activity time skip up to 4x faster
+Big cities generate like cities, towns like towns
+One-use door unlock code for locked lab doors
+40mm grenades and 84mm recoilless rounds buffed
+Cooking gives 5% more enjoyment per level
+Hallucinations show correctly for up to 6 hours
+You can choose the title screen

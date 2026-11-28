@@ -1,0 +1,10 @@
+Add M1919, SVD, PKM and more firearms and ammo
+Pipes store and supply many kinds of liquid
+The view follows a remote-controlled vehicle
+Add delivery drone you unfold and fly remotely
+Adjust ranged bionic weapons
+Adjust plasma rifle and anti-materiel cannon
+Range bonus for SMGs and pistol-caliber rifles
+Add IFAK, mainly from soldier and police zombies
+Higher chance to get CBMs from cyborgs
+Cloak body coverage 65% -> 90%

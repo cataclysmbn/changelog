@@ -1,0 +1,10 @@
+Spilled liquid spreads as a puddle on the floor
+Add disguised zombie
+Firearm skill 0 doubles spread
+Glue is a liquid you can spray on the floor
+Add .50 machine gun security robot
+Add experimental fighter with a laser cannon
+Add small park area with hell creatures
+Bigger single hits cause stronger bleeding
+Alpha mutation stat scaling and new traits
+You go prone automatically when knocked down

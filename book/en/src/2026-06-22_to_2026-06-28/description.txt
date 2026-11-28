@@ -1,0 +1,10 @@
+Enhanced deranged bionic special forces variants
+Add the M249-equipped TALON UGV
+Add the subway start scenario "The Metro"
+Craftable guns use base gun plus conversion kit
+Add Kevlar-padded wooden shields
+Less reading/crafting slowdown from bionic scanner
+Mouse auto-move works on remembered tiles
+Labs appear more often
+More flour, rice and pasta spawn
+Enemies now appear at the soldier corpse scene

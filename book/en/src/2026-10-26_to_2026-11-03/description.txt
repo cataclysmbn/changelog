@@ -1,0 +1,10 @@
+Boss feral FPF commander in nuclear plant tunnel
+Bandit camp boss becomes a dedicated boss NPC
+Add radioactive zombie evolution line
+Add military barracks and retirement village
+Ballistic vest, plate and tactical helmet rebalance
+Feral human evolution path, first-day basements
+Add food spoilage rate setting
+Disabled vehicles in emergency shelter parking
+New Marine CSO profession, varied starting ammo
+Soldier, SWAT and skeletal zombie armor adjusted

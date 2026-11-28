@@ -1,0 +1,10 @@
+Add the prone stance
+Body armor and ammo penetration values overhauled
+Add island cities inside big lakes
+Suburban housing forms on the edge of cities
+New Kevlar zombie, acid/skeleton evolution split
+At least 1 lab now appears per overmap
+Friendly robots mark enemy positions
+You can order a follower NPC to sleep
+Add the military drone operator profession
+Animal breeding and growth speed world option

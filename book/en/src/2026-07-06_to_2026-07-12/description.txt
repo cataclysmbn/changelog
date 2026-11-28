@@ -1,0 +1,10 @@
+Drone swarm road event added to Aftershock
+Blindness added as a starting trait
+Guaranteed superalloy in steel mill reward room
+Reactors can be attacked and destroyed
+Power armor soldier gets advanced UPS and A7 rifle
+The advanced UPS charges itself
+Crafting window shows auto-learn conditions
+Automated gas station tank stores gasoline
+Fix crash loading special enchantment items
+Hover repulsor immune to traps and lava
