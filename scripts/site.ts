@@ -75,7 +75,7 @@ export const buildSite = async ({
     const names = await bookPosts(join(book, "src"))
     for (const name of names) {
       const description = await readFile(join(book, "src", name, "description.txt"), "utf8").catch(
-        () => undefined,
+        (error) => (error.code === "ENOENT" ? undefined : Promise.reject(error)),
       )
       await finishPage(join(dest, name, "index.html"), {
         url: `${base}${name}/`,

@@ -702,13 +702,18 @@ const run = async (options: Options): Promise<void> => {
       await writeFile(join(postDir, "changelog.en.html"), translated.html)
       $.logStep("wrote", join(postDir, "changelog.en.html"))
       $.logStep("pi describer", range.label)
-      const description = await describeWithPi(
+      // Publish the post without a link preview description when the describer fails.
+      await describeWithPi(
         runOptions,
         { korean: korean.markdown, english: translated.markdown },
         join(tempDir, `${slug}.describe.prompt.md`),
+      ).then(
+        async ({ ko, en }) => {
+          await writeFile(join(postDir, "description.txt"), descriptionText(ko))
+          await writeFile(join(postDir, "description.en.txt"), descriptionText(en))
+        },
+        (error) => $.logWarn("describer failed", error instanceof Error ? error.message : error),
       )
-      await writeFile(join(postDir, "description.txt"), descriptionText(description.ko))
-      await writeFile(join(postDir, "description.en.txt"), descriptionText(description.en))
       $.logStep("published", (await publishPages([postDir]))[0])
     }
   } catch (error) {

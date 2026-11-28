@@ -25,6 +25,13 @@ test("parseDescription accepts 5 to 10 changes per language and rejects other co
   ).toThrow()
 })
 
+test("parseDescription rejects 4 changes for a post with 6 unlinked entries", () => {
+  const unlinked = post.replace(/^### \[(.*)\]\(.*\)$/gmu, "### $1")
+  expect(() =>
+    parseDescription(answer(five("변경").slice(1), five("Change").slice(1)), unlinked),
+  ).toThrow()
+})
+
 test("parseDescription accepts 2 changes for a post with 2 entries", () => {
   const short = post.split("\n\n").slice(0, 2).join("\n\n")
   expect(
