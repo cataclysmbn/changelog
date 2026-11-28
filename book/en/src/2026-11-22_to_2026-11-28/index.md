@@ -130,13 +130,11 @@ Adds 4 loading screen images from DDA.
 
 - The experimental tiles version includes the loading screen images.
 
-![Base game: Hub 01](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/538361f0211bd608d412858cc429dbcf5246520a3122cb688d9489238e38bc9d.webp)
-
-![My Sweet Cataclysm: BN Edition mod: necco image](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/7a28464f86642c41c4ba9edc9a9e0bf431631eef2cba312d1145e7866ee86b9a.webp)
-
-![Dark Days of the Dead mod: movie poster parody image](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/35f3e7decba0e92f7d103d38b9c1b257de7f41bd28517ade087ea0a18d0f3f30.webp)
-
-![innawoods mod image](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/74aab701ca9c43630894b88ab1a575c12b32d1c185bab1fb98b6e5d0b322d2a3.webp)
+| Base game | My Sweet Cataclysm mod |
+| --- | --- |
+| ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/538361f0211bd608d412858cc429dbcf5246520a3122cb688d9489238e38bc9d.webp) | ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/7a28464f86642c41c4ba9edc9a9e0bf431631eef2cba312d1145e7866ee86b9a.webp) |
+| Dark Days of the Dead mod | innawoods mod |
+| ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/35f3e7decba0e92f7d103d38b9c1b257de7f41bd28517ade087ea0a18d0f3f30.webp) | ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/74aab701ca9c43630894b88ab1a575c12b32d1c185bab1fb98b6e5d0b322d2a3.webp) |
 
 ### [Gases and fields you saw stay on the map](https://github.com/cataclysmbn/Cataclysm-BN/pull/11025)
 

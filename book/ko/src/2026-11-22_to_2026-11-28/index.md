@@ -130,13 +130,11 @@ DDA에서 로딩 화면 이미지 4장을 가져옴
 
 - 실험판 타일 버전을 받으면 로딩 화면 이미지가 같이 들어 있음
 
-![기본 게임: 허브 01](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/538361f0211bd608d412858cc429dbcf5246520a3122cb688d9489238e38bc9d.webp)
-
-![마이 스위트 카타클리즘: 밝은밤 에디션 모드: 네코 그림](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/7a28464f86642c41c4ba9edc9a9e0bf431631eef2cba312d1145e7866ee86b9a.webp)
-
-![어두운 미래의 저주(Dark Days of the Dead) 모드: 영화 포스터 패러디 그림](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/35f3e7decba0e92f7d103d38b9c1b257de7f41bd28517ade087ea0a18d0f3f30.webp)
-
-![숲속생활(innawoods) 모드 그림](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/74aab701ca9c43630894b88ab1a575c12b32d1c185bab1fb98b6e5d0b322d2a3.webp)
+| 기본 게임 | 마이 스위트 카타클리즘 모드 |
+| --- | --- |
+| ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/538361f0211bd608d412858cc429dbcf5246520a3122cb688d9489238e38bc9d.webp) | ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/7a28464f86642c41c4ba9edc9a9e0bf431631eef2cba312d1145e7866ee86b9a.webp) |
+| 어두운 미래의 저주 모드 | 숲속생활 모드 |
+| ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/35f3e7decba0e92f7d103d38b9c1b257de7f41bd28517ade087ea0a18d0f3f30.webp) | ![](https://cdn.jsdelivr.net/gh/cataclysmbn/changelog@b81f66b9ab788aac7b973a2e5b764bcfa18ff6e1/74aab701ca9c43630894b88ab1a575c12b32d1c185bab1fb98b6e5d0b322d2a3.webp) |
 
 ### [본 적 있는 가스나 필드도 지도에 기억됨](https://github.com/cataclysmbn/Cataclysm-BN/pull/11025)
 
